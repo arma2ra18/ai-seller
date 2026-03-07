@@ -5,7 +5,7 @@ import { getFunctions } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAllWDGr8TKYeqtjgpM9EWWf5hqSfPJqoI", // ЗАМЕНИ НА СВОИ
+    apiKey: "AIzaSyAllWDGr8TKYeqtjgpM9EWWf5hqSfPJqoI",
     authDomain: "ai-seller-prod-4c0c9.firebaseapp.com",
     projectId: "ai-seller-prod-4c0c9",
     storageBucket: "ai-seller-prod-4c0c9.firebasestorage.app",

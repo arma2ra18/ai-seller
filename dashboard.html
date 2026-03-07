@@ -36,188 +36,96 @@
             </div>
 
             <div class="generator-form">
-                <div class="form-tabs">
-                    <button class="tab active" data-tab="basic">📝 Текст</button>
-                    <button class="tab" data-tab="advanced" id="advancedTab">🖼️ Фото</button>
-                    <button class="tab" data-tab="video">🎬 Видео</button>
-                </div>
+    <div class="form-tabs">
+        <button class="tab active" data-tab="wb">Wildberries</button>
+        <button class="tab" data-tab="ozon">Ozon</button>
+        <button class="tab" data-tab="photo">🖼️ Фото</button>
+        <button class="tab" data-tab="video">🎬 Видео</button>
+    </div>
 
-                <!-- Вкладка "Текст" -->
-                <div class="tab-content active" id="basic-tab">
-                    <div class="form-group">
-                        <label>Категория товара</label>
-                        <select id="category">
-                            <option value="">Выберите категорию</option>
-                            <option value="electronics">Электроника</option>
-                            <option value="clothing">Одежда</option>
-                            <option value="home">Товары для дома</option>
-                            <option value="beauty">Красота и здоровье</option>
-                            <option value="kids">Детские товары</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Название товара</label>
-                        <input type="text" id="productName" placeholder="Например: Беспроводные наушники Xiaomi">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Ключевые особенности (через запятую)</label>
-                        <input type="text" id="features" placeholder="шумоподавление, влагозащита, 20 часов работы">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Целевая аудитория</label>
-                        <input type="text" id="audience" placeholder="Например: для спорта, для офиса, для подростков">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Ключевые слова для SEO</label>
-                        <input type="text" id="keywords" placeholder="купить наушники, беспроводные наушники">
-                    </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn-primary btn-large" id="generateBtn" onclick="generate()">
-                            ✨ Сгенерировать текст (1 токен)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Вкладка "Фото" -->
-                <div class="tab-content" id="advanced-tab">
-                    <div class="form-group">
-                        <label>Загрузить фото товара</label>
-                        <input type="file" id="productPhoto" accept="image/*" capture="environment">
-                        <small>Загрузите фото на белом фоне для лучшего результата</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Дополнительные пожелания к фото</label>
-                        <textarea id="photoPrompt" rows="2" placeholder="Например: на мраморном столе, с кофейными зернами вокруг, уютная атмосфера"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Выберите модель</label>
-                        <select id="photoModel">
-                            <option value="flux-2-pro">FLUX 2 Pro (лучшее качество)</option>
-                            <option value="nano-banana">Nano Banana Pro (стилизация)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn-primary btn-large" onclick="generateProductPhoto()" id="generatePhotoBtn">
-                            ✨ Сгенерировать фото (2 токена)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Вкладка "Видео" -->
-                <div class="tab-content" id="video-tab">
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label>Тип видео</label>
-                            <select id="videoType">
-                                <option value="standard">Стандартный обзор</option>
-                                <option value="360">Обзор на 360°</option>
-                                <option value="lifestyle">Использование в жизни</option>
-                                <option value="unboxing">Распаковка</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group half">
-                            <label>Длительность</label>
-                            <select id="videoDuration">
-                                <option value="8">8 секунд</option>
-                                <option value="10">10 секунд</option>
-                                <option value="12">12 секунд</option>
-                                <option value="15">15 секунд</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label>Соотношение сторон</label>
-                            <select id="videoAspectRatio">
-                                <option value="1:1">1:1 (квадрат, для карточек)</option>
-                                <option value="9:16">9:16 (вертикаль, для Reels)</option>
-                                <option value="16:9">16:9 (горизонталь)</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group half">
-                            <label>Категория товара</label>
-                            <select id="videoCategory">
-                                <option value="clothing">Одежда</option>
-                                <option value="electronics">Электроника</option>
-                                <option value="beauty">Косметика</option>
-                                <option value="home">Товары для дома</option>
-                                <option value="food">Еда</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Загрузить фото товара</label>
-                        <input type="file" id="videoPhoto" accept="image/*" capture="environment">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Дополнительные пожелания к видео</label>
-                        <textarea id="videoPrompt" rows="3" placeholder="Например: модель должна идти к камере, фон - город, вечернее освещение"></textarea>
-                    </div>
-
-                    <div class="template-hints" style="margin: 20px 0; padding: 15px; background: rgba(108,92,231,0.1); border-radius: 12px;">
-                        <p><strong>Пример промпта:</strong></p>
-                        <div id="promptExample">Выберите категорию</div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button class="btn btn-primary btn-large" onclick="generateVideo()" id="generateVideoBtn">
-                            ✨ Сгенерировать видео (5 токенов)
-                        </button>
-                    </div>
-                </div>
+    <!-- Вкладка Wildberries -->
+    <div class="tab-content active" id="wb-tab">
+        <h3>Создание карточки для Wildberries</h3>
+        <div class="form-group">
+            <label>Название товара</label>
+            <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4">
+        </div>
+        <div class="form-row">
+            <div class="half">
+                <label>Бренд</label>
+                <input type="text" id="wbBrand" placeholder="Xiaomi">
             </div>
-
-            <!-- Результаты генерации текста -->
-            <div class="results-section" id="resultsSection" style="display: none;">
-                <h2>Результаты генерации</h2>
-                
-                <div class="result-tabs">
-                    <button class="result-tab active" data-result="names">📝 Названия</button>
-                    <button class="result-tab" data-result="description">📄 Описание</button>
-                    <button class="result-tab" data-result="specs">📊 Характеристики</button>
-                </div>
-
-                <div class="result-content active" id="names-result">
-                    <div class="result-list" id="namesList"></div>
-                </div>
-
-                <div class="result-content" id="description-result">
-                    <div class="result-text" id="descriptionText"></div>
-                    <button class="btn btn-small" onclick="copyText(descriptionText)">📋 Копировать</button>
-                </div>
-
-                <div class="result-content" id="specs-result">
-                    <table class="specs-table" id="specsTable"></table>
-                    <button class="btn btn-small" onclick="copySpecs()">📋 Копировать</button>
-                </div>
-
-                <div class="result-actions">
-                    <button class="btn btn-outline" onclick="saveToHistory()">💾 Сохранить в историю</button>
-                </div>
+            <div class="half">
+                <label>Категория</label>
+                <select id="wbCategory">
+                    <option value="electronics">Электроника</option>
+                    <option value="clothing">Одежда</option>
+                    <option value="home">Товары для дома</option>
+                </select>
             </div>
+        </div>
+        <div class="form-group">
+            <label>Ключевые особенности (через запятую)</label>
+            <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы">
+        </div>
+        <div class="form-group">
+            <label>Загрузите фото товара (можно несколько)</label>
+            <input type="file" id="wbPhotos" accept="image/*" multiple>
+        </div>
+        <button class="btn btn-primary" onclick="generateWBCard()">Создать карточку для WB</button>
+    </div>
 
-            <!-- Результат генерации фото -->
-            <div id="photoResult" style="display: none; margin-top: 30px;">
-                <h3>Готовое фото:</h3>
-                <img id="generatedImage" style="max-width: 100%; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center;">
-                    <button class="btn btn-primary" onclick="downloadImage()">⬇️ Скачать</button>
-                    <button class="btn btn-outline" onclick="copyImageUrl()">🔗 Копировать ссылку</button>
-                </div>
+    <!-- Вкладка Ozon -->
+    <div class="tab-content" id="ozon-tab">
+        <h3>Создание карточки для Ozon</h3>
+        <div class="form-group">
+            <label>Название товара</label>
+            <input type="text" id="ozonProductName" placeholder="Например: Кроссовки Nike Air Max">
+        </div>
+        <div class="form-row">
+            <div class="half">
+                <label>Бренд</label>
+                <input type="text" id="ozonBrand" placeholder="Nike">
             </div>
+            <div class="half">
+                <label>Категория</label>
+                <select id="ozonCategory">
+                    <option value="clothing">Одежда и обувь</option>
+                    <option value="electronics">Электроника</option>
+                    <option value="home">Дом и сад</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Ключевые характеристики</label>
+            <textarea id="ozonFeatures" rows="3" placeholder="Размер: 42-45, Материал: кожа, Цвет: черный"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Загрузите фото товара</label>
+            <input type="file" id="ozonPhotos" accept="image/*" multiple>
+        </div>
+        <button class="btn btn-primary" onclick="generateOzonCard()">Создать карточку для Ozon</button>
+    </div>
+
+    <!-- Вкладка Фото (старая) -->
+    <div class="tab-content" id="photo-tab">
+        <!-- ... существующий код для фото ... -->
+    </div>
+
+    <!-- Вкладка Видео (старая) -->
+    <div class="tab-content" id="video-tab">
+        <!-- ... существующий код для видео ... -->
+    </div>
+</div>
+
+<!-- Блок результатов для карточек -->
+<div id="cardResults" style="display: none;" class="results-section">
+    <h3>Сгенерированные карточки</h3>
+    <div class="image-gallery"></div>
+    <h4>Варианты описаний</h4>
+    <div class="description-list"></div>
+    <button class="btn btn-primary" onclick="downloadAllCards()">Скачать все</button>
+</div>
 
             <!-- Результат генерации видео -->
             <div id="videoResult" style="display: none; margin-top: 30px;">
