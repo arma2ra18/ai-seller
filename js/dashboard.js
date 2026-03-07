@@ -1,14 +1,14 @@
 import { auth, db } from './firebase.js';
-import { 
-    doc, getDoc, collection, addDoc, query, orderBy, 
-    getDocs, updateDoc, increment, limit 
+import {
+    doc, getDoc, collection, addDoc, query, orderBy,
+    getDocs, updateDoc, increment, limit
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-import { promptTemplates } from './promptTemplates.js';
 
 let currentUser = null;
 let userData = null;
 
+// Следим за состоянием авторизации
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
@@ -18,9 +18,9 @@ onAuthStateChanged(auth, async (user) => {
     await loadUserData();
 });
 
+// Загружаем данные пользователя из Firestore
 async function loadUserData() {
     if (!currentUser) return;
-    
     try {
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists()) {
@@ -29,53 +29,51 @@ async function loadUserData() {
             loadHistory();
         }
     } catch (error) {
-        console.error('Error loading user:', error);
+        console.error('Ошибка загрузки пользователя:', error);
     }
 }
 
+// Обновляем интерфейс (баланс, тариф и т.д.)
 function updateUI() {
     if (!userData) return;
-    
+
     document.getElementById('userEmail').textContent = currentUser.email;
-    
+
     const maxGen = {
         'start': 30,
         'business': 200,
         'pro': 999999
     }[userData.plan] || 30;
-    
+
     const used = userData.usedGenerations || 0;
     const remaining = Math.max(0, maxGen - used);
-    
+
     document.getElementById('usedGenerations').textContent = used;
     document.getElementById('maxGenerations').textContent = maxGen;
     document.getElementById('remainingGenerations').textContent = remaining;
-    
+
     const progress = (used / maxGen) * 100;
     document.getElementById('generationProgress').style.width = `${Math.min(progress, 100)}%`;
-    
+
     const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
     document.getElementById('userPlan').textContent = planNames[userData.plan] || 'Старт';
-    
-    if (userData.plan !== 'start') {
-        document.getElementById('advancedTab').disabled = false;
-    }
 }
 
+// Генерация текста
 window.generate = async function() {
     if (!currentUser || !userData) return;
-    
+
     const maxGen = {
         'start': 30,
         'business': 200,
         'pro': 999999
     }[userData.plan] || 30;
-    
+
     if ((userData.usedGenerations || 0) >= maxGen) {
         alert('Лимит исчерпан');
         return;
     }
-    
+
     const data = {
         category: document.getElementById('category').value,
         productName: document.getElementById('productName').value,
@@ -83,41 +81,48 @@ window.generate = async function() {
         audience: document.getElementById('audience').value,
         keywords: document.getElementById('keywords').value.split(',').map(k => k.trim())
     };
-    
+
     if (!data.category || !data.productName) {
         alert('Заполните категорию и название');
         return;
     }
-    
+
     const btn = document.getElementById('generateBtn');
     btn.disabled = true;
     btn.textContent = '⏳ Генерация...';
-    
+
     try {
         const response = await fetch('/api/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Сервер вернул ${response.status}: ${text.substring(0, 100)}`);
+        }
+
         const result = await response.json();
         displayResults(result);
-        
+
+        // Сохраняем в историю
         await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'text',
             productName: data.productName,
             result: result,
             timestamp: new Date().toISOString()
         });
-        
+
+        // Обновляем счётчик использованных генераций
         await updateDoc(doc(db, 'users', currentUser.uid), {
             usedGenerations: increment(1)
         });
-        
+
         userData.usedGenerations = (userData.usedGenerations || 0) + 1;
         updateUI();
         alert('Готово!');
-        
+
     } catch (error) {
         alert('Ошибка: ' + error.message);
     } finally {
@@ -126,9 +131,10 @@ window.generate = async function() {
     }
 };
 
+// Отображение результатов
 function displayResults(result) {
     document.getElementById('resultsSection').style.display = 'block';
-    
+
     const namesList = document.getElementById('namesList');
     namesList.innerHTML = '';
     if (result.names) {
@@ -136,9 +142,9 @@ function displayResults(result) {
             namesList.innerHTML += `<div class="result-item" onclick="copyText(this)">${name}</div>`;
         });
     }
-    
+
     document.getElementById('descriptionText').textContent = result.description || '';
-    
+
     const specsTable = document.getElementById('specsTable');
     specsTable.innerHTML = '';
     if (result.specs) {
@@ -148,66 +154,46 @@ function displayResults(result) {
     }
 }
 
+// Копирование текста
 window.copyText = function(element) {
     navigator.clipboard.writeText(element.textContent);
     alert('Скопировано!');
 };
 
+// Загрузка истории
 async function loadHistory() {
     if (!currentUser) return;
-    
     try {
         const q = query(
             collection(db, 'users', currentUser.uid, 'generations'),
             orderBy('timestamp', 'desc'),
             limit(10)
         );
-        
         const snapshot = await getDocs(q);
         const historyList = document.getElementById('historyList');
-        
         if (snapshot.empty) {
             historyList.innerHTML = '<p>История пуста</p>';
             return;
         }
-        
         historyList.innerHTML = '';
         snapshot.forEach(doc => {
             const item = doc.data();
             const date = new Date(item.timestamp).toLocaleString('ru-RU', {
                 day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
             });
-            
             historyList.innerHTML += `
                 <div class="history-item">
                     <div><strong>${item.productName || 'Фото'}</strong> <div class="history-date">${date}</div></div>
-                    <button class="btn btn-small" onclick="viewHistoryItem('${doc.id}')">👁️</button>
+                    <button class="btn btn-small" onclick="alert('Просмотр: ${doc.id}')">👁️</button>
                 </div>
             `;
         });
     } catch (error) {
-        console.error('Error loading history:', error);
+        console.error('Ошибка загрузки истории:', error);
     }
 }
 
-window.viewHistoryItem = async function(id) {
-    // Здесь можно реализовать просмотр конкретной записи
-    alert('Просмотр истории: ' + id);
-};
-
-// Остальные функции (generateProductPhoto, generateVideo и т.д.) можно оставить,
-// но для них тоже нужно будет исправить импорты (storage и т.д.) аналогично.
-// Пока оставим заготовки.
-
-window.generateProductPhoto = async function() {
-    alert('Генерация фото временно отключена для отладки');
-};
-
-window.generateVideo = async function() {
-    alert('Генерация видео временно отключена для отладки');
-};
-
-// Инициализация вкладок
+// Инициализация вкладок (текст/фото/видео)
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -218,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`${tabId}-tab`).classList.add('active');
         });
     });
-    
+
     document.querySelectorAll('.result-tab').forEach(tab => {
         tab.addEventListener('click', function() {
             const resultId = this.dataset.result;
