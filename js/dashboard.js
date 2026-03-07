@@ -282,9 +282,130 @@ window.generateProductPhoto = async function() {
     showNotification('Функция генерации фото находится в разработке', 'info');
 };
 
-// ----- Генерация видео (заглушка) -----
+// ----- Генерация видео (реальная) -----
 window.generateVideo = async function() {
-    showNotification('Функция генерации видео находится в разработке', 'info');
+    if (!currentUser || !userData) return;
+
+    const fileInput = document.getElementById('videoPhoto');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        showNotification('Загрузите фото товара', 'error');
+        return;
+    }
+
+    const videoType = document.getElementById('videoType')?.value || 'standard';
+    const prompt = document.getElementById('videoPrompt')?.value || '';
+    const resolution = document.getElementById('videoResolution')?.value || '512P';
+
+    // Проверка баланса (видео = 5 токенов)
+    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
+    if ((userData.usedGenerations || 0) + 5 > maxGen) {
+        showNotification('Недостаточно токенов (требуется 5)', 'error');
+        return;
+    }
+
+    const btn = document.querySelector('[onclick="generateVideo()"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Генерация видео... (2-5 минут)';
+
+    try {
+        const formData = new FormData();
+        formData.append('videoPhoto', fileInput.files[0]);
+        formData.append('videoType', videoType);
+        formData.append('prompt', prompt);
+        formData.append('resolution', resolution);
+
+        const response = await fetch('/api/generate-video', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
+        const result = await response.json();
+        
+        // Отображаем видео в блоке результатов
+        displayVideoResult(result);
+
+        // Сохраняем в историю
+        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+            type: 'video',
+            productName: document.getElementById('ozonProductName')?.value || 
+                        document.getElementById('wbProductName')?.value || 'Видео',
+            videoUrl: result.videoUrl,
+            videoType: videoType,
+            prompt: prompt,
+            timestamp: new Date().toISOString()
+        });
+
+        // Списание токенов
+        await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(5) });
+        userData.usedGenerations += 5;
+        updateUI();
+        loadHistory();
+        
+        showNotification('Видео успешно сгенерировано!', 'success');
+
+    } catch (error) {
+        console.error('Video generation error:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Сгенерировать видео (5 токенов)';
+    }
+};
+
+// Функция для отображения видео
+function displayVideoResult(result) {
+    const container = document.getElementById('cardResults');
+    container.style.display = 'block';
+    
+    // Очищаем предыдущие результаты
+    const gallery = document.getElementById('resultImages');
+    const descList = document.getElementById('resultDescriptions');
+    
+    if (gallery) {
+        gallery.innerHTML = '';
+        // Для видео показываем placeholder с видео
+        const videoContainer = document.createElement('div');
+        videoContainer.className = 'video-container';
+        videoContainer.innerHTML = `
+            <video controls style="width: 100%; max-width: 500px; border-radius: 12px;">
+                <source src="${result.videoUrl}" type="video/mp4">
+                Ваш браузер не поддерживает видео.
+            </video>
+            <p class="text-muted" style="margin-top: 10px;">Длительность: ${result.duration} сек</p>
+        `;
+        gallery.appendChild(videoContainer);
+    }
+    
+    if (descList) {
+        descList.innerHTML = `
+            <div class="result-item" onclick="downloadVideo('${result.videoUrl}')">
+                📥 Скачать видео
+            </div>
+            <div class="result-item" onclick="copyVideoUrl('${result.videoUrl}')">
+                🔗 Копировать ссылку
+            </div>
+        `;
+    }
+}
+
+// Вспомогательные функции
+window.downloadVideo = function(url) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `video-${Date.now()}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+window.copyVideoUrl = function(url) {
+    navigator.clipboard.writeText(url);
+    showNotification('Ссылка скопирована', 'success');
 };
 
 // Отображение результатов карточки

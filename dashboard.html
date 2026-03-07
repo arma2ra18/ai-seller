@@ -219,27 +219,41 @@
                     </div>
                 </div>
 
-                <!-- Секция Видео -->
-                <div class="content-section" id="video-section">
-                    <h2>Генерация видео товара</h2>
-                    <div class="generation-form">
-                        <div class="form-group">
-                            <label>Загрузите фото товара</label>
-                            <div class="dropzone" id="videoDropzone">
-                                <span>Перетащите файлы или нажмите для выбора</span>
-                                <input type="file" id="videoPhoto" accept="image/*" style="display:none;">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Тип видео</label>
-                            <select id="videoType">
-                                <option value="standard">Стандартный обзор</option>
-                                <option value="360">Обзор на 360°</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary btn-large" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
-                    </div>
-                </div>
+<!-- Секция Видео -->
+<div class="content-section" id="video-section">
+    <h2>Генерация видео товара</h2>
+    <div class="generation-form">
+        <div class="form-group">
+            <label>Загрузите фото товара</label>
+            <div class="dropzone" id="videoDropzone">
+                <span>Перетащите файлы или нажмите для выбора</span>
+                <input type="file" id="videoPhoto" accept="image/*" style="display:none;">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Тип видео</label>
+            <select id="videoType">
+                <option value="standard">Стандартный обзор (товар на белом фоне)</option>
+                <option value="360">Обзор на 360°</option>
+                <option value="lifestyle">Использование в жизни</option>
+                <option value="unboxing">Распаковка</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Дополнительные пожелания (необязательно)</label>
+            <textarea id="videoPrompt" rows="3" placeholder="Например: товар медленно вращается, фон размыт, студийный свет"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Качество видео</label>
+            <select id="videoResolution">
+                <option value="512P">512p ($0.20) — для соцсетей</option>
+                <option value="1024P">1024p ($0.60) — высокое качество</option>
+            </select>
+            <small class="text-muted">Стоимость указана в долларах, списание токенов одинаковое (5 токенов)</small>
+        </div>
+        <button class="btn btn-primary btn-large" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
+    </div>
+</div>
 
                 <!-- Секция История -->
                 <div class="content-section" id="history-section">
