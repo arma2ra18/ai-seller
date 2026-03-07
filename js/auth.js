@@ -3,9 +3,9 @@ import {
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword,
     signOut,
-    sendPasswordResetEmail
-} from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+    sendPasswordResetEmail 
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 window.showTab = function(tab) {
     document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
@@ -18,9 +18,7 @@ window.showTab = function(tab) {
         document.querySelector('[onclick="showTab(\'register\')"]').classList.add('active');
         document.getElementById('register-tab').classList.add('active');
     }
-    
     document.getElementById('authMessage').textContent = '';
-    document.getElementById('authMessage').className = 'auth-message';
 };
 
 window.handleRegister = async function() {
@@ -125,7 +123,6 @@ window.logout = async function() {
 window.resetPassword = async function() {
     const email = prompt('Введите ваш email для сброса пароля:');
     if (!email) return;
-    
     try {
         await sendPasswordResetEmail(auth, email);
         alert('Письмо для сброса пароля отправлено на ' + email);
