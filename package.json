@@ -2,21 +2,18 @@
   "name": "ai-seller",
   "version": "1.0.0",
   "type": "module",
+  "description": "AI генератор контента для Wildberries и Ozon",
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "axios": "^1.13.6",
-    "formidable": "^3.5.0"
+    "@google/generative-ai": "^0.1.0",
+    "canvas": "^2.11.0",
+    "formidable": "^3.5.0",
+    "sharp": "^0.33.0"
   },
   "devDependencies": {
     "vercel": "^33.0.0"
   }
-"dependencies": {
-  "@imgly/background-removal-node": "^1.0.0",
-  "sharp": "^0.33.0",
-  "canvas": "^2.11.0",
-  "formidable": "^3.5.0"
-}
 }
