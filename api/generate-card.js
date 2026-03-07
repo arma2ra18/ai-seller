@@ -8,16 +8,102 @@ export const config = {
     },
 };
 
-// Заглушка для изображений – массив готовых ссылок (вместо генерации через GigaChat)
-const PLACEHOLDER_IMAGES = [
-    'https://img.freepik.com/free-vector/colorful-butterfly-girl-cartoon-illustration_1308-168808.jpg?semt=ais_hybrid&w=740&q=80',
+// Резервные изображения на случай сбоя GigaChat
+const FALLBACK_IMAGES = [
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
     'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500',
     'https://images.unsplash.com/photo-1503602642458-232111445657?w=500',
     'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
     'https://images.unsplash.com/photo-1560769629-975ec94e6a86?w=500'
 ];
 
-// Генерация описаний (заглушка, можно позже заменить на вызов GigaChat)
+/**
+ * Генерация одного изображения через GigaChat
+ * @param {string} prompt - текстовое описание
+ * @param {string} token - токен авторизации
+ * @returns {Promise<string>} - data URL изображения или ссылка на заглушку
+ */
+async function generateImage(prompt, token) {
+    try {
+        // 1. Запрос на генерацию
+        const completionResponse = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                model: 'GigaChat',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'Ты — профессиональный дизайнер товаров для маркетплейсов. Генерируй реалистичные изображения товаров на белом фоне, студийное освещение, высокое качество.'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                function_call: 'auto', // обязательно для генерации изображений
+            }),
+        });
+
+        if (!completionResponse.ok) {
+            const errorText = await completionResponse.text();
+            console.error('❌ GigaChat completion error:', completionResponse.status, errorText);
+            throw new Error(`GigaChat completion failed: ${completionResponse.status}`);
+        }
+
+        const completionData = await completionResponse.json();
+        console.log('📦 GigaChat response:', JSON.stringify(completionData, null, 2));
+
+        // Извлекаем file_id из тега <img src="..."/>
+        const content = completionData.choices?.[0]?.message?.content || '';
+        const match = content.match(/<img\s+src="([^"]+)"/i);
+        const fileId = match ? match[1] : null;
+
+        if (!fileId) {
+            console.error('❌ File ID not found in response. Content:', content);
+            throw new Error('Не удалось получить file_id из ответа GigaChat');
+        }
+
+        console.log('✅ File ID получен:', fileId);
+
+        // 2. Скачиваем файл изображения
+        const fileResponse = await fetch(`https://gigachat.devices.sberbank.ru/api/v1/files/${fileId}/content`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (!fileResponse.ok) {
+            const errorText = await fileResponse.text();
+            console.error('❌ GigaChat file download error:', fileResponse.status, errorText);
+            throw new Error(`GigaChat file download failed: ${fileResponse.status}`);
+        }
+
+        const arrayBuffer = await fileResponse.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const contentType = fileResponse.headers.get('content-type') || 'image/jpeg';
+        const base64 = buffer.toString('base64');
+
+        console.log(`✅ Изображение получено, размер: ${buffer.length} байт`);
+
+        // Возвращаем data URL
+        return `data:${contentType};base64,${base64}`;
+
+    } catch (error) {
+        console.error('❌ Ошибка в generateImage:', error.message);
+        // В случае ошибки возвращаем заглушку
+        return FALLBACK_IMAGES[Math.floor(Math.random() * FALLBACK_IMAGES.length)];
+    }
+}
+
+/**
+ * Генерация описаний (можно позже заменить на вызов GigaChat)
+ */
 async function generateDescriptions(productName, brand, features, platform) {
     return [
         `Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Идеально подходит для повседневного использования. Закажите сейчас!`,
@@ -29,6 +115,12 @@ async function generateDescriptions(productName, brand, features, platform) {
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    const token = process.env.GIGACHAT_AUTH_KEY;
+    if (!token) {
+        console.error('❌ GIGACHAT_AUTH_KEY not set in environment');
+        return res.status(500).json({ error: 'GIGACHAT_AUTH_KEY not set' });
     }
 
     try {
@@ -45,7 +137,6 @@ export default async function handler(req, res) {
             });
         });
 
-        // Извлекаем поля (могут быть массивами)
         const productName = fields.productName?.[0] || fields.productName || '';
         const brand = fields.brand?.[0] || fields.brand || '';
         const category = fields.category?.[0] || fields.category || '';
@@ -57,30 +148,37 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Product name is required' });
         }
 
-        // Загруженные файлы (пока не используем, но можно сохранить или обработать позже)
+        // Загруженные файлы (пока не используем, но сохраняем для будущего)
         const photos = files.photos ? (Array.isArray(files.photos) ? files.photos : [files.photos]) : [];
 
-        // Вместо реальной генерации используем массив готовых изображений
-        const images = PLACEHOLDER_IMAGES; // всегда 5 картинок
+        // Базовый промпт для генерации
+        const basePrompt = `Профессиональное фото товара "${productName}" от бренда ${brand}. Категория: ${category}. Особенности: ${features.join(', ')}. Белый фон, студийное освещение, высокое качество, 8k.`;
+
+        // Генерируем 5 изображений
+        const images = [];
+        for (let i = 0; i < 5; i++) {
+            const prompt = `${basePrompt} Вариант ${i+1}, ракурс ${i+1}.`;
+            console.log(`🎨 Генерация изображения ${i+1} с промптом:`, prompt);
+            const imageUrl = await generateImage(prompt, token);
+            images.push(imageUrl);
+            // Небольшая задержка между запросами, чтобы не превысить лимиты
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
 
         // Генерируем описания
         const descriptions = await generateDescriptions(productName, brand, features, platform);
 
-        // Возвращаем результат клиенту
-        res.status(200).json({
-            images,
-            descriptions
-        });
-
-        // Опционально: удаляем временные файлы, чтобы не засорять диск
+        // Удаляем временные файлы
         photos.forEach(file => {
             if (file.filepath && fs.existsSync(file.filepath)) {
                 fs.unlinkSync(file.filepath);
             }
         });
 
+        res.status(200).json({ images, descriptions });
+
     } catch (error) {
-        console.error('Generate card error:', error);
+        console.error('❌ Generate card error:', error);
         res.status(500).json({ error: error.message });
     }
 }
