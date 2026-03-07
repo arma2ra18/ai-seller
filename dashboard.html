@@ -46,282 +46,95 @@
 
             <!-- Статистика в плитках -->
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">👤</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Пользователь</span>
-                        <span class="stat-value" id="statUser">-</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📦</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Карточки товара</span>
-                        <span class="stat-value" id="statCards">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🎬</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Видеообложки</span>
-                        <span class="stat-value" id="statVideos">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📝</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Описания товара</span>
-                        <span class="stat-value" id="statDescriptions">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-info">
-                        <span class="stat-label">История</span>
-                        <span class="stat-value" id="statHistory">0</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">💰</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Баланс</span>
-                        <span class="stat-value" id="statBalance">30</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">📰</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Новости</span>
-                        <span class="stat-value" id="statNews">29</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon">🎁</div>
-                    <div class="stat-info">
-                        <span class="stat-label">Бонусы</span>
-                        <span class="stat-value" id="statBonus">0</span>
-                    </div>
-                </div>
+                <div class="stat-card"><div class="stat-icon">👤</div><div class="stat-info"><span class="stat-label">Пользователь</span><span class="stat-value" id="statUser">-</span></div></div>
+                <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-info"><span class="stat-label">Карточки товара</span><span class="stat-value" id="statCards">0</span></div></div>
+                <div class="stat-card"><div class="stat-icon">🎬</div><div class="stat-info"><span class="stat-label">Видеообложки</span><span class="stat-value" id="statVideos">0</span></div></div>
+                <div class="stat-card"><div class="stat-icon">📝</div><div class="stat-info"><span class="stat-label">Описания товара</span><span class="stat-value" id="statDescriptions">0</span></div></div>
+                <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-info"><span class="stat-label">История</span><span class="stat-value" id="statHistory">0</span></div></div>
+                <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-info"><span class="stat-label">Баланс</span><span class="stat-value" id="statBalance">30</span></div></div>
+                <div class="stat-card"><div class="stat-icon">📰</div><div class="stat-info"><span class="stat-label">Новости</span><span class="stat-value" id="statNews">29</span></div></div>
+                <div class="stat-card"><div class="stat-icon">🎁</div><div class="stat-info"><span class="stat-label">Бонусы</span><span class="stat-value" id="statBonus">0</span></div></div>
             </div>
 
             <!-- Динамический контент -->
             <div class="content-area" id="contentArea">
-                <!-- Секция токенов -->
+                <!-- Токены -->
                 <div class="content-section active" id="tokens-section">
                     <h2>Токены и статистика</h2>
                     <div class="info-cards">
-                        <div class="info-card">
-                            <h3>Текущий баланс</h3>
-                            <p class="big-number"><span id="remainingGenerationsDetail">30</span> / <span id="maxGenerationsDetail">30</span></p>
-                            <p>Использовано: <span id="usedGenerationsDetail">0</span></p>
-                            <button class="btn btn-primary" onclick="showPaymentModal()">Пополнить</button>
-                        </div>
-                        <div class="info-card">
-                            <h3>Бонусы</h3>
-                            <p>Приглашайте друзей и получайте бонусные токены</p>
-                            <button class="btn btn-outline">Пригласить</button>
-                        </div>
+                        <div class="info-card"><h3>Текущий баланс</h3><p class="big-number"><span id="remainingGenerationsDetail">30</span> / <span id="maxGenerationsDetail">30</span></p><p>Использовано: <span id="usedGenerationsDetail">0</span></p><button class="btn btn-primary" onclick="showPaymentModal()">Пополнить</button></div>
+                        <div class="info-card"><h3>Бонусы</h3><p>Приглашайте друзей и получайте бонусные токены</p><button class="btn btn-outline">Пригласить</button></div>
                     </div>
                 </div>
 
-                <!-- Секция Wildberries (гарантированно содержит элемент wbPhotos) -->
+                <!-- Wildberries (элемент wbPhotos присутствует) -->
                 <div class="content-section" id="wb-section">
                     <h2>Создание карточки для Wildberries</h2>
                     <div class="generation-form">
-                        <div class="form-group">
-                            <label>Название товара</label>
-                            <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4">
-                        </div>
+                        <div class="form-group"><label>Название товара</label><input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4"></div>
                         <div class="form-row">
-                            <div class="form-group half">
-                                <label>Бренд</label>
-                                <input type="text" id="wbBrand" placeholder="Xiaomi">
-                            </div>
-                            <div class="form-group half">
-                                <label>Категория</label>
-                                <select id="wbCategory">
-                                    <option value="electronics">Электроника</option>
-                                    <option value="clothing">Одежда</option>
-                                    <option value="home">Товары для дома</option>
-                                </select>
-                            </div>
+                            <div class="form-group half"><label>Бренд</label><input type="text" id="wbBrand" placeholder="Xiaomi"></div>
+                            <div class="form-group half"><label>Категория</label><select id="wbCategory"><option value="electronics">Электроника</option><option value="clothing">Одежда</option><option value="home">Товары для дома</option></select></div>
                         </div>
-                        <div class="form-group">
-                            <label>Ключевые особенности (через запятую)</label>
-                            <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы">
-                        </div>
+                        <div class="form-group"><label>Ключевые особенности (через запятую)</label><input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы"></div>
                         <div class="form-group">
                             <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
-                            <div class="dropzone" id="wbDropzone">
-                                <span>Перетащите файлы или нажмите для выбора</span>
-                                <input type="file" id="wbPhotos" accept="image/*" multiple style="display:none;">
-                            </div>
+                            <div class="dropzone" id="wbDropzone"><span>Перетащите файлы или нажмите для выбора</span><input type="file" id="wbPhotos" accept="image/*" multiple style="display:none;"></div>
                         </div>
                         <button class="btn btn-primary btn-large" onclick="generateWBCard()">✨ Создать карточку для WB</button>
                     </div>
                 </div>
 
-                <!-- Секция Ozon -->
+                <!-- Ozon -->
                 <div class="content-section" id="ozon-section">
                     <h2>Создание карточки для Ozon</h2>
                     <div class="generation-form">
-                        <div class="form-group">
-                            <label>Название товара</label>
-                            <input type="text" id="ozonProductName" placeholder="Например: Кроссовки Nike Air Max">
-                        </div>
+                        <div class="form-group"><label>Название товара</label><input type="text" id="ozonProductName" placeholder="Кроссовки Nike Air Max"></div>
                         <div class="form-row">
-                            <div class="form-group half">
-                                <label>Бренд</label>
-                                <input type="text" id="ozonBrand" placeholder="Nike">
-                            </div>
-                            <div class="form-group half">
-                                <label>Категория</label>
-                                <select id="ozonCategory">
-                                    <option value="clothing">Одежда и обувь</option>
-                                    <option value="electronics">Электроника</option>
-                                    <option value="home">Дом и сад</option>
-                                </select>
-                            </div>
+                            <div class="form-group half"><label>Бренд</label><input type="text" id="ozonBrand" placeholder="Nike"></div>
+                            <div class="form-group half"><label>Категория</label><select id="ozonCategory"><option value="clothing">Одежда</option><option value="electronics">Электроника</option><option value="home">Дом</option></select></div>
                         </div>
-                        <div class="form-group">
-                            <label>Ключевые характеристики (через запятую)</label>
-                            <input type="text" id="ozonFeatures" placeholder="размер 42-45, материал: кожа, цвет: черный">
-                        </div>
+                        <div class="form-group"><label>Ключевые характеристики (через запятую)</label><input type="text" id="ozonFeatures" placeholder="размер 42-45, материал: кожа"></div>
                         <div class="form-group">
                             <label>Загрузите фото товара</label>
-                            <div class="dropzone" id="ozonDropzone">
-                                <span>Перетащите файлы или нажмите для выбора</span>
-                                <input type="file" id="ozonPhotos" accept="image/*" multiple style="display:none;">
-                            </div>
+                            <div class="dropzone" id="ozonDropzone"><span>Перетащите файлы или нажмите для выбора</span><input type="file" id="ozonPhotos" accept="image/*" multiple style="display:none;"></div>
                         </div>
                         <button class="btn btn-primary btn-large" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
                     </div>
                 </div>
 
-                <!-- Секция Фото -->
-                <div class="content-section" id="photo-section">
-                    <h2>Генерация фото товара</h2>
-                    <div class="generation-form">
-                        <div class="form-group">
-                            <label>Загрузите фото товара</label>
-                            <div class="dropzone" id="photoDropzone">
-                                <span>Перетащите файлы или нажмите для выбора</span>
-                                <input type="file" id="productPhoto" accept="image/*" style="display:none;">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Дополнительные пожелания</label>
-                            <textarea id="photoPrompt" rows="3" placeholder="Например: на мраморном столе, с кофейными зернами"></textarea>
-                        </div>
-                        <button class="btn btn-primary btn-large" onclick="generateProductPhoto()">✨ Сгенерировать фото (2 токена)</button>
-                    </div>
-                </div>
+                <!-- Фото (заглушка) -->
+                <div class="content-section" id="photo-section"><h2>Генерация фото</h2><p class="text-muted">В разработке</p></div>
+                <!-- Видео (заглушка) -->
+                <div class="content-section" id="video-section"><h2>Генерация видео</h2><p class="text-muted">В разработке</p></div>
+                <!-- История -->
+                <div class="content-section" id="history-section"><h2>История</h2><div class="history-list" id="historyListDetail"></div></div>
 
-                <!-- Секция Видео -->
-                <div class="content-section" id="video-section">
-                    <h2>Генерация видео товара</h2>
-                    <div class="generation-form">
-                        <div class="form-group">
-                            <label>Загрузите фото товара</label>
-                            <div class="dropzone" id="videoDropzone">
-                                <span>Перетащите файлы или нажмите для выбора</span>
-                                <input type="file" id="videoPhoto" accept="image/*" style="display:none;">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Тип видео</label>
-                            <select id="videoType">
-                                <option value="standard">Стандартный обзор (товар на белом фоне)</option>
-                                <option value="360">Обзор на 360°</option>
-                                <option value="lifestyle">Использование в жизни</option>
-                                <option value="unboxing">Распаковка</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Дополнительные пожелания (необязательно)</label>
-                            <textarea id="videoPrompt" rows="3" placeholder="Например: товар медленно вращается, фон размыт, студийный свет"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Качество видео</label>
-                            <select id="videoResolution">
-                                <option value="512P">512p — оптимальное</option>
-                                <option value="1024P">1024p — высокое качество</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary btn-large" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
-                    </div>
-                </div>
-
-                <!-- Секция История (детальная) -->
-                <div class="content-section" id="history-section">
-                    <h2>История генераций</h2>
-                    <div class="history-list" id="historyListDetail"></div>
-                </div>
-
-                <!-- Секция Тарифы -->
+                <!-- Тарифы -->
                 <div class="content-section" id="tariffs-section">
                     <h2>Тарифы и подписка</h2>
                     <div class="pricing-grid">
-                        <div class="pricing-card">
-                            <h3>Старт</h3>
-                            <div class="price">990 ₽<span>/мес</span></div>
-                            <ul class="features-list">
-                                <li>30 генераций</li>
-                                <li>Все типы контента</li>
-                                <li>История в облаке</li>
-                            </ul>
-                            <button class="btn btn-primary btn-block" onclick="selectPlan('start')">Выбрать</button>
-                        </div>
-                        <div class="pricing-card popular">
-                            <div class="popular-tag">🔥 Хит продаж</div>
-                            <h3>Бизнес</h3>
-                            <div class="price">2 990 ₽<span>/мес</span></div>
-                            <ul class="features-list">
-                                <li>200 генераций</li>
-                                <li>Все типы контента</li>
-                                <li>Массовая генерация</li>
-                            </ul>
-                            <button class="btn btn-primary btn-block" onclick="selectPlan('business')">Выбрать</button>
-                        </div>
-                        <div class="pricing-card">
-                            <h3>Профи</h3>
-                            <div class="price">9 900 ₽<span>/мес</span></div>
-                            <ul class="features-list">
-                                <li>Безлимит генераций</li>
-                                <li>Все типы контента</li>
-                                <li>VIP-поддержка</li>
-                            </ul>
-                            <button class="btn btn-primary btn-block" onclick="selectPlan('pro')">Выбрать</button>
-                        </div>
+                        <div class="pricing-card"><h3>Старт</h3><div class="price">990 ₽<span>/мес</span></div><ul class="features-list"><li>30 генераций</li><li>Все типы контента</li><li>История</li></ul><button class="btn btn-primary btn-block" onclick="selectPlan('start')">Выбрать</button></div>
+                        <div class="pricing-card popular"><div class="popular-tag">🔥 Хит</div><h3>Бизнес</h3><div class="price">2 990 ₽<span>/мес</span></div><ul class="features-list"><li>200 генераций</li><li>Все типы контента</li><li>Массовая генерация</li></ul><button class="btn btn-primary btn-block" onclick="selectPlan('business')">Выбрать</button></div>
+                        <div class="pricing-card"><h3>Профи</h3><div class="price">9 900 ₽<span>/мес</span></div><ul class="features-list"><li>Безлимит</li><li>Все типы</li><li>VIP</li></ul><button class="btn btn-primary btn-block" onclick="selectPlan('pro')">Выбрать</button></div>
                     </div>
                 </div>
 
-                <!-- Секция Настройки -->
-                <div class="content-section" id="settings-section">
-                    <h2>Настройки</h2>
-                    <p class="text-muted">Раздел в разработке</p>
-                </div>
+                <!-- Настройки -->
+                <div class="content-section" id="settings-section"><h2>Настройки</h2><p class="text-muted">В разработке</p></div>
             </div>
 
-            <!-- Блок результатов -->
+            <!-- Результаты -->
             <div id="cardResults" class="results-section" style="display: none;">
-                <h2>Результаты генерации</h2>
-                <div class="result-block">
-                    <h3>Изображения</h3>
-                    <div class="image-gallery" id="resultImages"></div>
-                </div>
-                <div class="result-block">
-                    <h3>Описания</h3>
-                    <div class="description-list" id="resultDescriptions"></div>
-                </div>
+                <h2>Результаты</h2>
+                <div class="result-block"><h3>Изображения</h3><div class="image-gallery" id="resultImages"></div></div>
+                <div class="result-block"><h3>Описания</h3><div class="description-list" id="resultDescriptions"></div></div>
             </div>
 
-            <!-- Блок истории (основной) -->
+            <!-- История (основная) -->
             <div class="history-section">
                 <h2>История генераций</h2>
-                <div class="history-list" id="historyList">
-                    <p class="text-muted">Загрузка...</p>
-                </div>
+                <div class="history-list" id="historyList"><p class="text-muted">Загрузка...</p></div>
             </div>
         </main>
     </div>
@@ -331,9 +144,9 @@
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <h2 id="modalTitle">Пополнение баланса</h2>
-            <p id="modalDescription">Вы выбрали тариф: <span id="selectedPlanName">—</span></p>
-            <p>Сумма к оплате: <strong id="modalAmount">0 ₽</strong></p>
-            <p class="text-muted" style="margin: 20px 0;">Оплата будет выполнена через ЮKassa. После подтверждения средства поступят на ваш баланс автоматически.</p>
+            <p id="modalDescription">Выберите тариф: <span id="selectedPlanName">—</span></p>
+            <p>Сумма: <strong id="modalAmount">0 ₽</strong></p>
+            <p class="text-muted">После оплаты токены зачислятся автоматически.</p>
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-primary" onclick="confirmPayment()">Оплатить</button>
                 <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
