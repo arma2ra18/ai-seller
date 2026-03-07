@@ -32,13 +32,11 @@ window.handleRegister = async function() {
         messageEl.className = 'auth-message error';
         return;
     }
-
     if (password.length < 6) {
         messageEl.textContent = '❌ Пароль должен быть не менее 6 символов';
         messageEl.className = 'auth-message error';
         return;
     }
-
     if (password !== confirm) {
         messageEl.textContent = '❌ Пароли не совпадают';
         messageEl.className = 'auth-message error';
@@ -62,18 +60,11 @@ window.handleRegister = async function() {
 
         messageEl.textContent = '✅ Регистрация успешна! Перенаправляем...';
         messageEl.className = 'auth-message success';
-        
-        setTimeout(() => {
-            window.location.href = '/dashboard.html';
-        }, 1500);
-
+        setTimeout(() => window.location.href = '/dashboard.html', 1500);
     } catch (error) {
         let errorMessage = 'Ошибка регистрации';
-        if (error.code === 'auth/email-already-in-use') {
-            errorMessage = 'Этот email уже зарегистрирован';
-        } else if (error.code === 'auth/invalid-email') {
-            errorMessage = 'Некорректный email';
-        }
+        if (error.code === 'auth/email-already-in-use') errorMessage = 'Этот email уже зарегистрирован';
+        else if (error.code === 'auth/invalid-email') errorMessage = 'Некорректный email';
         messageEl.textContent = '❌ ' + errorMessage;
         messageEl.className = 'auth-message error';
     }
@@ -93,23 +84,14 @@ window.handleLogin = async function() {
     try {
         messageEl.textContent = '⏳ Вход...';
         messageEl.className = 'auth-message info';
-        
         await signInWithEmailAndPassword(auth, email, password);
-        
         messageEl.textContent = '✅ Вход выполнен! Перенаправляем...';
         messageEl.className = 'auth-message success';
-        
-        setTimeout(() => {
-            window.location.href = '/dashboard.html';
-        }, 1000);
-
+        setTimeout(() => window.location.href = '/dashboard.html', 1000);
     } catch (error) {
         let errorMessage = 'Ошибка входа';
-        if (error.code === 'auth/user-not-found') {
-            errorMessage = 'Пользователь не найден';
-        } else if (error.code === 'auth/wrong-password') {
-            errorMessage = 'Неверный пароль';
-        }
+        if (error.code === 'auth/user-not-found') errorMessage = 'Пользователь не найден';
+        else if (error.code === 'auth/wrong-password') errorMessage = 'Неверный пароль';
         messageEl.textContent = '❌ ' + errorMessage;
         messageEl.className = 'auth-message error';
     }

@@ -7,51 +7,36 @@
     <link rel="stylesheet" href="../styles/main.css">
     <style>
         .admin-wrapper { display: flex; }
-        .admin-sidebar { width: 280px; background: rgba(20,25,35,0.95); position: fixed; height: 100vh; }
+        .admin-sidebar { width: 280px; background: #1a1d24; position: fixed; height: 100vh; }
         .admin-content { margin-left: 280px; padding: 30px; flex: 1; }
         
         .users-table {
             width: 100%;
             border-collapse: collapse;
-            background: rgba(30,35,45,0.7);
-            border-radius: 16px;
+            background: #1a1d24;
+            border-radius: 12px;
             overflow: hidden;
         }
-        
         .users-table th {
             text-align: left;
             padding: 15px;
-            background: rgba(255,255,255,0.03);
+            background: rgba(255,255,255,0.05);
             color: #a0a8c0;
-            font-weight: 500;
-            font-size: 13px;
         }
-        
         .users-table td {
             padding: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid #2a2e36;
         }
-        
-        .users-table tr:hover {
-            background: rgba(255,255,255,0.02);
-        }
-        
-        .user-actions {
-            display: flex;
-            gap: 5px;
-        }
-        
         .search-bar {
-            margin-bottom: 20px;
             display: flex;
             gap: 10px;
+            margin-bottom: 20px;
         }
-        
         .search-bar input {
             flex: 1;
             padding: 12px;
-            background: rgba(30,35,45,0.7);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: #2a2e36;
+            border: 1px solid #2a2e36;
             border-radius: 8px;
             color: white;
         }
@@ -62,11 +47,11 @@
         <div class="admin-sidebar">
             <div class="admin-sidebar-logo">AI Seller Admin</div>
             <ul class="admin-sidebar-menu">
-                <li><a href="dashboard.html"><i>📊</i> Дашборд</a></li>
-                <li><a href="users.html" class="active"><i>👥</i> Пользователи</a></li>
-                <li><a href="#" onclick="alert('В разработке')"><i>💰</i> Платежи</a></li>
-                <li><a href="#" onclick="alert('В разработке')"><i>📝</i> Логи</a></li>
-                <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
+                <li><a href="dashboard.html">📊 Дашборд</a></li>
+                <li><a href="users.html" class="active">👥 Пользователи</a></li>
+                <li><a href="#" onclick="alert('В разработке')">💰 Платежи</a></li>
+                <li><a href="#" onclick="alert('В разработке')">📝 Логи</a></li>
+                <li style="margin-top: 30px;"><a href="#" onclick="logout()">🚪 Выйти</a></li>
             </ul>
         </div>
         

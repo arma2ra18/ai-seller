@@ -26,7 +26,6 @@
 
     <main class="dashboard">
         <div class="container">
-            <!-- Верхний блок с прогрессом -->
             <div class="dashboard-header">
                 <h1>Генератор карточек</h1>
                 <div class="generation-counter">
@@ -37,7 +36,6 @@
                 </div>
             </div>
 
-            <!-- Вкладки -->
             <div class="tabs-container">
                 <div class="tabs">
                     <button class="tab active" data-tab="wb">Wildberries</button>
@@ -47,9 +45,7 @@
                 </div>
             </div>
 
-            <!-- Содержимое вкладок -->
             <div class="tab-contents">
-                <!-- Вкладка Wildberries -->
                 <div class="tab-content active" id="wb-tab">
                     <div class="card-form">
                         <h2>Создание карточки для Wildberries</h2>
@@ -84,7 +80,6 @@
                     </div>
                 </div>
 
-                <!-- Вкладка Ozon -->
                 <div class="tab-content" id="ozon-tab">
                     <div class="card-form">
                         <h2>Создание карточки для Ozon</h2>
@@ -118,7 +113,6 @@
                     </div>
                 </div>
 
-                <!-- Вкладка Фото (заглушка) -->
                 <div class="tab-content" id="photo-tab">
                     <div class="card-form">
                         <h2>Генерация фото товара</h2>
@@ -126,7 +120,6 @@
                     </div>
                 </div>
 
-                <!-- Вкладка Видео (заглушка) -->
                 <div class="tab-content" id="video-tab">
                     <div class="card-form">
                         <h2>Генерация видео</h2>
@@ -135,7 +128,6 @@
                 </div>
             </div>
 
-            <!-- Блок результатов генерации -->
             <div id="cardResults" class="results-section" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
@@ -148,7 +140,6 @@
                 </div>
             </div>
 
-            <!-- Блок истории -->
             <div class="history-section">
                 <h2>История генераций</h2>
                 <div class="history-list" id="historyList">
@@ -158,7 +149,6 @@
         </div>
     </main>
 
-    <!-- Модальное окно оплаты -->
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">&times;</button>

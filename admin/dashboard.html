@@ -10,127 +10,96 @@
             display: flex;
             min-height: 100vh;
         }
-        
         .admin-sidebar {
             width: 280px;
-            background: rgba(20, 25, 35, 0.95);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid rgba(255,255,255,0.05);
+            background: #1a1d24;
+            border-right: 1px solid #2a2e36;
             padding: 30px 0;
             position: fixed;
             height: 100vh;
             overflow-y: auto;
         }
-        
         .admin-sidebar-logo {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 22px;
+            font-weight: 600;
             padding: 0 20px 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            background: linear-gradient(135deg, #6c5ce7, #00d2ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            border-bottom: 1px solid #2a2e36;
+            margin-bottom: 20px;
+            color: white;
         }
-        
         .admin-sidebar-menu {
             list-style: none;
-            padding: 0;
         }
-        
         .admin-sidebar-menu li {
             margin-bottom: 5px;
         }
-        
         .admin-sidebar-menu a {
             display: block;
             padding: 12px 25px;
             color: #a0a8c0;
             text-decoration: none;
-            transition: all 0.3s;
             border-left: 3px solid transparent;
         }
-        
         .admin-sidebar-menu a:hover,
         .admin-sidebar-menu a.active {
-            background: rgba(108, 92, 231, 0.1);
+            background: rgba(47,110,214,0.1);
             color: white;
-            border-left-color: #6c5ce7;
+            border-left-color: #2f6ed6;
         }
-        
-        .admin-sidebar-menu a i {
-            margin-right: 10px;
-            width: 20px;
-            display: inline-block;
-        }
-        
         .admin-content {
             flex: 1;
             margin-left: 280px;
             padding: 30px;
         }
-        
         .admin-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid #2a2e36;
         }
-        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
-        
         .stat-card {
-            background: rgba(30, 35, 45, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 16px;
+            background: #1a1d24;
+            border: 1px solid #2a2e36;
+            border-radius: 12px;
             padding: 25px;
         }
-        
         .stat-title {
             color: #a0a8c0;
             font-size: 14px;
             text-transform: uppercase;
             margin-bottom: 10px;
         }
-        
         .stat-value {
             font-size: 36px;
-            font-weight: 700;
+            font-weight: 600;
             color: white;
         }
-        
         .recent-activity {
-            background: rgba(30,35,45,0.7);
-            border-radius: 16px;
+            background: #1a1d24;
+            border: 1px solid #2a2e36;
+            border-radius: 12px;
             padding: 25px;
         }
-        
         .activity-list {
             list-style: none;
-            padding: 0;
         }
-        
         .activity-item {
             display: flex;
             justify-content: space-between;
             padding: 15px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            border-bottom: 1px solid #2a2e36;
         }
-        
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-        
         .badge-success {
-            background: rgba(16,185,129,0.1);
-            color: #10b981;
+            background: rgba(40,167,69,0.2);
+            color: #28a745;
             padding: 4px 8px;
             border-radius: 20px;
             font-size: 12px;
@@ -142,11 +111,11 @@
         <div class="admin-sidebar">
             <div class="admin-sidebar-logo">AI Seller Admin</div>
             <ul class="admin-sidebar-menu">
-                <li><a href="dashboard.html" class="active"><i>📊</i> Дашборд</a></li>
-                <li><a href="users.html"><i>👥</i> Пользователи</a></li>
-                <li><a href="#" onclick="alert('В разработке')"><i>💰</i> Платежи</a></li>
-                <li><a href="#" onclick="alert('В разработке')"><i>📝</i> Логи</a></li>
-                <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
+                <li><a href="dashboard.html" class="active">📊 Дашборд</a></li>
+                <li><a href="users.html">👥 Пользователи</a></li>
+                <li><a href="#" onclick="alert('В разработке')">💰 Платежи</a></li>
+                <li><a href="#" onclick="alert('В разработке')">📝 Логи</a></li>
+                <li style="margin-top: 30px;"><a href="#" onclick="logout()">🚪 Выйти</a></li>
             </ul>
         </div>
         
@@ -181,9 +150,7 @@
             <div class="recent-activity">
                 <h2>Последние действия</h2>
                 <ul class="activity-list" id="activityList">
-                    <li class="activity-item">
-                        <span>Загрузка...</span>
-                    </li>
+                    <li class="activity-item"><span>Загрузка...</span></li>
                 </ul>
             </div>
         </div>
