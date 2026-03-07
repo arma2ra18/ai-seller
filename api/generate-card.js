@@ -1,6 +1,7 @@
 // api/generate-card.js
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
+import axios from 'axios';
 import https from 'https';
 
 export const config = {
@@ -9,12 +10,17 @@ export const config = {
     },
 };
 
-// Создаём агент с отключённой проверкой SSL (для самоподписных сертификатов GigaChat)
+// Создаём HTTPS-агент с отключённой проверкой сертификата
 const agent = new https.Agent({
     rejectUnauthorized: false
 });
 
-// Резервные изображения на случай полного провала
+// Создаём экземпляр axios с этим агентом
+const axiosInstance = axios.create({
+    httpsAgent: agent,
+});
+
+// Резервные изображения на случай ошибок
 const FALLBACK_IMAGES = [
     'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
     'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500',
@@ -24,20 +30,14 @@ const FALLBACK_IMAGES = [
 ];
 
 /**
- * Генерация одного изображения через GigaChat
+ * Генерация одного изображения через GigaChat (с axios)
  */
 async function generateImage(prompt, token) {
     try {
-        // 1. Запрос на генерацию
-        const completionResponse = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`,
-                'Host': 'gigachat.devices.sberbank.ru', // явно указываем Host
-            },
-            body: JSON.stringify({
+        // 1. Запрос на генерацию (ожидаем, что GigaChat вернёт file_id в теге <img>)
+        const completionResponse = await axiosInstance.post(
+            'https://gigachat.devices.sberbank.ru/api/v1/chat/completions',
+            {
                 model: 'GigaChat',
                 messages: [
                     {
@@ -50,18 +50,18 @@ async function generateImage(prompt, token) {
                     }
                 ],
                 function_call: 'auto', // обязательно для генерации изображений
-            }),
-            // @ts-ignore - используем наш агент с отключённым SSL
-            agent: agent,
-        });
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'Host': 'gigachat.devices.sberbank.ru',
+                },
+            }
+        );
 
-        if (!completionResponse.ok) {
-            const errorText = await completionResponse.text();
-            console.error('❌ GigaChat completion error:', completionResponse.status, errorText);
-            throw new Error(`GigaChat completion failed: ${completionResponse.status}`);
-        }
-
-        const completionData = await completionResponse.json();
+        const completionData = completionResponse.data;
         console.log('📦 GigaChat response:', JSON.stringify(completionData, null, 2));
 
         // Извлекаем file_id из тега <img src="..."/>
@@ -76,26 +76,20 @@ async function generateImage(prompt, token) {
 
         console.log('✅ File ID получен:', fileId);
 
-        // 2. Скачиваем файл изображения (тоже с отключённым SSL)
-        const fileResponse = await fetch(`https://gigachat.devices.sberbank.ru/api/v1/files/${fileId}/content`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Host': 'gigachat.devices.sberbank.ru',
-            },
-            // @ts-ignore
-            agent: agent,
-        });
+        // 2. Скачиваем файл изображения
+        const fileResponse = await axiosInstance.get(
+            `https://gigachat.devices.sberbank.ru/api/v1/files/${fileId}/content`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Host': 'gigachat.devices.sberbank.ru',
+                },
+                responseType: 'arraybuffer', // важно для бинарных данных
+            }
+        );
 
-        if (!fileResponse.ok) {
-            const errorText = await fileResponse.text();
-            console.error('❌ GigaChat file download error:', fileResponse.status, errorText);
-            throw new Error(`GigaChat file download failed: ${fileResponse.status}`);
-        }
-
-        const arrayBuffer = await fileResponse.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const contentType = fileResponse.headers.get('content-type') || 'image/jpeg';
+        const buffer = Buffer.from(fileResponse.data);
+        const contentType = fileResponse.headers['content-type'] || 'image/jpeg';
         const base64 = buffer.toString('base64');
 
         console.log(`✅ Изображение получено, размер: ${buffer.length} байт`);
@@ -104,16 +98,21 @@ async function generateImage(prompt, token) {
 
     } catch (error) {
         console.error('❌ Ошибка в generateImage:', error.message);
-        if (error.cause) {
-            console.error('❌ Причина:', error.cause);
+        if (error.response) {
+            console.error('❌ Статус ответа:', error.response.status);
+            console.error('❌ Данные ответа:', error.response.data);
+        } else if (error.request) {
+            console.error('❌ Запрос был сделан, но ответ не получен:', error.request);
+        } else {
+            console.error('❌ Детали ошибки:', error);
         }
-        // В случае ошибки возвращаем заглушку
+        // Возвращаем заглушку
         return FALLBACK_IMAGES[Math.floor(Math.random() * FALLBACK_IMAGES.length)];
     }
 }
 
 /**
- * Генерация описаний (заглушка)
+ * Генерация описаний (заглушка, позже можно заменить на GigaChat)
  */
 async function generateDescriptions(productName, brand, features, platform) {
     return [
@@ -135,6 +134,7 @@ export default async function handler(req, res) {
     }
 
     try {
+        // Парсим multipart/form-data
         const form = new IncomingForm({
             keepExtensions: true,
             multiples: true,
@@ -158,21 +158,27 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Product name is required' });
         }
 
+        // Загруженные файлы (пока не используем, но удалим после)
         const photos = files.photos ? (Array.isArray(files.photos) ? files.photos : [files.photos]) : [];
 
+        // Формируем базовый промпт
         const basePrompt = `Профессиональное фото товара "${productName}" от бренда ${brand}. Категория: ${category}. Особенности: ${features.join(', ')}. Белый фон, студийное освещение, высокое качество, 8k.`;
 
+        // Генерируем 5 изображений
         const images = [];
         for (let i = 0; i < 5; i++) {
             const prompt = `${basePrompt} Вариант ${i+1}, ракурс ${i+1}.`;
             console.log(`🎨 Генерация изображения ${i+1} с промптом:`, prompt);
             const imageUrl = await generateImage(prompt, token);
             images.push(imageUrl);
+            // Небольшая задержка между запросами
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
+        // Генерируем описания
         const descriptions = await generateDescriptions(productName, brand, features, platform);
 
+        // Удаляем временные файлы
         photos.forEach(file => {
             if (file.filepath && fs.existsSync(file.filepath)) {
                 fs.unlinkSync(file.filepath);
