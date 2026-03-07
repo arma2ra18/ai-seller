@@ -1,119 +1,42 @@
-import { auth, db, isAdmin } from './firebase.js';
-import { signOut } from 'firebase/auth';
-import { collection, query, getDocs, orderBy, limit } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { auth } from './firebase.js';
+import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
-let currentUser = null;
-
-auth.onAuthStateChanged(async (user) => {
-    if (!user || !(await isAdmin(user))) {
-        window.location.href = 'index.html';
+window.adminLogin = async function() {
+    const email = document.getElementById('adminEmail').value.trim();
+    const password = document.getElementById('adminPassword').value;
+    const errorEl = document.getElementById('adminError');
+    
+    if (!email || !password) {
+        errorEl.textContent = 'Введите email и пароль';
+        errorEl.style.display = 'block';
         return;
     }
-    currentUser = user;
-    document.getElementById('adminEmail').textContent = user.email;
-    
-    if (window.location.pathname.includes('dashboard.html')) {
-        loadStats();
-        loadActivity();
-    } else if (window.location.pathname.includes('users.html')) {
-        loadUsers();
-    }
-});
 
-async function loadStats() {
     try {
-        const functions = getFunctions();
-        const getStats = httpsCallable(functions, 'getAdminStats');
-        const result = await getStats();
-        const stats = result.data;
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const token = await userCredential.user.getIdTokenResult();
         
-        document.getElementById('totalUsers').textContent = stats.users.total;
-        document.getElementById('totalRevenue').textContent = stats.payments.revenue + ' ₽';
-        document.getElementById('totalGenerations').textContent = stats.generations.total;
-        document.getElementById('activeUsers').textContent = Math.floor(stats.users.total * 0.3);
+        // Проверяем, есть ли у пользователя права администратора
+        if (token.claims && token.claims.admin === true) {
+            window.location.href = 'dashboard.html';
+        } else {
+            errorEl.textContent = 'У вас нет прав администратора';
+            errorEl.style.display = 'block';
+            await auth.signOut(); // разлогиниваем, если нет прав
+        }
     } catch (error) {
-        console.error('Error loading stats:', error);
+        console.error('Login error:', error);
+        let errorMessage = 'Ошибка входа';
+        if (error.code === 'auth/user-not-found') {
+            errorMessage = 'Пользователь не найден';
+        } else if (error.code === 'auth/wrong-password') {
+            errorMessage = 'Неверный пароль';
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = 'Некорректный email';
+        } else if (error.code === 'auth/too-many-requests') {
+            errorMessage = 'Слишком много попыток, повторите позже';
+        }
+        errorEl.textContent = errorMessage;
+        errorEl.style.display = 'block';
     }
-}
-
-async function loadActivity() {
-    try {
-        const logsRef = collection(db, 'adminLogs');
-        const q = query(logsRef, orderBy('timestamp', 'desc'), limit(10));
-        const snapshot = await getDocs(q);
-        
-        const activityList = document.getElementById('activityList');
-        activityList.innerHTML = '';
-        
-        snapshot.forEach(doc => {
-            const log = doc.data();
-            const time = log.timestamp?.toDate().toLocaleString('ru-RU', {
-                hour: '2-digit', minute: '2-digit'
-            }) || 'недавно';
-            
-            activityList.innerHTML += `
-                <li class="activity-item">
-                    <span>${log.action}: ${log.targetUser || log.targetEmail || 'система'}</span>
-                    <span>${time}</span>
-                </li>
-            `;
-        });
-    } catch (error) {
-        console.error('Error loading activity:', error);
-    }
-}
-
-async function loadUsers() {
-    try {
-        const usersRef = collection(db, 'users');
-        const q = query(usersRef, orderBy('createdAt', 'desc'), limit(50));
-        const snapshot = await getDocs(q);
-        
-        const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '';
-        
-        snapshot.forEach(doc => {
-            const user = doc.data();
-            const date = user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'неизвестно';
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td>${user.email || 'нет email'}</td>
-                    <td><span style="background: rgba(16,185,129,0.1); padding: 4px 8px; border-radius: 20px;">${user.plan || 'start'}</span></td>
-                    <td>${user.balance || 0}</td>
-                    <td>${user.usedGenerations || 0}</td>
-                    <td>${date}</td>
-                    <td class="user-actions">
-                        <button class="btn btn-small" onclick="addTokens('${doc.id}')">➕</button>
-                        <button class="btn btn-small" onclick="blockUser('${doc.id}')">🚫</button>
-                    </td>
-                </tr>
-            `;
-        });
-    } catch (error) {
-        console.error('Error loading users:', error);
-    }
-}
-
-window.logout = async function() {
-    await signOut(auth);
-    window.location.href = 'index.html';
-};
-
-window.addTokens = function(userId) {
-    const amount = prompt('Количество токенов:');
-    if (amount) alert(`Начислено ${amount} токенов`);
-};
-
-window.blockUser = function(userId) {
-    if (confirm('Заблокировать?')) alert('Пользователь заблокирован');
-};
-
-window.searchUsers = function() {
-    alert('Поиск: ' + document.getElementById('userSearch').value);
-};
-
-window.exportUsers = function() {
-    alert('Экспорт в CSV');
 };
