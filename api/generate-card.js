@@ -3,8 +3,7 @@ import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import sharp from 'sharp';
-import { createCanvas, registerFont } from 'canvas';
-import path from 'path';
+import { createCanvas } from 'canvas';
 
 export const config = {
     api: {
@@ -12,7 +11,7 @@ export const config = {
     },
 };
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI(process.env.AIzaSyDhj-2aSlKbuRuODQR9qBbBl38kP0xwXzU);
 
 /**
  * Улучшение фото через Gemini (замена фона, освещение)
@@ -66,29 +65,25 @@ async function addTextToImage(imageBuffer, texts, variant) {
     const width = 1024;
     const height = 1024;
 
-    // Загружаем изображение, полученное от Gemini
     const image = await sharp(imageBuffer)
         .resize(width, height, { fit: 'contain', background: '#ffffff' })
         .toBuffer();
 
-    // Создаём canvas
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
-    // Рисуем изображение
     const img = await loadImage(image);
     ctx.drawImage(img, 0, 0, width, height);
 
-    // Настройки текста
     ctx.fillStyle = '#000000';
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
     ctx.shadowBlur = 5;
     ctx.shadowOffsetX = 2;
     ctx.shadowOffsetY = 2;
 
-    // Разные варианты расположения
+    // Разные варианты расположения текста
     switch (variant) {
-        case 0: // Классический: название сверху, особенности снизу
+        case 0:
             ctx.font = 'bold 48px "Inter"';
             ctx.fillText(productName, 50, 100);
             ctx.font = '36px "Inter"';
@@ -96,8 +91,7 @@ async function addTextToImage(imageBuffer, texts, variant) {
             ctx.font = '30px "Inter"';
             ctx.fillText(features.join(' · '), 50, height - 50);
             break;
-
-        case 1: // Минималистичный: название по центру, особенности справа
+        case 1:
             ctx.textAlign = 'center';
             ctx.font = 'bold 56px "Inter"';
             ctx.fillText(productName, width / 2, height - 150);
@@ -107,14 +101,12 @@ async function addTextToImage(imageBuffer, texts, variant) {
                 ctx.fillText(f, width - 50, 150 + idx * 50);
             });
             break;
-
-        case 2: // Премиум: крупное название вверху, особенности в две колонки
+        case 2:
             ctx.textAlign = 'left';
             ctx.font = 'bold 64px "Inter"';
             ctx.fillText(productName, 50, 120);
             ctx.font = '40px "Inter"';
             if (brand) ctx.fillText(brand, 50, 200);
-            
             ctx.font = '28px "Inter"';
             const half = Math.ceil(features.length / 2);
             features.slice(0, half).forEach((f, idx) => {
@@ -124,8 +116,7 @@ async function addTextToImage(imageBuffer, texts, variant) {
                 ctx.fillText(`✓ ${f}`, 500, 300 + idx * 45);
             });
             break;
-
-        case 3: // Вертикальный текст справа
+        case 3:
             ctx.save();
             ctx.translate(900, 500);
             ctx.rotate(-Math.PI / 2);
@@ -137,8 +128,7 @@ async function addTextToImage(imageBuffer, texts, variant) {
             }
             ctx.restore();
             break;
-
-        case 4: // Текст на цветной плашке
+        case 4:
             ctx.fillStyle = 'rgba(0,0,0,0.7)';
             ctx.fillRect(0, height - 200, width, 200);
             ctx.fillStyle = '#ffffff';
@@ -196,26 +186,16 @@ export default async function handler(req, res) {
         const firstPhoto = photos[0];
         const productBuffer = fs.readFileSync(firstPhoto.filepath);
 
-        // Стили для улучшения фото
         const styles = ['white minimal', 'soft studio', 'premium dark', 'bright clean', 'warm natural'];
         const images = [];
 
         for (let i = 0; i < styles.length; i++) {
             console.log(`🎨 Улучшение фото в стиле ${styles[i]}`);
-            // Шаг 1: Gemini улучшает фон и освещение
             const enhancedBuffer = await enhanceProductImage(productBuffer, styles[i]);
-
-            // Шаг 2: Накладываем текст в зависимости от варианта
             const cardBuffer = await addTextToImage(enhancedBuffer, { productName, brand, features }, i);
-
-            // Оптимизация через sharp
-            const optimized = await sharp(cardBuffer)
-                .jpeg({ quality: 90 })
-                .toBuffer();
-
+            const optimized = await sharp(cardBuffer).jpeg({ quality: 90 }).toBuffer();
             images.push(`data:image/jpeg;base64,${optimized.toString('base64')}`);
-
-            await new Promise(r => setTimeout(r, 2000)); // пауза между запросами
+            await new Promise(r => setTimeout(r, 2000));
         }
 
         const descriptions = await generateDescriptions(productName, brand, features);
