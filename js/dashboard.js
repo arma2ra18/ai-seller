@@ -8,7 +8,6 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 let currentUser = null;
 let userData = null;
 
-// Следим за авторизацией
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
@@ -18,7 +17,6 @@ onAuthStateChanged(auth, async (user) => {
     await loadUserData();
 });
 
-// Загрузка данных пользователя из Firestore
 async function loadUserData() {
     if (!currentUser) return;
     try {
@@ -44,14 +42,12 @@ async function loadUserData() {
     }
 }
 
-// Обновление интерфейса (баланс, тариф)
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
     const used = userData.usedGenerations || 0;
     const remaining = Math.max(0, maxGen - used);
 
-    // Обновляем все элементы с балансом
     document.querySelectorAll('#remainingGenerations, #remainingGenerationsDetail').forEach(el => {
         if (el) el.textContent = remaining;
     });
@@ -67,7 +63,6 @@ function updateUI() {
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
 }
 
-// Обновление плиток статистики
 function updateStats() {
     const statUser = document.getElementById('statUser');
     if (statUser) statUser.textContent = currentUser.email.split('@')[0];
@@ -87,7 +82,6 @@ function updateStats() {
     if (statBonus) statBonus.textContent = 0;
 }
 
-// Выход
 window.logout = async function() {
     try {
         await signOut(auth);
@@ -109,72 +103,29 @@ document.querySelectorAll('.menu-item').forEach(item => {
     });
 });
 
-// ----- Настройка дропзон -----
-function setupDropzone(dropzoneId, inputId) {
-    const dropzone = document.getElementById(dropzoneId);
-    const input = document.getElementById(inputId);
-    if (!dropzone || !input) return;
-
-    dropzone.addEventListener('click', () => input.click());
-    
-    // dropzone.addEventListener('dragover', (e) => {
-    //     e.preventDefault();
-    //     dropzone.style.borderColor = 'var(--accent)';
-    // });
-    
-    // dropzone.addEventListener('dragleave', () => {
-    //     dropzone.style.borderColor = 'var(--border)';
-    // });
-    
-    // dropzone.addEventListener('drop', (e) => {
-    //     e.preventDefault();
-    //     dropzone.style.borderColor = 'var(--border)';
-    //     input.files = e.dataTransfer.files;
-    //     const names = Array.from(e.dataTransfer.files).map(f => f.name).join(', ');
-    //     dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
-    // });
-    
-    input.addEventListener('change', () => {
-        if (input.files.length > 0) {
-            const names = Array.from(input.files).map(f => f.name).join(', ');
-            dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
-        } else {
-            dropzone.innerHTML = '<span>Перетащите файлы или нажмите для выбора</span>';
-        }
-    });
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    setupDropzone('wbDropzone', 'wbPhotos');
-    setupDropzone('ozonDropzone', 'ozonPhotos');
-    setupDropzone('photoDropzone', 'productPhoto');
-    setupDropzone('videoDropzone', 'videoPhoto');
-});
-
 // ----- Генерация карточки для Wildberries -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
 
-    // Диагностика: ищем элемент разными способами
-    console.log('querySelector("#wbPhotos"):', document.querySelector('#wbPhotos'));
-    console.log('getElementById("wbPhotos"):', document.getElementById('wbPhotos'));
-    console.log('Все элементы с id="wbPhotos":', document.querySelectorAll('#wbPhotos').length);
-
-    const fileInput = document.querySelector('#wbPhotos');
+    const fileInput = document.getElementById('wbPhotos');
     if (!fileInput) {
-        console.error('❌ Элемент #wbPhotos не найден через querySelector. Проверьте HTML.');
-        showNotification('Ошибка: элемент загрузки не найден. Проверьте консоль.', 'error');
+        console.error('❌ Элемент #wbPhotos не найден');
+        showNotification('Ошибка: элемент загрузки не найден.', 'error');
         return;
     }
     
-    const productName = document.querySelector('#wbProductName')?.value.trim();
-    const brand = document.querySelector('#wbBrand')?.value.trim();
-    const category = document.querySelector('#wbCategory')?.value;
-    const features = document.querySelector('#wbFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
+    const productName = document.getElementById('wbProductName')?.value.trim();
+    const brand = document.getElementById('wbBrand')?.value.trim();
+    const category = document.getElementById('wbCategory')?.value;
+    const features = document.getElementById('wbFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
     const files = fileInput.files;
     
-    if (!productName || files.length === 0) {
-        showNotification('Заполните название и загрузите фото', 'error');
+    if (!productName) {
+        showNotification('Введите название товара', 'error');
+        return;
+    }
+    if (files.length === 0) {
+        showNotification('Выберите хотя бы одно фото', 'error');
         return;
     }
 
@@ -184,7 +135,7 @@ window.generateWBCard = async function() {
         return;
     }
 
-    const btn = document.querySelector('#generateWBBtn') || document.querySelector('[onclick="generateWBCard()"]');
+    const btn = document.getElementById('generateWBBtn') || document.querySelector('[onclick="generateWBCard()"]');
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<span class="loading"></span> Генерация...';
@@ -235,19 +186,22 @@ window.generateOzonCard = async function() {
 
     const fileInput = document.getElementById('ozonPhotos');
     if (!fileInput) {
-        console.error('❌ Элемент с id="ozonPhotos" не найден.');
-        showNotification('Ошибка: элемент загрузки не найден (ozonPhotos).', 'error');
+        showNotification('Ошибка: элемент загрузки не найден.', 'error');
         return;
     }
-
+    
     const productName = document.getElementById('ozonProductName')?.value.trim();
     const brand = document.getElementById('ozonBrand')?.value.trim();
     const category = document.getElementById('ozonCategory')?.value;
     const features = document.getElementById('ozonFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
     const files = fileInput.files;
     
-    if (!productName || files.length === 0) {
-        showNotification('Заполните название и загрузите фото', 'error');
+    if (!productName) {
+        showNotification('Введите название товара', 'error');
+        return;
+    }
+    if (files.length === 0) {
+        showNotification('Выберите хотя бы одно фото', 'error');
         return;
     }
 
@@ -312,7 +266,6 @@ window.generateVideo = async function() {
     showNotification('Функция генерации видео находится в разработке', 'info');
 };
 
-// Отображение результатов карточки
 function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
     if (!container) return;
@@ -413,7 +366,6 @@ window.viewHistoryItem = async function(docId) {
 
 // ----- Пополнение баланса и подписка -----
 let currentPlan = null;
-let currentPrice = 0;
 
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
@@ -435,7 +387,6 @@ window.selectPlan = function(plan) {
         'pro': { name: 'Профи', price: 9900 }
     };
     currentPlan = plan;
-    currentPrice = plans[plan].price;
 
     const title = document.getElementById('modalTitle');
     if (title) title.textContent = 'Оформление подписки';
@@ -481,7 +432,6 @@ window.closeModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) modal.classList.remove('show');
     currentPlan = null;
-    currentPrice = 0;
 };
 
 // ----- Уведомления -----
