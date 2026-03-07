@@ -69,14 +69,22 @@ function updateUI() {
 
 // Обновление плиток статистики
 function updateStats() {
-    document.getElementById('statUser').textContent = currentUser.email.split('@')[0];
-    document.getElementById('statCards').textContent = userData?.usedGenerations || 0;
-    document.getElementById('statVideos').textContent = 0;
-    document.getElementById('statDescriptions').textContent = userData?.usedGenerations || 0;
-    document.getElementById('statHistory').textContent = 0;
-    document.getElementById('statBalance').textContent = userData?.balance || 30;
-    document.getElementById('statNews').textContent = 29;
-    document.getElementById('statBonus').textContent = 0;
+    const statUser = document.getElementById('statUser');
+    if (statUser) statUser.textContent = currentUser.email.split('@')[0];
+    const statCards = document.getElementById('statCards');
+    if (statCards) statCards.textContent = userData?.usedGenerations || 0;
+    const statVideos = document.getElementById('statVideos');
+    if (statVideos) statVideos.textContent = 0;
+    const statDescriptions = document.getElementById('statDescriptions');
+    if (statDescriptions) statDescriptions.textContent = userData?.usedGenerations || 0;
+    const statHistory = document.getElementById('statHistory');
+    if (statHistory) statHistory.textContent = 0;
+    const statBalance = document.getElementById('statBalance');
+    if (statBalance) statBalance.textContent = userData?.balance || 30;
+    const statNews = document.getElementById('statNews');
+    if (statNews) statNews.textContent = 29;
+    const statBonus = document.getElementById('statBonus');
+    if (statBonus) statBonus.textContent = 0;
 }
 
 // Выход
@@ -139,21 +147,42 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDropzone('videoDropzone', 'videoPhoto');
 });
 
+// ----- Вспомогательная функция для получения элемента с повторной попыткой -----
+function waitForElement(selector, timeout = 3000) {
+    return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        const check = () => {
+            const el = document.querySelector(selector);
+            if (el) {
+                resolve(el);
+            } else if (Date.now() - startTime > timeout) {
+                reject(new Error(`Элемент ${selector} не найден за ${timeout}ms`));
+            } else {
+                setTimeout(check, 100);
+            }
+        };
+        check();
+    });
+}
+
 // ----- Генерация карточки для Wildberries -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
 
+    // Надёжно получаем элемент файлового ввода
+    let fileInput;
+    try {
+        fileInput = await waitForElement('#wbPhotos', 2000);
+    } catch (e) {
+        console.error(e);
+        showNotification('Ошибка: элемент загрузки не найден. Обновите страницу.', 'error');
+        return;
+    }
+    
     const productName = document.getElementById('wbProductName')?.value.trim();
     const brand = document.getElementById('wbBrand')?.value.trim();
     const category = document.getElementById('wbCategory')?.value;
     const features = document.getElementById('wbFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
-    const fileInput = document.getElementById('wbPhotos');
-    
-    if (!fileInput) {
-        showNotification('Ошибка: элемент загрузки не найден', 'error');
-        return;
-    }
-    
     const files = fileInput.files;
     
     if (!productName || files.length === 0) {
@@ -167,7 +196,7 @@ window.generateWBCard = async function() {
         return;
     }
 
-    const btn = document.querySelector('[onclick="generateWBCard()"]');
+    const btn = document.getElementById('generateWBBtn') || document.querySelector('[onclick="generateWBCard()"]');
     btn.disabled = true;
     btn.innerHTML = '<span class="loading"></span> Генерация...';
 
@@ -212,17 +241,19 @@ window.generateWBCard = async function() {
 window.generateOzonCard = async function() {
     if (!currentUser || !userData) return;
 
+    let fileInput;
+    try {
+        fileInput = await waitForElement('#ozonPhotos', 2000);
+    } catch (e) {
+        console.error(e);
+        showNotification('Ошибка: элемент загрузки не найден. Обновите страницу.', 'error');
+        return;
+    }
+
     const productName = document.getElementById('ozonProductName')?.value.trim();
     const brand = document.getElementById('ozonBrand')?.value.trim();
     const category = document.getElementById('ozonCategory')?.value;
     const features = document.getElementById('ozonFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
-    const fileInput = document.getElementById('ozonPhotos');
-    
-    if (!fileInput) {
-        showNotification('Ошибка: элемент загрузки не найден', 'error');
-        return;
-    }
-    
     const files = fileInput.files;
     
     if (!productName || files.length === 0) {
@@ -236,7 +267,7 @@ window.generateOzonCard = async function() {
         return;
     }
 
-    const btn = document.querySelector('[onclick="generateOzonCard()"]');
+    const btn = document.getElementById('generateOzonBtn') || document.querySelector('[onclick="generateOzonCard()"]');
     btn.disabled = true;
     btn.innerHTML = '<span class="loading"></span> Генерация...';
 

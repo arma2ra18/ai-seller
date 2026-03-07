@@ -158,7 +158,7 @@
                             </div>
                             <div id="wbFileList" class="file-list"></div>
                         </div>
-                        <button class="btn btn-primary btn-large" onclick="generateWBCard()">✨ Создать карточку для WB</button>
+                        <button class="btn btn-primary btn-large" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку для WB</button>
                     </div>
                 </div>
 
@@ -196,7 +196,7 @@
                             </div>
                             <div id="ozonFileList" class="file-list"></div>
                         </div>
-                        <button class="btn btn-primary btn-large" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
+                        <button class="btn btn-primary btn-large" id="generateOzonBtn" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
                     </div>
                 </div>
 
@@ -215,7 +215,7 @@
                             <label>Дополнительные пожелания</label>
                             <textarea id="photoPrompt" rows="3" placeholder="Например: на мраморном столе, с кофейными зернами"></textarea>
                         </div>
-                        <button class="btn btn-primary btn-large" onclick="generateProductPhoto()">✨ Сгенерировать фото (2 токена)</button>
+                        <button class="btn btn-primary btn-large" id="generatePhotoBtn" onclick="generateProductPhoto()">✨ Сгенерировать фото (2 токена)</button>
                     </div>
                 </div>
 
@@ -237,11 +237,11 @@
                                 <option value="360">Обзор на 360°</option>
                             </select>
                         </div>
-                        <button class="btn btn-primary btn-large" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
+                        <button class="btn btn-primary btn-large" id="generateVideoBtn" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
                     </div>
                 </div>
 
-                <!-- Секция История -->
+                <!-- Секция История (дублируется, но можно оставить) -->
                 <div class="content-section" id="history-section">
                     <h2>История генераций</h2>
                     <div class="history-list" id="historyListDetail"></div>
