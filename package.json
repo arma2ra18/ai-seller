@@ -13,4 +13,10 @@
   "devDependencies": {
     "vercel": "^33.0.0"
   }
+"dependencies": {
+  "@imgly/background-removal-node": "^1.0.0",
+  "sharp": "^0.33.0",
+  "canvas": "^2.11.0",
+  "formidable": "^3.5.0"
+}
 }
