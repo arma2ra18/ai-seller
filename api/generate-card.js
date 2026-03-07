@@ -3,6 +3,8 @@ import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import sharp from 'sharp';
+import { createCanvas, registerFont } from 'canvas';
+import path from 'path';
 
 export const config = {
     api: {
@@ -10,109 +12,169 @@ export const config = {
     },
 };
 
-// Инициализация Gemini
-const genAI = new GoogleGenerativeAI(process.env.AIzaSyDhj-2aSlKbuRuODQR9qBbBl38kP0xwXzU);
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Генерация карточки товара через Gemini
+ * Улучшение фото через Gemini (замена фона, освещение)
  */
-async function generateProductCard(productBuffer, texts, style) {
-    const { productName, brand, features } = texts;
-    
-    // Конвертируем изображение в base64
+async function enhanceProductImage(productBuffer, style) {
     const base64Image = productBuffer.toString('base64');
     
-    // Промпт для Gemini (на английском для лучшего качества)
-    const prompt = `You are a professional e-commerce product photographer and designer.
-    
-Task: Create a high-quality product card image for an online marketplace.
-
-Product details:
-- Name: ${productName}
-- Brand: ${brand || 'Generic'}
-- Features: ${features.join(', ')}
-- Style: ${style} (modern, minimal, premium, bold, or eco)
-
-Requirements:
-1. Place the product on a clean, professional background (${style} style)
-2. Add soft, realistic shadows under the product
-3. Enhance lighting to look like studio photography
-4. Preserve ALL product details, colors, and text exactly as in the original
-5. Add these text elements (make them crisp and readable):
-   - Product name at the top (bold, large font)
-   - Key features as small icons or bullet points
-   - Brand logo/name subtly placed
-6. Ensure the final image looks like it was professionally designed
-7. Maintain 1024x1024 resolution
-8. Do NOT alter the product shape or details
+    const prompt = `You are a professional e-commerce photo editor. 
+Take this product photo and:
+1. Remove the background and replace it with a clean, ${style} style background (white, minimal, premium, etc.)
+2. Add a soft, realistic shadow under the product
+3. Enhance the lighting to make it look like studio photography
+4. Keep the product exactly as is – do not change its shape, colors, or details
+5. The final image should be 1024x1024 with the product centered
 
 Return ONLY the edited image.`;
 
     try {
-        // Вызов Gemini API
-        const model = genAI.getGenerativeModel({
-            model: "gemini-2.5-flash-image-preview", // или "gemini-3-pro-image-preview" для 4K
-        });
-
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image-preview" });
         const result = await model.generateContent({
             contents: [
                 {
                     role: "user",
                     parts: [
                         { text: prompt },
-                        {
-                            inlineData: {
-                                mimeType: "image/jpeg",
-                                data: base64Image
-                            }
-                        }
+                        { inlineData: { mimeType: "image/jpeg", data: base64Image } }
                     ]
                 }
             ],
-            generationConfig: {
-                temperature: 0.4,
-                maxOutputTokens: 4096,
-            }
+            generationConfig: { temperature: 0.3, maxOutputTokens: 4096 }
         });
 
         const response = await result.response;
-        
-        // Извлекаем изображение из ответа
         for (const part of response.candidates[0].content.parts) {
             if (part.inlineData) {
                 return Buffer.from(part.inlineData.data, 'base64');
             }
         }
-        
         throw new Error('No image in response');
-        
     } catch (error) {
         console.error('Gemini error:', error);
         throw error;
     }
 }
 
-// Генерация описаний (оставляем как есть)
-async function generateDescriptions(productName, brand, features, platform) {
+/**
+ * Наложение текста на изображение с помощью canvas
+ */
+async function addTextToImage(imageBuffer, texts, variant) {
+    const { productName, brand, features } = texts;
+    const width = 1024;
+    const height = 1024;
+
+    // Загружаем изображение, полученное от Gemini
+    const image = await sharp(imageBuffer)
+        .resize(width, height, { fit: 'contain', background: '#ffffff' })
+        .toBuffer();
+
+    // Создаём canvas
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
+
+    // Рисуем изображение
+    const img = await loadImage(image);
+    ctx.drawImage(img, 0, 0, width, height);
+
+    // Настройки текста
+    ctx.fillStyle = '#000000';
+    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+
+    // Разные варианты расположения
+    switch (variant) {
+        case 0: // Классический: название сверху, особенности снизу
+            ctx.font = 'bold 48px "Inter"';
+            ctx.fillText(productName, 50, 100);
+            ctx.font = '36px "Inter"';
+            if (brand) ctx.fillText(brand, 50, 170);
+            ctx.font = '30px "Inter"';
+            ctx.fillText(features.join(' · '), 50, height - 50);
+            break;
+
+        case 1: // Минималистичный: название по центру, особенности справа
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 56px "Inter"';
+            ctx.fillText(productName, width / 2, height - 150);
+            ctx.textAlign = 'right';
+            ctx.font = '32px "Inter"';
+            features.forEach((f, idx) => {
+                ctx.fillText(f, width - 50, 150 + idx * 50);
+            });
+            break;
+
+        case 2: // Премиум: крупное название вверху, особенности в две колонки
+            ctx.textAlign = 'left';
+            ctx.font = 'bold 64px "Inter"';
+            ctx.fillText(productName, 50, 120);
+            ctx.font = '40px "Inter"';
+            if (brand) ctx.fillText(brand, 50, 200);
+            
+            ctx.font = '28px "Inter"';
+            const half = Math.ceil(features.length / 2);
+            features.slice(0, half).forEach((f, idx) => {
+                ctx.fillText(`✓ ${f}`, 50, 300 + idx * 45);
+            });
+            features.slice(half).forEach((f, idx) => {
+                ctx.fillText(`✓ ${f}`, 500, 300 + idx * 45);
+            });
+            break;
+
+        case 3: // Вертикальный текст справа
+            ctx.save();
+            ctx.translate(900, 500);
+            ctx.rotate(-Math.PI / 2);
+            ctx.font = 'bold 48px "Inter"';
+            ctx.fillText(productName, 0, 0);
+            if (brand) {
+                ctx.font = '32px "Inter"';
+                ctx.fillText(brand, 0, 60);
+            }
+            ctx.restore();
+            break;
+
+        case 4: // Текст на цветной плашке
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.fillRect(0, height - 200, width, 200);
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.font = 'bold 48px "Inter"';
+            ctx.fillText(productName, width / 2, height - 120);
+            ctx.font = '32px "Inter"';
+            ctx.fillText(features.join(' · '), width / 2, height - 60);
+            break;
+    }
+
+    return canvas.toBuffer('image/jpeg');
+}
+
+function loadImage(buffer) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+    });
+}
+
+async function generateDescriptions(productName, brand, features) {
     return [
-        `✨ ${productName} от ${brand} — ${features.join(', ')}. Идеально для повседневного использования!`,
-        `🔥 ${brand} ${productName} — высокое качество и надёжность. ${features.join(', ')}.`,
-        `💎 Купите ${productName} по лучшей цене! ${features.join(', ')}. Только оригинал.`
+        `✨ ${productName} от ${brand} — ${features.join(', ')}`,
+        `🔥 ${brand} ${productName} — высокое качество и надёжность`,
+        `💎 Купите ${productName} по лучшей цене! ${features.join(', ')}`
     ];
 }
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
-    }
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+    if (!process.env.GEMINI_API_KEY) return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
 
     try {
-        // Парсинг формы
         const form = new IncomingForm({ keepExtensions: true, multiples: true });
         const { fields, files } = await new Promise((resolve, reject) => {
             form.parse(req, (err, fields, files) => {
@@ -123,63 +185,46 @@ export default async function handler(req, res) {
 
         const productName = fields.productName?.[0] || fields.productName || '';
         const brand = fields.brand?.[0] || fields.brand || '';
-        const category = fields.category?.[0] || fields.category || '';
         const featuresStr = fields.features?.[0] || fields.features || '';
         const features = featuresStr.split(',').map(f => f.trim()).filter(Boolean);
-        
         const photos = files.photos ? (Array.isArray(files.photos) ? files.photos : [files.photos]) : [];
-        if (photos.length === 0 || !productName) {
+
+        if (!productName || photos.length === 0) {
             return res.status(400).json({ error: 'Product name and photo required' });
         }
 
         const firstPhoto = photos[0];
         const productBuffer = fs.readFileSync(firstPhoto.filepath);
 
-        // Стили для генерации
-        const styles = ['modern', 'minimal', 'premium', 'bold', 'eco'];
-        
-        // Генерируем 5 вариантов карточек
+        // Стили для улучшения фото
+        const styles = ['white minimal', 'soft studio', 'premium dark', 'bright clean', 'warm natural'];
         const images = [];
+
         for (let i = 0; i < styles.length; i++) {
-            console.log(`🎨 Генерация стиля ${styles[i]}`);
-            try {
-                const cardBuffer = await generateProductCard(
-                    productBuffer, 
-                    { productName, brand, features }, 
-                    styles[i]
-                );
-                
-                // Оптимизация размера через sharp
-                const optimized = await sharp(cardBuffer)
-                    .resize(1024, 1024, { fit: 'contain', background: '#ffffff' })
-                    .jpeg({ quality: 85 })
-                    .toBuffer();
-                
-                images.push(`data:image/jpeg;base64,${optimized.toString('base64')}`);
-                
-                // Небольшая задержка между запросами
-                await new Promise(r => setTimeout(r, 2000));
-                
-            } catch (err) {
-                console.error(`Ошибка для стиля ${styles[i]}:`, err);
-                // Добавляем заглушку при ошибке
-                images.push(null);
-            }
+            console.log(`🎨 Улучшение фото в стиле ${styles[i]}`);
+            // Шаг 1: Gemini улучшает фон и освещение
+            const enhancedBuffer = await enhanceProductImage(productBuffer, styles[i]);
+
+            // Шаг 2: Накладываем текст в зависимости от варианта
+            const cardBuffer = await addTextToImage(enhancedBuffer, { productName, brand, features }, i);
+
+            // Оптимизация через sharp
+            const optimized = await sharp(cardBuffer)
+                .jpeg({ quality: 90 })
+                .toBuffer();
+
+            images.push(`data:image/jpeg;base64,${optimized.toString('base64')}`);
+
+            await new Promise(r => setTimeout(r, 2000)); // пауза между запросами
         }
 
-        // Генерируем описания
-        const descriptions = await generateDescriptions(productName, brand, features, fields.platform || 'wb');
+        const descriptions = await generateDescriptions(productName, brand, features);
 
-        // Удаляем временный файл
         fs.unlinkSync(firstPhoto.filepath);
-
-        res.status(200).json({ 
-            images: images.filter(img => img !== null), // Убираем неудачные
-            descriptions 
-        });
+        res.status(200).json({ images, descriptions });
 
     } catch (error) {
-        console.error('❌ Generate card error:', error);
+        console.error('❌ Ошибка:', error);
         res.status(500).json({ error: error.message });
     }
 }
