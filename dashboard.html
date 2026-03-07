@@ -106,7 +106,7 @@
 
             <!-- Динамический контент (переключается меню) -->
             <div class="content-area" id="contentArea">
-                <!-- Секция токенов -->
+                <!-- Секция токенов (по умолчанию) -->
                 <div class="content-section active" id="tokens-section">
                     <h2>Токены и статистика</h2>
                     <div class="info-cards">
@@ -152,10 +152,13 @@
                         </div>
                         <div class="form-group">
                             <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
-                            <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input">
-                            <div class="file-input-info">Выберите файлы</div>
+                            <div class="dropzone" id="wbDropzone">
+                                <span>Перетащите файлы или нажмите для выбора</span>
+                                <input type="file" id="wbPhotos" accept="image/*" multiple style="display:none;">
+                            </div>
+                            <div id="wbFileList" class="file-list"></div>
                         </div>
-                        <button class="btn btn-primary btn-large" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку для WB</button>
+                        <button class="btn btn-primary btn-large" onclick="generateWBCard()">✨ Создать карточку для WB</button>
                     </div>
                 </div>
 
@@ -187,10 +190,13 @@
                         </div>
                         <div class="form-group">
                             <label>Загрузите фото товара</label>
-                            <input type="file" id="ozonPhotos" accept="image/*" multiple class="file-input">
-                            <div class="file-input-info">Выберите файлы</div>
+                            <div class="dropzone" id="ozonDropzone">
+                                <span>Перетащите файлы или нажмите для выбора</span>
+                                <input type="file" id="ozonPhotos" accept="image/*" multiple style="display:none;">
+                            </div>
+                            <div id="ozonFileList" class="file-list"></div>
                         </div>
-                        <button class="btn btn-primary btn-large" id="generateOzonBtn" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
+                        <button class="btn btn-primary btn-large" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
                     </div>
                 </div>
 
@@ -200,14 +206,16 @@
                     <div class="generation-form">
                         <div class="form-group">
                             <label>Загрузите фото товара</label>
-                            <input type="file" id="productPhoto" accept="image/*" class="file-input">
-                            <div class="file-input-info">Выберите файл</div>
+                            <div class="dropzone" id="photoDropzone">
+                                <span>Перетащите файлы или нажмите для выбора</span>
+                                <input type="file" id="productPhoto" accept="image/*" style="display:none;">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Дополнительные пожелания</label>
                             <textarea id="photoPrompt" rows="3" placeholder="Например: на мраморном столе, с кофейными зернами"></textarea>
                         </div>
-                        <button class="btn btn-primary btn-large" id="generatePhotoBtn" onclick="generateProductPhoto()">✨ Сгенерировать фото (2 токена)</button>
+                        <button class="btn btn-primary btn-large" onclick="generateProductPhoto()">✨ Сгенерировать фото (2 токена)</button>
                     </div>
                 </div>
 
@@ -217,8 +225,10 @@
                     <div class="generation-form">
                         <div class="form-group">
                             <label>Загрузите фото товара</label>
-                            <input type="file" id="videoPhoto" accept="image/*" class="file-input">
-                            <div class="file-input-info">Выберите файл</div>
+                            <div class="dropzone" id="videoDropzone">
+                                <span>Перетащите файлы или нажмите для выбора</span>
+                                <input type="file" id="videoPhoto" accept="image/*" style="display:none;">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Тип видео</label>
@@ -227,8 +237,14 @@
                                 <option value="360">Обзор на 360°</option>
                             </select>
                         </div>
-                        <button class="btn btn-primary btn-large" id="generateVideoBtn" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
+                        <button class="btn btn-primary btn-large" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
                     </div>
+                </div>
+
+                <!-- Секция История -->
+                <div class="content-section" id="history-section">
+                    <h2>История генераций</h2>
+                    <div class="history-list" id="historyListDetail"></div>
                 </div>
 
                 <!-- Секция Тарифы -->

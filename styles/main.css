@@ -818,21 +818,3 @@ h2 {
         flex-direction: column;
     }
 }
-/* Стили для обычного input file */
-.file-input {
-    width: 100%;
-    padding: 10px;
-    background: var(--bg-input);
-    border: 1px dashed var(--border);
-    border-radius: 8px;
-    color: var(--text-primary);
-    cursor: pointer;
-}
-.file-input:hover {
-    border-color: var(--accent);
-}
-.file-input-info {
-    margin-top: 5px;
-    font-size: 13px;
-    color: var(--text-secondary);
-}
