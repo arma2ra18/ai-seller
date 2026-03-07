@@ -44,14 +44,13 @@ async function loadUserData() {
     }
 }
 
-// Обновление интерфейса (баланс, тариф)
+// Обновление интерфейса
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
     const used = userData.usedGenerations || 0;
     const remaining = Math.max(0, maxGen - used);
 
-    // Обновляем все элементы с балансом
     document.querySelectorAll('#remainingGenerations, #remainingGenerationsDetail').forEach(el => {
         if (el) el.textContent = remaining;
     });
@@ -69,14 +68,22 @@ function updateUI() {
 
 // Обновление плиток статистики
 function updateStats() {
-    document.getElementById('statUser').textContent = currentUser.email.split('@')[0];
-    document.getElementById('statCards').textContent = userData?.usedGenerations || 0;
-    document.getElementById('statVideos').textContent = 0;
-    document.getElementById('statDescriptions').textContent = userData?.usedGenerations || 0;
-    document.getElementById('statHistory').textContent = 0;
-    document.getElementById('statBalance').textContent = userData?.balance || 30;
-    document.getElementById('statNews').textContent = 29;
-    document.getElementById('statBonus').textContent = 0;
+    const statUser = document.getElementById('statUser');
+    if (statUser) statUser.textContent = currentUser.email.split('@')[0];
+    const statCards = document.getElementById('statCards');
+    if (statCards) statCards.textContent = userData?.usedGenerations || 0;
+    const statVideos = document.getElementById('statVideos');
+    if (statVideos) statVideos.textContent = 0;
+    const statDescriptions = document.getElementById('statDescriptions');
+    if (statDescriptions) statDescriptions.textContent = userData?.usedGenerations || 0;
+    const statHistory = document.getElementById('statHistory');
+    if (statHistory) statHistory.textContent = 0;
+    const statBalance = document.getElementById('statBalance');
+    if (statBalance) statBalance.textContent = userData?.balance || 30;
+    const statNews = document.getElementById('statNews');
+    if (statNews) statNews.textContent = 29;
+    const statBonus = document.getElementById('statBonus');
+    if (statBonus) statBonus.textContent = 0;
 }
 
 // Выход
@@ -108,28 +115,35 @@ function setupDropzone(dropzoneId, inputId) {
     if (!dropzone || !input) return;
 
     dropzone.addEventListener('click', () => input.click());
+
     dropzone.addEventListener('dragover', (e) => {
         e.preventDefault();
         dropzone.style.borderColor = 'var(--accent)';
     });
+
     dropzone.addEventListener('dragleave', () => {
         dropzone.style.borderColor = 'var(--border)';
     });
+
     dropzone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropzone.style.borderColor = 'var(--border)';
         input.files = e.dataTransfer.files;
-        const names = Array.from(e.dataTransfer.files).map(f => f.name).join(', ');
-        dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
+        updateDropzoneText(dropzone, input);
     });
+
     input.addEventListener('change', () => {
-        if (input.files.length > 0) {
-            const names = Array.from(input.files).map(f => f.name).join(', ');
-            dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
-        } else {
-            dropzone.innerHTML = '<span>Перетащите файлы или нажмите для выбора</span>';
-        }
+        updateDropzoneText(dropzone, input);
     });
+}
+
+function updateDropzoneText(dropzone, input) {
+    if (input.files && input.files.length > 0) {
+        const names = Array.from(input.files).map(f => f.name).join(', ');
+        dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
+    } else {
+        dropzone.innerHTML = '<span>Перетащите файлы или нажмите для выбора</span>';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -148,14 +162,14 @@ window.generateWBCard = async function() {
     const category = document.getElementById('wbCategory')?.value;
     const features = document.getElementById('wbFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
     const fileInput = document.getElementById('wbPhotos');
-    
+
     if (!fileInput) {
         showNotification('Ошибка: элемент загрузки не найден', 'error');
         return;
     }
-    
+
     const files = fileInput.files;
-    
+
     if (!productName || files.length === 0) {
         showNotification('Заполните название и загрузите фото', 'error');
         return;
@@ -184,7 +198,12 @@ window.generateWBCard = async function() {
             method: 'POST',
             body: formData
         });
-        if (!response.ok) throw new Error(await response.text());
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
         const result = await response.json();
         displayCardResults(result, 'wb');
 
@@ -194,10 +213,12 @@ window.generateWBCard = async function() {
             result,
             timestamp: new Date().toISOString()
         });
+
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         userData.usedGenerations += 3;
         updateUI();
         loadHistory();
+
         showNotification('Карточка для WB создана!', 'success');
     } catch (error) {
         console.error('Ошибка генерации:', error);
@@ -217,14 +238,14 @@ window.generateOzonCard = async function() {
     const category = document.getElementById('ozonCategory')?.value;
     const features = document.getElementById('ozonFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
     const fileInput = document.getElementById('ozonPhotos');
-    
+
     if (!fileInput) {
         showNotification('Ошибка: элемент загрузки не найден', 'error');
         return;
     }
-    
+
     const files = fileInput.files;
-    
+
     if (!productName || files.length === 0) {
         showNotification('Заполните название и загрузите фото', 'error');
         return;
@@ -253,7 +274,12 @@ window.generateOzonCard = async function() {
             method: 'POST',
             body: formData
         });
-        if (!response.ok) throw new Error(await response.text());
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+
         const result = await response.json();
         displayCardResults(result, 'ozon');
 
@@ -263,10 +289,12 @@ window.generateOzonCard = async function() {
             result,
             timestamp: new Date().toISOString()
         });
+
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         userData.usedGenerations += 3;
         updateUI();
         loadHistory();
+
         showNotification('Карточка для Ozon создана!', 'success');
     } catch (error) {
         console.error('Ошибка генерации:', error);
@@ -282,12 +310,18 @@ window.generateProductPhoto = async function() {
     showNotification('Функция генерации фото находится в разработке', 'info');
 };
 
-// ----- Генерация видео (реальная) -----
+// ----- Генерация видео -----
 window.generateVideo = async function() {
     if (!currentUser || !userData) return;
 
     const fileInput = document.getElementById('videoPhoto');
-    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+    if (!fileInput) {
+        showNotification('Ошибка: элемент загрузки не найден', 'error');
+        return;
+    }
+
+    const files = fileInput.files;
+    if (!files || files.length === 0) {
         showNotification('Загрузите фото товара', 'error');
         return;
     }
@@ -296,7 +330,6 @@ window.generateVideo = async function() {
     const prompt = document.getElementById('videoPrompt')?.value || '';
     const resolution = document.getElementById('videoResolution')?.value || '512P';
 
-    // Проверка баланса (видео = 5 токенов)
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
     if ((userData.usedGenerations || 0) + 5 > maxGen) {
         showNotification('Недостаточно токенов (требуется 5)', 'error');
@@ -309,7 +342,7 @@ window.generateVideo = async function() {
 
     try {
         const formData = new FormData();
-        formData.append('videoPhoto', fileInput.files[0]);
+        formData.append('videoPhoto', files[0]);
         formData.append('videoType', videoType);
         formData.append('prompt', prompt);
         formData.append('resolution', resolution);
@@ -325,11 +358,8 @@ window.generateVideo = async function() {
         }
 
         const result = await response.json();
-        
-        // Отображаем видео в блоке результатов
         displayVideoResult(result);
 
-        // Сохраняем в историю
         await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'video',
             productName: document.getElementById('ozonProductName')?.value || 
@@ -340,14 +370,12 @@ window.generateVideo = async function() {
             timestamp: new Date().toISOString()
         });
 
-        // Списание токенов
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(5) });
         userData.usedGenerations += 5;
         updateUI();
         loadHistory();
-        
-        showNotification('Видео успешно сгенерировано!', 'success');
 
+        showNotification('Видео успешно сгенерировано!', 'success');
     } catch (error) {
         console.error('Video generation error:', error);
         showNotification('Ошибка: ' + error.message, 'error');
@@ -355,57 +383,6 @@ window.generateVideo = async function() {
         btn.disabled = false;
         btn.innerHTML = '✨ Сгенерировать видео (5 токенов)';
     }
-};
-
-// Функция для отображения видео
-function displayVideoResult(result) {
-    const container = document.getElementById('cardResults');
-    container.style.display = 'block';
-    
-    // Очищаем предыдущие результаты
-    const gallery = document.getElementById('resultImages');
-    const descList = document.getElementById('resultDescriptions');
-    
-    if (gallery) {
-        gallery.innerHTML = '';
-        // Для видео показываем placeholder с видео
-        const videoContainer = document.createElement('div');
-        videoContainer.className = 'video-container';
-        videoContainer.innerHTML = `
-            <video controls style="width: 100%; max-width: 500px; border-radius: 12px;">
-                <source src="${result.videoUrl}" type="video/mp4">
-                Ваш браузер не поддерживает видео.
-            </video>
-            <p class="text-muted" style="margin-top: 10px;">Длительность: ${result.duration} сек</p>
-        `;
-        gallery.appendChild(videoContainer);
-    }
-    
-    if (descList) {
-        descList.innerHTML = `
-            <div class="result-item" onclick="downloadVideo('${result.videoUrl}')">
-                📥 Скачать видео
-            </div>
-            <div class="result-item" onclick="copyVideoUrl('${result.videoUrl}')">
-                🔗 Копировать ссылку
-            </div>
-        `;
-    }
-}
-
-// Вспомогательные функции
-window.downloadVideo = function(url) {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `video-${Date.now()}.mp4`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
-
-window.copyVideoUrl = function(url) {
-    navigator.clipboard.writeText(url);
-    showNotification('Ссылка скопирована', 'success');
 };
 
 // Отображение результатов карточки
@@ -450,6 +427,55 @@ function displayCardResults(result, platform) {
     }
 }
 
+// Отображение видео результата
+function displayVideoResult(result) {
+    const container = document.getElementById('cardResults');
+    if (!container) return;
+    container.style.display = 'block';
+
+    const gallery = document.getElementById('resultImages');
+    if (gallery) {
+        gallery.innerHTML = '';
+        const videoContainer = document.createElement('div');
+        videoContainer.className = 'video-container';
+        videoContainer.innerHTML = `
+            <video controls style="width: 100%; max-width: 500px; border-radius: 12px;">
+                <source src="${result.videoUrl}" type="video/mp4">
+                Ваш браузер не поддерживает видео.
+            </video>
+            <p class="text-muted" style="margin-top: 10px;">Длительность: 5 сек</p>
+        `;
+        gallery.appendChild(videoContainer);
+    }
+
+    const descList = document.getElementById('resultDescriptions');
+    if (descList) {
+        descList.innerHTML = `
+            <div class="result-item" onclick="downloadVideo('${result.videoUrl}')">
+                📥 Скачать видео
+            </div>
+            <div class="result-item" onclick="copyVideoUrl('${result.videoUrl}')">
+                🔗 Копировать ссылку
+            </div>
+        `;
+    }
+}
+
+// Вспомогательные функции для видео
+window.downloadVideo = function(url) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `video-${Date.now()}.mp4`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
+
+window.copyVideoUrl = function(url) {
+    navigator.clipboard.writeText(url);
+    showNotification('Ссылка скопирована', 'success');
+};
+
 // ----- История -----
 async function loadHistory() {
     if (!currentUser) return;
@@ -466,7 +492,7 @@ async function loadHistory() {
         snapshot.forEach(doc => {
             const item = doc.data();
             const date = new Date(item.timestamp).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-            const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : 'Фото';
+            const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : (item.type === 'video' ? '🎬' : 'Фото');
             historyList.innerHTML += `
                 <div class="history-item">
                     <div>
@@ -491,13 +517,16 @@ window.viewHistoryItem = async function(docId) {
         const docSnap = await getDoc(doc(db, 'users', currentUser.uid, 'generations', docId));
         if (docSnap.exists()) {
             const item = docSnap.data();
-            if (item.result && item.result.images && item.result.descriptions) {
+            if (item.type === 'video' && item.videoUrl) {
+                displayVideoResult({ videoUrl: item.videoUrl });
+            } else if (item.result && item.result.images && item.result.descriptions) {
                 displayCardResults(item.result, item.type || 'wb-card');
-                const resultsSection = document.getElementById('cardResults');
-                if (resultsSection) resultsSection.scrollIntoView({ behavior: 'smooth' });
             } else {
                 showNotification('Не удалось загрузить результат', 'error');
+                return;
             }
+            const resultsSection = document.getElementById('cardResults');
+            if (resultsSection) resultsSection.scrollIntoView({ behavior: 'smooth' });
         } else {
             showNotification('Запись не найдена', 'error');
         }
@@ -509,7 +538,6 @@ window.viewHistoryItem = async function(docId) {
 
 // ----- Пополнение баланса и подписка -----
 let currentPlan = null;
-let currentPrice = 0;
 
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
@@ -531,7 +559,6 @@ window.selectPlan = function(plan) {
         'pro': { name: 'Профи', price: 9900 }
     };
     currentPlan = plan;
-    currentPrice = plans[plan].price;
 
     const title = document.getElementById('modalTitle');
     if (title) title.textContent = 'Оформление подписки';
@@ -577,7 +604,6 @@ window.closeModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) modal.classList.remove('show');
     currentPlan = null;
-    currentPrice = 0;
 };
 
 // ----- Уведомления -----
