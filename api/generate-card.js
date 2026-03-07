@@ -78,7 +78,6 @@ export default async function handler(req, res) {
         const features = featuresStr.split(',').map(f => f.trim()).filter(Boolean);
         if (!productName) return res.status(400).json({ error: 'Product name required' });
 
-        // Загруженные фото (пока не используются)
         const photos = files.photos ? (Array.isArray(files.photos) ? files.photos : [files.photos]) : [];
 
         const basePrompt = `Профессиональное фото товара "${productName}" от бренда ${brand}. Категория: ${category}. Особенности: ${features.join(', ')}. Белый фон, студийное освещение, высокое качество, 8k.`;

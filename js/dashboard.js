@@ -64,33 +64,44 @@ window.logout = async function() {
     }
 };
 
-// Модальное окно оплаты
+// ----- Пополнение баланса и подписка -----
 let currentPlan = null;
+let currentPrice = 0;
+
 window.showPaymentModal = function() {
     document.getElementById('modalTitle').textContent = 'Пополнение баланса';
-    document.getElementById('modalDescription').innerHTML = 'Вы можете выбрать один из тарифов или пополнить счёт вручную.';
+    document.getElementById('modalDescription').innerHTML = 'Выберите один из тарифов ниже.';
     document.getElementById('selectedPlanName').textContent = '—';
     document.getElementById('modalAmount').textContent = '0 ₽';
     document.getElementById('paymentModal').classList.add('show');
 };
+
 window.selectPlan = function(plan) {
-    const plans = { 'start': { name: 'Старт', price: 990 }, 'business': { name: 'Бизнес', price: 2990 }, 'pro': { name: 'Профи', price: 9900 } };
+    const plans = {
+        'start': { name: 'Старт', price: 990 },
+        'business': { name: 'Бизнес', price: 2990 },
+        'pro': { name: 'Профи', price: 9900 }
+    };
     currentPlan = plan;
+    currentPrice = plans[plan].price;
+
     document.getElementById('modalTitle').textContent = 'Оформление подписки';
-    document.getElementById('modalDescription').innerHTML = `Вы выбрали тариф <strong>${plans[plan].name}</strong>.`;
     document.getElementById('selectedPlanName').textContent = plans[plan].name;
     document.getElementById('modalAmount').textContent = `${plans[plan].price} ₽`;
     document.getElementById('paymentModal').classList.add('show');
 };
+
 window.confirmPayment = function() {
     if (!currentPlan) {
-        showNotification('Функция пополнения будет доступна после подключения ЮKassa', 'info');
-        closeModal();
+        showNotification('Сначала выберите тариф', 'warning');
         return;
     }
+
     const tokensMap = { 'start': 30, 'business': 200, 'pro': 999999 };
     const tokens = tokensMap[currentPlan];
+
     showNotification('Оплата обрабатывается...', 'info');
+
     setTimeout(async () => {
         try {
             await updateDoc(doc(db, 'users', currentUser.uid), {
@@ -108,11 +119,14 @@ window.confirmPayment = function() {
         }
     }, 2000);
 };
+
 window.closeModal = function() {
     document.getElementById('paymentModal').classList.remove('show');
+    currentPlan = null;
+    currentPrice = 0;
 };
 
-// Генерация карточки для Wildberries
+// ----- Генерация карточек -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
     const productName = document.getElementById('wbProductName').value.trim();
@@ -168,8 +182,60 @@ window.generateWBCard = async function() {
     }
 };
 
-// Генерация карточки для Ozon (аналогично)
-window.generateOzonCard = async function() { /* аналогично generateWBCard, поменять platform на 'ozon' */ };
+window.generateOzonCard = async function() {
+    if (!currentUser || !userData) return;
+    const productName = document.getElementById('ozonProductName').value.trim();
+    const brand = document.getElementById('ozonBrand').value.trim();
+    const category = document.getElementById('ozonCategory').value;
+    const features = document.getElementById('ozonFeatures').value.split(',').map(f => f.trim()).filter(Boolean);
+    const files = document.getElementById('ozonPhotos').files;
+    if (!productName || files.length === 0) {
+        showNotification('Заполните название и загрузите фото', 'error');
+        return;
+    }
+    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
+    if ((userData.usedGenerations || 0) + 3 > maxGen) {
+        showNotification('Недостаточно токенов (требуется 3)', 'error');
+        return;
+    }
+    const btn = document.querySelector('[onclick="generateOzonCard()"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Генерация...';
+    try {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
+        formData.append('productName', productName);
+        formData.append('brand', brand);
+        formData.append('category', category);
+        formData.append('features', JSON.stringify(features));
+        formData.append('platform', 'ozon');
+
+        const response = await fetch('/api/generate-card', {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        displayCardResults(result, 'ozon');
+
+        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+            type: 'ozon-card',
+            productName,
+            result,
+            timestamp: new Date().toISOString()
+        });
+        await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
+        userData.usedGenerations += 3;
+        updateUI();
+        loadHistory();
+        showNotification('Карточка для Ozon создана!', 'success');
+    } catch (error) {
+        showNotification('Ошибка: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Создать карточку для Ozon';
+    }
+};
 
 function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
@@ -205,7 +271,7 @@ function displayCardResults(result, platform) {
     }
 }
 
-// История
+// ----- История -----
 async function loadHistory() {
     if (!currentUser) return;
     try {
@@ -258,6 +324,7 @@ window.viewHistoryItem = async function(docId) {
     }
 };
 
+// ----- Уведомления -----
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
@@ -266,7 +333,7 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Инициализация вкладок
+// ----- Инициализация вкладок -----
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', function() {
@@ -277,6 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById(`${tabId}-tab`).classList.add('active');
         });
     });
+
     window.onclick = function(event) {
         const modal = document.getElementById('paymentModal');
         if (event.target === modal) closeModal();

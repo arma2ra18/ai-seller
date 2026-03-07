@@ -1,3 +1,4 @@
+/* ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ ===== */
 :root {
     --bg-dark: #0a0c10;
     --bg-card: #1a1d24;
@@ -32,6 +33,7 @@ body {
     padding: 0 24px;
 }
 
+/* ===== ТИПОГРАФИКА ===== */
 h1, h2, h3, h4 {
     font-weight: 600;
     letter-spacing: -0.02em;
@@ -52,6 +54,7 @@ h2 {
     -webkit-text-fill-color: transparent;
 }
 
+/* ===== КНОПКИ ===== */
 .btn {
     display: inline-block;
     padding: 10px 24px;
@@ -64,19 +67,19 @@ h2 {
     font-size: 15px;
     letter-spacing: 0.3px;
     text-transform: uppercase;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary {
     background: var(--accent-gradient);
     color: white;
-    box-shadow: 0 4px 15px rgba(47,110,214,0.4);
+    box-shadow: 0 4px 15px rgba(47, 110, 214, 0.4);
 }
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #1e5bbf, #5a4ad1);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(47,110,214,0.5);
+    box-shadow: 0 8px 25px rgba(47, 110, 214, 0.5);
 }
 
 .btn-outline {
@@ -88,7 +91,7 @@ h2 {
 
 .btn-outline:hover {
     border-color: #2f6ed6;
-    background: rgba(47,110,214,0.1);
+    background: rgba(47, 110, 214, 0.1);
     transform: translateY(-2px);
 }
 
@@ -111,6 +114,7 @@ h2 {
     pointer-events: none;
 }
 
+/* ===== ХЕДЕР ===== */
 .header {
     background: var(--bg-card);
     border-bottom: 1px solid var(--border);
@@ -150,6 +154,7 @@ h2 {
     color: white;
 }
 
+/* ===== ГЛАВНАЯ СТРАНИЦА ===== */
 .hero {
     padding: 100px 0 80px;
     text-align: center;
@@ -371,7 +376,127 @@ h2 {
     font-size: 14px;
 }
 
-/* Дашборд */
+/* ===== СТРАНИЦА ВХОДА ===== */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--bg-dark);
+}
+
+.auth-card {
+    background: linear-gradient(145deg, #1a1d24, #14171e);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 24px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    animation: slideUp 0.3s ease;
+}
+
+.auth-logo {
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 20px;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth-card h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 24px;
+    background: none;
+    -webkit-text-fill-color: var(--text-primary);
+}
+
+.auth-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    background: rgba(255,255,255,0.03);
+    padding: 6px;
+    border-radius: 50px;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    border-radius: 40px;
+    transition: all 0.2s;
+}
+
+.auth-tab.active {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+    animation: fadeIn 0.3s;
+}
+
+.auth-message {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 14px;
+    display: none;
+}
+
+.auth-message.error {
+    display: block;
+    background: rgba(220,53,69,0.1);
+    color: var(--error);
+    border: 1px solid rgba(220,53,69,0.2);
+}
+
+.auth-message.success {
+    display: block;
+    background: rgba(40,167,69,0.1);
+    color: var(--success);
+    border: 1px solid rgba(40,167,69,0.2);
+}
+
+.auth-message.info {
+    display: block;
+    background: rgba(47,110,214,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(47,110,214,0.2);
+}
+
+.forgot-password {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.forgot-password a {
+    color: var(--text-secondary);
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.forgot-password a:hover {
+    color: var(--accent);
+}
+
+/* ===== ДАШБОРД ===== */
 .dashboard {
     padding: 40px 0;
     min-height: calc(100vh - 70px);
@@ -676,7 +801,7 @@ h2 {
     margin-top: 4px;
 }
 
-/* Модальное окно */
+/* ===== МОДАЛЬНОЕ ОКНО ===== */
 .modal {
     position: fixed;
     top: 0;
@@ -746,7 +871,7 @@ h2 {
     color: white;
 }
 
-/* Уведомления */
+/* ===== УВЕДОМЛЕНИЯ ===== */
 .notification {
     position: fixed;
     top: 20px;
@@ -774,7 +899,7 @@ h2 {
     to { transform: translateX(0); opacity: 1; }
 }
 
-/* Загрузчик */
+/* ===== ЗАГРУЗЧИК ===== */
 .loading {
     display: inline-block;
     width: 20px;
@@ -789,7 +914,15 @@ h2 {
     to { transform: rotate(360deg); }
 }
 
-/* Адаптивность */
+/* ===== АДАПТИВНОСТЬ ===== */
+@media (max-width: 1024px) {
+    .pricing-grid,
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 768px) {
     .header .container {
         flex-direction: column;
@@ -809,13 +942,17 @@ h2 {
         flex-direction: column;
         gap: 20px;
         padding: 20px;
+        border-radius: 30px;
     }
-    .pricing-grid {
+    .pricing-grid,
+    .steps,
+    .features-grid {
         grid-template-columns: 1fr;
     }
     .dashboard-header {
         flex-direction: column;
         gap: 15px;
+        text-align: center;
     }
     .user-menu {
         flex-direction: column;
@@ -835,127 +972,6 @@ h2 {
         flex-direction: column;
         gap: 20px;
     }
-/* ===== СТРАНИЦА ВХОДА ===== */
-.auth-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    background: var(--bg-dark);
-}
-
-.auth-card {
-    background: linear-gradient(145deg, #1a1d24, #14171e);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 24px;
-    padding: 40px;
-    width: 100%;
-    max-width: 420px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-    animation: slideUp 0.3s ease;
-}
-
-.auth-logo {
-    font-size: 32px;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 20px;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.auth-card h2 {
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 24px;
-    background: none;
-    -webkit-text-fill-color: var(--text-primary);
-}
-
-.auth-tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 30px;
-    background: rgba(255,255,255,0.03);
-    padding: 6px;
-    border-radius: 50px;
-}
-
-.auth-tab {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    background: none;
-    color: var(--text-secondary);
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    border-radius: 40px;
-    transition: all 0.2s;
-}
-
-.auth-tab.active {
-    background: var(--accent-gradient);
-    color: white;
-}
-
-.auth-form {
-    display: none;
-}
-
-.auth-form.active {
-    display: block;
-    animation: fadeIn 0.3s;
-}
-
-.auth-message {
-    margin-top: 20px;
-    padding: 12px;
-    border-radius: 10px;
-    text-align: center;
-    font-size: 14px;
-    display: none;
-}
-
-.auth-message.error {
-    display: block;
-    background: rgba(220,53,69,0.1);
-    color: var(--error);
-    border: 1px solid rgba(220,53,69,0.2);
-}
-
-.auth-message.success {
-    display: block;
-    background: rgba(40,167,69,0.1);
-    color: var(--success);
-    border: 1px solid rgba(40,167,69,0.2);
-}
-
-.auth-message.info {
-    display: block;
-    background: rgba(47,110,214,0.1);
-    color: var(--accent);
-    border: 1px solid rgba(47,110,214,0.2);
-}
-
-.forgot-password {
-    text-align: center;
-    margin-top: 20px;
-}
-
-.forgot-password a {
-    color: var(--text-secondary);
-    font-size: 14px;
-    text-decoration: none;
-}
-
-.forgot-password a:hover {
-    color: var(--accent);
-}
-
-@media (max-width: 480px) {
     .auth-card {
         padding: 30px 20px;
     }
@@ -965,6 +981,21 @@ h2 {
     }
 }
 
-/* ===== ОСТАЛЬНЫЕ СТИЛИ (все, что были ранее) ===== */
-/* ... (здесь идут все предыдущие стили из main.css, которые я давал ранее) ... */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 28px;
+    }
+    .hero-subtitle {
+        font-size: 16px;
+    }
+    .stat-number {
+        font-size: 24px;
+    }
+    .btn-large {
+        padding: 12px 24px;
+    }
+    .user-balance {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }

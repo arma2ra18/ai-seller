@@ -26,6 +26,7 @@
 
     <main class="dashboard">
         <div class="container">
+            <!-- Верхний блок с прогрессом -->
             <div class="dashboard-header">
                 <h1>Генератор карточек</h1>
                 <div class="generation-counter">
@@ -36,6 +37,7 @@
                 </div>
             </div>
 
+            <!-- Вкладки -->
             <div class="tabs-container">
                 <div class="tabs">
                     <button class="tab active" data-tab="wb">Wildberries</button>
@@ -45,7 +47,9 @@
                 </div>
             </div>
 
+            <!-- Содержимое вкладок -->
             <div class="tab-contents">
+                <!-- Вкладка Wildberries -->
                 <div class="tab-content active" id="wb-tab">
                     <div class="card-form">
                         <h2>Создание карточки для Wildberries</h2>
@@ -80,6 +84,7 @@
                     </div>
                 </div>
 
+                <!-- Вкладка Ozon -->
                 <div class="tab-content" id="ozon-tab">
                     <div class="card-form">
                         <h2>Создание карточки для Ozon</h2>
@@ -113,6 +118,7 @@
                     </div>
                 </div>
 
+                <!-- Вкладка Фото (заглушка) -->
                 <div class="tab-content" id="photo-tab">
                     <div class="card-form">
                         <h2>Генерация фото товара</h2>
@@ -120,6 +126,7 @@
                     </div>
                 </div>
 
+                <!-- Вкладка Видео (заглушка) -->
                 <div class="tab-content" id="video-tab">
                     <div class="card-form">
                         <h2>Генерация видео</h2>
@@ -128,6 +135,45 @@
                 </div>
             </div>
 
+            <!-- Секция тарифов и подписки -->
+            <div class="pricing-section">
+                <h2>Тарифы и подписка</h2>
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <h3>Старт</h3>
+                        <div class="price">990 ₽<span>/мес</span></div>
+                        <ul class="features-list">
+                            <li>30 генераций</li>
+                            <li>Все типы контента</li>
+                            <li>История в облаке</li>
+                        </ul>
+                        <button class="btn btn-primary btn-block" onclick="selectPlan('start')">Выбрать</button>
+                    </div>
+                    <div class="pricing-card popular">
+                        <div class="popular-tag">🔥 Хит продаж</div>
+                        <h3>Бизнес</h3>
+                        <div class="price">2 990 ₽<span>/мес</span></div>
+                        <ul class="features-list">
+                            <li>200 генераций</li>
+                            <li>Все типы контента</li>
+                            <li>Массовая генерация</li>
+                        </ul>
+                        <button class="btn btn-primary btn-block" onclick="selectPlan('business')">Выбрать</button>
+                    </div>
+                    <div class="pricing-card">
+                        <h3>Профи</h3>
+                        <div class="price">9 900 ₽<span>/мес</span></div>
+                        <ul class="features-list">
+                            <li>Безлимит генераций</li>
+                            <li>Все типы контента</li>
+                            <li>VIP-поддержка</li>
+                        </ul>
+                        <button class="btn btn-primary btn-block" onclick="selectPlan('pro')">Выбрать</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Блок результатов генерации -->
             <div id="cardResults" class="results-section" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
@@ -140,6 +186,7 @@
                 </div>
             </div>
 
+            <!-- Блок истории -->
             <div class="history-section">
                 <h2>История генераций</h2>
                 <div class="history-list" id="historyList">
@@ -149,13 +196,15 @@
         </div>
     </main>
 
+    <!-- Модальное окно оплаты -->
     <div id="paymentModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <h2 id="modalTitle">Пополнение баланса</h2>
-            <p id="modalDescription">Вы можете выбрать один из тарифов или пополнить счёт вручную.</p>
-            <p>Сумма: <strong id="modalAmount">0 ₽</strong></p>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <p id="modalDescription">Вы выбрали тариф: <span id="selectedPlanName">—</span></p>
+            <p>Сумма к оплате: <strong id="modalAmount">0 ₽</strong></p>
+            <p class="text-muted" style="margin: 20px 0;">Оплата будет выполнена через ЮKassa. После подтверждения средства поступят на ваш баланс автоматически.</p>
+            <div style="display: flex; gap: 10px;">
                 <button class="btn btn-primary" onclick="confirmPayment()">Оплатить</button>
                 <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
             </div>
