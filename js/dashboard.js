@@ -53,26 +53,29 @@ function updateUI() {
 
     // Обновляем все элементы с балансом
     document.querySelectorAll('#remainingGenerations, #remainingGenerationsDetail').forEach(el => {
-        el.textContent = remaining;
+        if (el) el.textContent = remaining;
     });
     document.querySelectorAll('#maxGenerations, #maxGenerationsDetail').forEach(el => {
-        el.textContent = maxGen;
+        if (el) el.textContent = maxGen;
     });
-    document.getElementById('usedGenerationsDetail').textContent = used;
-    document.getElementById('userEmail').textContent = currentUser.email;
+    const usedDetail = document.getElementById('usedGenerationsDetail');
+    if (usedDetail) usedDetail.textContent = used;
+    const userEmailEl = document.getElementById('userEmail');
+    if (userEmailEl) userEmailEl.textContent = currentUser.email;
     const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
-    document.getElementById('userPlan').textContent = planNames[userData.plan] || 'Старт';
+    const userPlanEl = document.getElementById('userPlan');
+    if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
 }
 
 // Обновление плиток статистики
 function updateStats() {
     document.getElementById('statUser').textContent = currentUser.email.split('@')[0];
     document.getElementById('statCards').textContent = userData?.usedGenerations || 0;
-    document.getElementById('statVideos').textContent = 0; // позже можно добавить реальные данные
+    document.getElementById('statVideos').textContent = 0;
     document.getElementById('statDescriptions').textContent = userData?.usedGenerations || 0;
     document.getElementById('statHistory').textContent = 0;
     document.getElementById('statBalance').textContent = userData?.balance || 30;
-    document.getElementById('statNews').textContent = 29; // заглушка
+    document.getElementById('statNews').textContent = 29;
     document.getElementById('statBonus').textContent = 0;
 }
 
@@ -93,11 +96,12 @@ document.querySelectorAll('.menu-item').forEach(item => {
         document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
         this.classList.add('active');
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        document.getElementById(section + '-section').classList.add('active');
+        const target = document.getElementById(section + '-section');
+        if (target) target.classList.add('active');
     });
 });
 
-// ----- Дропзоны для файлов -----
+// ----- Настройка дропзон -----
 function setupDropzone(dropzoneId, inputId) {
     const dropzone = document.getElementById(dropzoneId);
     const input = document.getElementById(inputId);
@@ -138,23 +142,35 @@ document.addEventListener('DOMContentLoaded', () => {
 // ----- Генерация карточки для Wildberries -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
-    const productName = document.getElementById('wbProductName').value.trim();
-    const brand = document.getElementById('wbBrand').value.trim();
-    const category = document.getElementById('wbCategory').value;
-    const features = document.getElementById('wbFeatures').value.split(',').map(f => f.trim()).filter(Boolean);
-    const files = document.getElementById('wbPhotos').files;
+
+    const productName = document.getElementById('wbProductName')?.value.trim();
+    const brand = document.getElementById('wbBrand')?.value.trim();
+    const category = document.getElementById('wbCategory')?.value;
+    const features = document.getElementById('wbFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
+    const fileInput = document.getElementById('wbPhotos');
+    
+    if (!fileInput) {
+        showNotification('Ошибка: элемент загрузки не найден', 'error');
+        return;
+    }
+    
+    const files = fileInput.files;
+    
     if (!productName || files.length === 0) {
         showNotification('Заполните название и загрузите фото', 'error');
         return;
     }
+
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
     if ((userData.usedGenerations || 0) + 3 > maxGen) {
         showNotification('Недостаточно токенов (требуется 3)', 'error');
         return;
     }
+
     const btn = document.querySelector('[onclick="generateWBCard()"]');
     btn.disabled = true;
     btn.innerHTML = '<span class="loading"></span> Генерация...';
+
     try {
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
@@ -184,6 +200,7 @@ window.generateWBCard = async function() {
         loadHistory();
         showNotification('Карточка для WB создана!', 'success');
     } catch (error) {
+        console.error('Ошибка генерации:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     } finally {
         btn.disabled = false;
@@ -194,23 +211,35 @@ window.generateWBCard = async function() {
 // ----- Генерация карточки для Ozon -----
 window.generateOzonCard = async function() {
     if (!currentUser || !userData) return;
-    const productName = document.getElementById('ozonProductName').value.trim();
-    const brand = document.getElementById('ozonBrand').value.trim();
-    const category = document.getElementById('ozonCategory').value;
-    const features = document.getElementById('ozonFeatures').value.split(',').map(f => f.trim()).filter(Boolean);
-    const files = document.getElementById('ozonPhotos').files;
+
+    const productName = document.getElementById('ozonProductName')?.value.trim();
+    const brand = document.getElementById('ozonBrand')?.value.trim();
+    const category = document.getElementById('ozonCategory')?.value;
+    const features = document.getElementById('ozonFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
+    const fileInput = document.getElementById('ozonPhotos');
+    
+    if (!fileInput) {
+        showNotification('Ошибка: элемент загрузки не найден', 'error');
+        return;
+    }
+    
+    const files = fileInput.files;
+    
     if (!productName || files.length === 0) {
         showNotification('Заполните название и загрузите фото', 'error');
         return;
     }
+
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
     if ((userData.usedGenerations || 0) + 3 > maxGen) {
         showNotification('Недостаточно токенов (требуется 3)', 'error');
         return;
     }
+
     const btn = document.querySelector('[onclick="generateOzonCard()"]');
     btn.disabled = true;
     btn.innerHTML = '<span class="loading"></span> Генерация...';
+
     try {
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
@@ -240,6 +269,7 @@ window.generateOzonCard = async function() {
         loadHistory();
         showNotification('Карточка для Ozon создана!', 'success');
     } catch (error) {
+        console.error('Ошибка генерации:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     } finally {
         btn.disabled = false;
@@ -260,35 +290,42 @@ window.generateVideo = async function() {
 // Отображение результатов карточки
 function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
+    if (!container) return;
     container.style.display = 'block';
+
     const gallery = document.getElementById('resultImages');
-    gallery.innerHTML = '';
-    if (result.images && result.images.length) {
-        result.images.forEach(url => {
-            const img = document.createElement('img');
-            img.src = url;
-            img.alt = 'Generated';
-            img.onclick = () => window.open(url, '_blank');
-            gallery.appendChild(img);
-        });
-    } else {
-        gallery.innerHTML = '<p class="text-muted">Изображения не сгенерированы</p>';
+    if (gallery) {
+        gallery.innerHTML = '';
+        if (result.images && result.images.length) {
+            result.images.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = 'Generated';
+                img.onclick = () => window.open(url, '_blank');
+                gallery.appendChild(img);
+            });
+        } else {
+            gallery.innerHTML = '<p class="text-muted">Изображения не сгенерированы</p>';
+        }
     }
+
     const descList = document.getElementById('resultDescriptions');
-    descList.innerHTML = '';
-    if (result.descriptions && result.descriptions.length) {
-        result.descriptions.forEach((desc, idx) => {
-            const div = document.createElement('div');
-            div.className = 'result-item';
-            div.textContent = `Вариант ${idx + 1}: ${desc}`;
-            div.onclick = () => {
-                navigator.clipboard.writeText(desc);
-                showNotification('Описание скопировано!', 'success');
-            };
-            descList.appendChild(div);
-        });
-    } else {
-        descList.innerHTML = '<p class="text-muted">Описания не сгенерированы</p>';
+    if (descList) {
+        descList.innerHTML = '';
+        if (result.descriptions && result.descriptions.length) {
+            result.descriptions.forEach((desc, idx) => {
+                const div = document.createElement('div');
+                div.className = 'result-item';
+                div.textContent = `Вариант ${idx + 1}: ${desc}`;
+                div.onclick = () => {
+                    navigator.clipboard.writeText(desc);
+                    showNotification('Описание скопировано!', 'success');
+                };
+                descList.appendChild(div);
+            });
+        } else {
+            descList.innerHTML = '<p class="text-muted">Описания не сгенерированы</p>';
+        }
     }
 }
 
@@ -299,6 +336,7 @@ async function loadHistory() {
         const q = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
         const snapshot = await getDocs(q);
         const historyList = document.getElementById('historyList');
+        if (!historyList) return;
         if (snapshot.empty) {
             historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
             return;
@@ -321,7 +359,8 @@ async function loadHistory() {
         });
     } catch (error) {
         console.error('Ошибка загрузки истории:', error);
-        document.getElementById('historyList').innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
+        const historyList = document.getElementById('historyList');
+        if (historyList) historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
     }
 }
 
@@ -333,7 +372,8 @@ window.viewHistoryItem = async function(docId) {
             const item = docSnap.data();
             if (item.result && item.result.images && item.result.descriptions) {
                 displayCardResults(item.result, item.type || 'wb-card');
-                document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
+                const resultsSection = document.getElementById('cardResults');
+                if (resultsSection) resultsSection.scrollIntoView({ behavior: 'smooth' });
             } else {
                 showNotification('Не удалось загрузить результат', 'error');
             }
@@ -341,6 +381,7 @@ window.viewHistoryItem = async function(docId) {
             showNotification('Запись не найдена', 'error');
         }
     } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
         showNotification('Ошибка загрузки', 'error');
     }
 };
@@ -350,11 +391,16 @@ let currentPlan = null;
 let currentPrice = 0;
 
 window.showPaymentModal = function() {
-    document.getElementById('modalTitle').textContent = 'Пополнение баланса';
-    document.getElementById('modalDescription').innerHTML = 'Выберите один из тарифов ниже.';
-    document.getElementById('selectedPlanName').textContent = '—';
-    document.getElementById('modalAmount').textContent = '0 ₽';
-    document.getElementById('paymentModal').classList.add('show');
+    const modal = document.getElementById('paymentModal');
+    if (modal) modal.classList.add('show');
+    const title = document.getElementById('modalTitle');
+    if (title) title.textContent = 'Пополнение баланса';
+    const desc = document.getElementById('modalDescription');
+    if (desc) desc.innerHTML = 'Выберите один из тарифов ниже.';
+    const planSpan = document.getElementById('selectedPlanName');
+    if (planSpan) planSpan.textContent = '—';
+    const amount = document.getElementById('modalAmount');
+    if (amount) amount.textContent = '0 ₽';
 };
 
 window.selectPlan = function(plan) {
@@ -366,10 +412,14 @@ window.selectPlan = function(plan) {
     currentPlan = plan;
     currentPrice = plans[plan].price;
 
-    document.getElementById('modalTitle').textContent = 'Оформление подписки';
-    document.getElementById('selectedPlanName').textContent = plans[plan].name;
-    document.getElementById('modalAmount').textContent = `${plans[plan].price} ₽`;
-    document.getElementById('paymentModal').classList.add('show');
+    const title = document.getElementById('modalTitle');
+    if (title) title.textContent = 'Оформление подписки';
+    const planSpan = document.getElementById('selectedPlanName');
+    if (planSpan) planSpan.textContent = plans[plan].name;
+    const amount = document.getElementById('modalAmount');
+    if (amount) amount.textContent = `${plans[plan].price} ₽`;
+    const modal = document.getElementById('paymentModal');
+    if (modal) modal.classList.add('show');
 };
 
 window.confirmPayment = function() {
@@ -396,13 +446,15 @@ window.confirmPayment = function() {
             showNotification(`Тариф "${currentPlan}" активирован!`, 'success');
             closeModal();
         } catch (error) {
+            console.error('Ошибка при активации:', error);
             showNotification('Ошибка при активации', 'error');
         }
     }, 2000);
 };
 
 window.closeModal = function() {
-    document.getElementById('paymentModal').classList.remove('show');
+    const modal = document.getElementById('paymentModal');
+    if (modal) modal.classList.remove('show');
     currentPlan = null;
     currentPrice = 0;
 };
@@ -416,7 +468,7 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// ----- Инициализация (закрытие модального окна по клику вне его) -----
+// Закрытие модального окна по клику вне его
 window.onclick = function(event) {
     const modal = document.getElementById('paymentModal');
     if (event.target === modal) closeModal();

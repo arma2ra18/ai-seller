@@ -156,6 +156,7 @@
                                 <span>Перетащите файлы или нажмите для выбора</span>
                                 <input type="file" id="wbPhotos" accept="image/*" multiple style="display:none;">
                             </div>
+                            <div id="wbFileList" class="file-list"></div>
                         </div>
                         <button class="btn btn-primary btn-large" onclick="generateWBCard()">✨ Создать карточку для WB</button>
                     </div>
@@ -193,6 +194,7 @@
                                 <span>Перетащите файлы или нажмите для выбора</span>
                                 <input type="file" id="ozonPhotos" accept="image/*" multiple style="display:none;">
                             </div>
+                            <div id="ozonFileList" class="file-list"></div>
                         </div>
                         <button class="btn btn-primary btn-large" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
                     </div>
@@ -239,7 +241,7 @@
                     </div>
                 </div>
 
-                <!-- Секция История (дублируется основным блоком ниже, но можно оставить для навигации) -->
+                <!-- Секция История -->
                 <div class="content-section" id="history-section">
                     <h2>История генераций</h2>
                     <div class="history-list" id="historyListDetail"></div>
@@ -290,7 +292,7 @@
                 </div>
             </div>
 
-            <!-- Блок результатов генерации (всегда отображается после генерации) -->
+            <!-- Блок результатов генерации -->
             <div id="cardResults" class="results-section" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
@@ -303,7 +305,7 @@
                 </div>
             </div>
 
-            <!-- Блок истории (основной) -->
+            <!-- Блок истории -->
             <div class="history-section">
                 <h2>История генераций</h2>
                 <div class="history-list" id="historyList">
