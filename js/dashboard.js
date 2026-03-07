@@ -151,18 +151,22 @@ document.addEventListener('DOMContentLoaded', () => {
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
 
-    // Прямая проверка элемента
-    const fileInput = document.getElementById('wbPhotos');
+    // Диагностика: ищем элемент разными способами
+    console.log('querySelector("#wbPhotos"):', document.querySelector('#wbPhotos'));
+    console.log('getElementById("wbPhotos"):', document.getElementById('wbPhotos'));
+    console.log('Все элементы с id="wbPhotos":', document.querySelectorAll('#wbPhotos').length);
+
+    const fileInput = document.querySelector('#wbPhotos');
     if (!fileInput) {
-        console.error('❌ Элемент с id="wbPhotos" не найден в DOM. Проверьте, что в HTML есть <input id="wbPhotos">.');
-        showNotification('Ошибка: элемент загрузки не найден (wbPhotos). Обновите страницу или проверьте код.', 'error');
+        console.error('❌ Элемент #wbPhotos не найден через querySelector. Проверьте HTML.');
+        showNotification('Ошибка: элемент загрузки не найден. Проверьте консоль.', 'error');
         return;
     }
     
-    const productName = document.getElementById('wbProductName')?.value.trim();
-    const brand = document.getElementById('wbBrand')?.value.trim();
-    const category = document.getElementById('wbCategory')?.value;
-    const features = document.getElementById('wbFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
+    const productName = document.querySelector('#wbProductName')?.value.trim();
+    const brand = document.querySelector('#wbBrand')?.value.trim();
+    const category = document.querySelector('#wbCategory')?.value;
+    const features = document.querySelector('#wbFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
     const files = fileInput.files;
     
     if (!productName || files.length === 0) {
@@ -176,7 +180,7 @@ window.generateWBCard = async function() {
         return;
     }
 
-    const btn = document.getElementById('generateWBBtn') || document.querySelector('[onclick="generateWBCard()"]');
+    const btn = document.querySelector('#generateWBBtn') || document.querySelector('[onclick="generateWBCard()"]');
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<span class="loading"></span> Генерация...';

@@ -125,42 +125,41 @@
                 </div>
 
                 <!-- Секция Wildberries -->
-                <div class="content-section" id="wb-section">
-                    <h2>Создание карточки для Wildberries</h2>
-                    <div class="generation-form">
-                        <div class="form-group">
-                            <label>Название товара</label>
-                            <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group half">
-                                <label>Бренд</label>
-                                <input type="text" id="wbBrand" placeholder="Xiaomi">
-                            </div>
-                            <div class="form-group half">
-                                <label>Категория</label>
-                                <select id="wbCategory">
-                                    <option value="electronics">Электроника</option>
-                                    <option value="clothing">Одежда</option>
-                                    <option value="home">Товары для дома</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Ключевые особенности (через запятую)</label>
-                            <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы">
-                        </div>
-                        <div class="form-group">
-                            <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
-                            <div class="dropzone" id="wbDropzone">
-                                <span>Перетащите файлы или нажмите для выбора</span>
-                                <input type="file" id="wbPhotos" accept="image/*" multiple style="display:none;">
-                            </div>
-                            <div id="wbFileList" class="file-list"></div>
-                        </div>
-                        <button class="btn btn-primary btn-large" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку для WB</button>
-                    </div>
-                </div>
+<div class="content-section" id="wb-section">
+    <h2>Создание карточки для Wildberries</h2>
+    <div class="generation-form">
+        <div class="form-group">
+            <label>Название товара</label>
+            <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4">
+        </div>
+        <div class="form-row">
+            <div class="form-group half">
+                <label>Бренд</label>
+                <input type="text" id="wbBrand" placeholder="Xiaomi">
+            </div>
+            <div class="form-group half">
+                <label>Категория</label>
+                <select id="wbCategory">
+                    <option value="electronics">Электроника</option>
+                    <option value="clothing">Одежда</option>
+                    <option value="home">Товары для дома</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Ключевые особенности (через запятую)</label>
+            <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы">
+        </div>
+        <div class="form-group">
+            <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
+            <div class="dropzone" id="wbDropzone">
+                <span>Перетащите файлы или нажмите для выбора</span>
+                <input type="file" id="wbPhotos" accept="image/*" multiple style="display:none;">
+            </div>
+        </div>
+        <button class="btn btn-primary btn-large" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку для WB</button>
+    </div>
+</div>
 
                 <!-- Секция Ozon -->
                 <div class="content-section" id="ozon-section">
