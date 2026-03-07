@@ -10,7 +10,7 @@ export const config = {
 
 // Заглушка для изображений – массив готовых ссылок (вместо генерации через GigaChat)
 const PLACEHOLDER_IMAGES = [
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
+    'https://img.freepik.com/free-vector/colorful-butterfly-girl-cartoon-illustration_1308-168808.jpg?semt=ais_hybrid&w=740&q=80',
     'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500',
     'https://images.unsplash.com/photo-1503602642458-232111445657?w=500',
     'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
