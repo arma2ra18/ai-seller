@@ -116,20 +116,24 @@ function setupDropzone(dropzoneId, inputId) {
     if (!dropzone || !input) return;
 
     dropzone.addEventListener('click', () => input.click());
-    dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropzone.style.borderColor = 'var(--accent)';
-    });
-    dropzone.addEventListener('dragleave', () => {
-        dropzone.style.borderColor = 'var(--border)';
-    });
-    dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropzone.style.borderColor = 'var(--border)';
-        input.files = e.dataTransfer.files;
-        const names = Array.from(e.dataTransfer.files).map(f => f.name).join(', ');
-        dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
-    });
+    
+    // dropzone.addEventListener('dragover', (e) => {
+    //     e.preventDefault();
+    //     dropzone.style.borderColor = 'var(--accent)';
+    // });
+    
+    // dropzone.addEventListener('dragleave', () => {
+    //     dropzone.style.borderColor = 'var(--border)';
+    // });
+    
+    // dropzone.addEventListener('drop', (e) => {
+    //     e.preventDefault();
+    //     dropzone.style.borderColor = 'var(--border)';
+    //     input.files = e.dataTransfer.files;
+    //     const names = Array.from(e.dataTransfer.files).map(f => f.name).join(', ');
+    //     dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
+    // });
+    
     input.addEventListener('change', () => {
         if (input.files.length > 0) {
             const names = Array.from(input.files).map(f => f.name).join(', ');
