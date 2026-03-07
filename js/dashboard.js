@@ -117,6 +117,7 @@ window.generateWBCard = async function() {
     const productName = document.getElementById('wbProductName')?.value.trim();
     const brand = document.getElementById('wbBrand')?.value.trim();
     const category = document.getElementById('wbCategory')?.value;
+    const price = document.getElementById('wbPrice')?.value.trim() || '1990';
     const features = document.getElementById('wbFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
     const files = fileInput.files;
     
@@ -147,6 +148,7 @@ window.generateWBCard = async function() {
         formData.append('productName', productName);
         formData.append('brand', brand);
         formData.append('category', category);
+        formData.append('price', price);
         formData.append('features', JSON.stringify(features));
         formData.append('platform', 'wb');
 
@@ -193,6 +195,7 @@ window.generateOzonCard = async function() {
     const productName = document.getElementById('ozonProductName')?.value.trim();
     const brand = document.getElementById('ozonBrand')?.value.trim();
     const category = document.getElementById('ozonCategory')?.value;
+    const price = document.getElementById('ozonPrice')?.value.trim() || '1990';
     const features = document.getElementById('ozonFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
     const files = fileInput.files;
     
@@ -223,6 +226,7 @@ window.generateOzonCard = async function() {
         formData.append('productName', productName);
         formData.append('brand', brand);
         formData.append('category', category);
+        formData.append('price', price);
         formData.append('features', JSON.stringify(features));
         formData.append('platform', 'ozon');
 
@@ -266,6 +270,7 @@ window.generateVideo = async function() {
     showNotification('Функция генерации видео находится в разработке', 'info');
 };
 
+// Отображение результатов карточки
 function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
     if (!container) return;
@@ -366,6 +371,7 @@ window.viewHistoryItem = async function(docId) {
 
 // ----- Пополнение баланса и подписка -----
 let currentPlan = null;
+let currentPrice = 0;
 
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
@@ -387,6 +393,7 @@ window.selectPlan = function(plan) {
         'pro': { name: 'Профи', price: 9900 }
     };
     currentPlan = plan;
+    currentPrice = plans[plan].price;
 
     const title = document.getElementById('modalTitle');
     if (title) title.textContent = 'Оформление подписки';
@@ -432,6 +439,7 @@ window.closeModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) modal.classList.remove('show');
     currentPlan = null;
+    currentPrice = 0;
 };
 
 // ----- Уведомления -----

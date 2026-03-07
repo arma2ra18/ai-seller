@@ -106,7 +106,7 @@
 
             <!-- Динамический контент (переключается меню) -->
             <div class="content-area" id="contentArea">
-                <!-- Секция токенов -->
+                <!-- Секция токенов (по умолчанию) -->
                 <div class="content-section active" id="tokens-section">
                     <h2>Токены и статистика</h2>
                     <div class="info-cards">
@@ -146,6 +146,15 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label>Цена (₽)</label>
+                                <input type="number" id="wbPrice" placeholder="1990" min="0" step="1">
+                            </div>
+                            <div class="form-group half">
+                                <!-- пусто -->
+                            </div>
+                        </div>
                         <div class="form-group">
                             <label>Ключевые особенности (через запятую)</label>
                             <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы">
@@ -181,6 +190,13 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label>Цена (₽)</label>
+                                <input type="number" id="ozonPrice" placeholder="4990" min="0" step="1">
+                            </div>
+                            <div class="form-group half"></div>
+                        </div>
                         <div class="form-group">
                             <label>Ключевые характеристики (через запятую)</label>
                             <input type="text" id="ozonFeatures" placeholder="размер 42-45, материал: кожа, цвет: черный">
@@ -194,7 +210,7 @@
                     </div>
                 </div>
 
-                <!-- Секция Фото -->
+                <!-- Секция Фото (заглушка) -->
                 <div class="content-section" id="photo-section">
                     <h2>Генерация фото товара</h2>
                     <div class="generation-form">
@@ -211,7 +227,7 @@
                     </div>
                 </div>
 
-                <!-- Секция Видео -->
+                <!-- Секция Видео (заглушка) -->
                 <div class="content-section" id="video-section">
                     <h2>Генерация видео товара</h2>
                     <div class="generation-form">
