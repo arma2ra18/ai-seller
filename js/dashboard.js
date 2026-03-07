@@ -1,7 +1,8 @@
+// js/dashboard.js
 import { auth, db } from './firebase.js';
 import {
     doc, getDoc, collection, addDoc, query, orderBy,
-    getDocs, updateDoc, increment, limit
+    getDocs, updateDoc, increment, limit, setDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
@@ -28,7 +29,7 @@ async function loadUserData() {
             updateUI();
             loadHistory();
         } else {
-            // Если записи нет (редкий случай), создаём
+            // Если записи нет, создаём новую
             await setDoc(doc(db, 'users', currentUser.uid), {
                 email: currentUser.email,
                 plan: 'start',
@@ -87,7 +88,7 @@ let currentPrice = 0;
 
 window.showPaymentModal = function() {
     document.getElementById('modalTitle').textContent = 'Пополнение баланса';
-    document.getElementById('modalDescription').innerHTML = 'Вы можете пополнить баланс на любую сумму или выбрать тариф ниже.';
+    document.getElementById('modalDescription').innerHTML = 'Вы можете выбрать один из тарифов или пополнить счёт вручную.';
     document.getElementById('selectedPlanName').textContent = '—';
     document.getElementById('modalAmount').textContent = '0 ₽';
     document.getElementById('paymentModal').classList.add('show');
@@ -111,22 +112,19 @@ window.selectPlan = function(plan) {
 
 window.confirmPayment = function() {
     if (!currentPlan) {
-        // Просто пополнение на произвольную сумму (можно добавить поле ввода)
         showNotification('Функция пополнения будет доступна после подключения ЮKassa', 'info');
         closeModal();
         return;
     }
 
-    // Имитация начисления токенов
     const tokensMap = { 'start': 30, 'business': 200, 'pro': 999999 };
     const tokens = tokensMap[currentPlan];
 
     showNotification('Оплата обрабатывается...', 'info');
 
-    // Через 2 секунды имитируем успех
+    // Имитация успешной оплаты через 2 секунды
     setTimeout(async () => {
         try {
-            // Обновляем план и баланс пользователя в Firestore
             await updateDoc(doc(db, 'users', currentUser.uid), {
                 plan: currentPlan,
                 balance: tokens,
@@ -151,10 +149,10 @@ window.closeModal = function() {
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
 
-    const productName = document.getElementById('wbProductName').value;
-    const brand = document.getElementById('wbBrand').value;
+    const productName = document.getElementById('wbProductName').value.trim();
+    const brand = document.getElementById('wbBrand').value.trim();
     const category = document.getElementById('wbCategory').value;
-    const features = document.getElementById('wbFeatures').value.split(',').map(f => f.trim());
+    const features = document.getElementById('wbFeatures').value.split(',').map(f => f.trim()).filter(Boolean);
     const files = document.getElementById('wbPhotos').files;
 
     if (!productName || files.length === 0) {
@@ -210,6 +208,7 @@ window.generateWBCard = async function() {
         });
         userData.usedGenerations += 3;
         updateUI();
+        loadHistory(); // обновляем историю
 
         showNotification('Карточка для WB создана!', 'success');
 
@@ -222,14 +221,14 @@ window.generateWBCard = async function() {
     }
 };
 
-// Генерация карточки для Ozon (аналогично)
+// Генерация карточки для Ozon
 window.generateOzonCard = async function() {
     if (!currentUser || !userData) return;
 
-    const productName = document.getElementById('ozonProductName').value;
-    const brand = document.getElementById('ozonBrand').value;
+    const productName = document.getElementById('ozonProductName').value.trim();
+    const brand = document.getElementById('ozonBrand').value.trim();
     const category = document.getElementById('ozonCategory').value;
-    const features = document.getElementById('ozonFeatures').value.split(',').map(f => f.trim());
+    const features = document.getElementById('ozonFeatures').value.split(',').map(f => f.trim()).filter(Boolean);
     const files = document.getElementById('ozonPhotos').files;
 
     if (!productName || files.length === 0) {
@@ -283,6 +282,7 @@ window.generateOzonCard = async function() {
         });
         userData.usedGenerations += 3;
         updateUI();
+        loadHistory();
 
         showNotification('Карточка для Ozon создана!', 'success');
 
@@ -300,7 +300,7 @@ function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
     container.style.display = 'block';
 
-    const gallery = container.querySelector('.image-gallery');
+    const gallery = document.getElementById('resultImages');
     gallery.innerHTML = '';
     if (result.images && result.images.length) {
         result.images.forEach(url => {
@@ -314,7 +314,7 @@ function displayCardResults(result, platform) {
         gallery.innerHTML = '<p class="text-muted">Изображения не сгенерированы</p>';
     }
 
-    const descList = container.querySelector('.description-list');
+    const descList = document.getElementById('resultDescriptions');
     descList.innerHTML = '';
     if (result.descriptions && result.descriptions.length) {
         result.descriptions.forEach((desc, idx) => {
@@ -323,25 +323,16 @@ function displayCardResults(result, platform) {
             div.textContent = `Вариант ${idx + 1}: ${desc}`;
             div.onclick = () => {
                 navigator.clipboard.writeText(desc);
-                showNotification('Скопировано!', 'success');
+                showNotification('Описание скопировано!', 'success');
             };
             descList.appendChild(div);
         });
+    } else {
+        descList.innerHTML = '<p class="text-muted">Описания не сгенерированы</p>';
     }
 }
 
-// Генерация фото (старая функция)
-window.generateProductPhoto = async function() {
-    // Реализация аналогична, можно оставить или удалить
-    showNotification('Функция в разработке', 'info');
-};
-
-// Генерация видео (старая функция)
-window.generateVideo = async function() {
-    showNotification('Функция в разработке', 'info');
-};
-
-// Загрузка истории
+// Загрузка истории из Firestore
 async function loadHistory() {
     if (!currentUser) return;
     try {
@@ -353,7 +344,7 @@ async function loadHistory() {
         const snapshot = await getDocs(q);
         const historyList = document.getElementById('historyList');
         if (snapshot.empty) {
-            historyList.innerHTML = '<p class="text-muted">История пуста</p>';
+            historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
             return;
         }
         historyList.innerHTML = '';
@@ -362,21 +353,45 @@ async function loadHistory() {
             const date = new Date(item.timestamp).toLocaleString('ru-RU', {
                 day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
             });
+            const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : 'Фото';
             historyList.innerHTML += `
                 <div class="history-item">
-                    <div><strong>${item.productName || 'Карточка'}</strong> <div class="history-date">${date}</div></div>
+                    <div>
+                        <strong>${item.productName || 'Без названия'}</strong>
+                        <span class="history-type">${typeLabel}</span>
+                        <div class="history-date">${date}</div>
+                    </div>
                     <button class="btn btn-small btn-outline" onclick="viewHistoryItem('${doc.id}')">👁️</button>
                 </div>
             `;
         });
     } catch (error) {
         console.error('Ошибка загрузки истории:', error);
+        document.getElementById('historyList').innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
     }
 }
 
-// Просмотр элемента истории (заглушка)
-window.viewHistoryItem = async function(id) {
-    showNotification('Просмотр истории: ' + id, 'info');
+// Просмотр элемента истории
+window.viewHistoryItem = async function(docId) {
+    if (!currentUser) return;
+    try {
+        const docRef = doc(db, 'users', currentUser.uid, 'generations', docId);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const item = docSnap.data();
+            if (item.result && item.result.images && item.result.descriptions) {
+                displayCardResults(item.result, item.type || 'wb-card');
+                document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                showNotification('Не удалось загрузить результат', 'error');
+            }
+        } else {
+            showNotification('Запись не найдена', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+        showNotification('Ошибка загрузки', 'error');
+    }
 };
 
 // Уведомления
@@ -400,13 +415,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    document.querySelectorAll('.result-tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            const resultId = this.dataset.result;
-            document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.result-content').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            document.getElementById(`${resultId}-result`).classList.add('active');
-        });
-    });
+    // Закрытие модального окна по клику вне его
+    window.onclick = function(event) {
+        const modal = document.getElementById('paymentModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
 });
