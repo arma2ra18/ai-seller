@@ -191,14 +191,10 @@ async function loadHistory() {
 }
 
 window.viewHistoryItem = async function(id) {
-    // Здесь можно реализовать просмотр конкретной записи
     alert('Просмотр истории: ' + id);
 };
 
-// Остальные функции (generateProductPhoto, generateVideo и т.д.) можно оставить,
-// но для них тоже нужно будет исправить импорты (storage и т.д.) аналогично.
-// Пока оставим заготовки.
-
+// Заглушки для фото и видео (можно будет доработать позже)
 window.generateProductPhoto = async function() {
     alert('Генерация фото временно отключена для отладки');
 };
@@ -229,7 +225,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-    <script type="module" src="js/dashboard.js"></script>
-</body>
-</html>
