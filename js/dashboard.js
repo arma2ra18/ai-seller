@@ -147,35 +147,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setupDropzone('videoDropzone', 'videoPhoto');
 });
 
-// ----- Вспомогательная функция для получения элемента с повторной попыткой -----
-function waitForElement(selector, timeout = 3000) {
-    return new Promise((resolve, reject) => {
-        const startTime = Date.now();
-        const check = () => {
-            const el = document.querySelector(selector);
-            if (el) {
-                resolve(el);
-            } else if (Date.now() - startTime > timeout) {
-                reject(new Error(`Элемент ${selector} не найден за ${timeout}ms`));
-            } else {
-                setTimeout(check, 100);
-            }
-        };
-        check();
-    });
-}
-
 // ----- Генерация карточки для Wildberries -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
 
-    // Надёжно получаем элемент файлового ввода
-    let fileInput;
-    try {
-        fileInput = await waitForElement('#wbPhotos', 2000);
-    } catch (e) {
-        console.error(e);
-        showNotification('Ошибка: элемент загрузки не найден. Обновите страницу.', 'error');
+    // Прямая проверка элемента
+    const fileInput = document.getElementById('wbPhotos');
+    if (!fileInput) {
+        console.error('❌ Элемент с id="wbPhotos" не найден в DOM. Проверьте, что в HTML есть <input id="wbPhotos">.');
+        showNotification('Ошибка: элемент загрузки не найден (wbPhotos). Обновите страницу или проверьте код.', 'error');
         return;
     }
     
@@ -197,8 +177,10 @@ window.generateWBCard = async function() {
     }
 
     const btn = document.getElementById('generateWBBtn') || document.querySelector('[onclick="generateWBCard()"]');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span> Генерация...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Генерация...';
+    }
 
     try {
         const formData = new FormData();
@@ -232,8 +214,10 @@ window.generateWBCard = async function() {
         console.error('Ошибка генерации:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = '✨ Создать карточку для WB';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '✨ Создать карточку для WB';
+        }
     }
 };
 
@@ -241,12 +225,10 @@ window.generateWBCard = async function() {
 window.generateOzonCard = async function() {
     if (!currentUser || !userData) return;
 
-    let fileInput;
-    try {
-        fileInput = await waitForElement('#ozonPhotos', 2000);
-    } catch (e) {
-        console.error(e);
-        showNotification('Ошибка: элемент загрузки не найден. Обновите страницу.', 'error');
+    const fileInput = document.getElementById('ozonPhotos');
+    if (!fileInput) {
+        console.error('❌ Элемент с id="ozonPhotos" не найден.');
+        showNotification('Ошибка: элемент загрузки не найден (ozonPhotos).', 'error');
         return;
     }
 
@@ -268,8 +250,10 @@ window.generateOzonCard = async function() {
     }
 
     const btn = document.getElementById('generateOzonBtn') || document.querySelector('[onclick="generateOzonCard()"]');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span> Генерация...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Генерация...';
+    }
 
     try {
         const formData = new FormData();
@@ -303,8 +287,10 @@ window.generateOzonCard = async function() {
         console.error('Ошибка генерации:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     } finally {
-        btn.disabled = false;
-        btn.innerHTML = '✨ Создать карточку для Ozon';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '✨ Создать карточку для Ozon';
+        }
     }
 };
 
