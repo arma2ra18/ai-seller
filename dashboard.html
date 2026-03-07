@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Seller — личный кабинет</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">AI Seller</div>
+            <div class="user-menu">
+                <div class="user-info">
+                    <span class="user-email" id="userEmail">Загрузка...</span>
+                    <span class="user-plan" id="userPlan">Старт</span>
+                </div>
+                <div class="user-balance">
+                    Баланс: <span id="remainingGenerations">30</span> / <span id="maxGenerations">30</span>
+                </div>
+                <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <div class="container">
+            <div class="dashboard-header">
+                <h1>Генератор контента</h1>
+                <div class="generation-counter">
+                    <span>Использовано: <strong id="usedGenerations">0</strong> из <strong id="maxGenerations">30</strong></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="generationProgress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="generator-form">
+                <div class="form-tabs">
+                    <button class="tab active" data-tab="basic">📝 Текст</button>
+                    <button class="tab" data-tab="advanced" id="advancedTab">🖼️ Фото</button>
+                    <button class="tab" data-tab="video">🎬 Видео</button>
+                </div>
+
+                <!-- Вкладка "Текст" -->
+                <div class="tab-content active" id="basic-tab">
+                    <div class="form-group">
+                        <label>Категория товара</label>
+                        <select id="category">
+                            <option value="">Выберите категорию</option>
+                            <option value="electronics">Электроника</option>
+                            <option value="clothing">Одежда</option>
+                            <option value="home">Товары для дома</option>
+                            <option value="beauty">Красота и здоровье</option>
+                            <option value="kids">Детские товары</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Название товара</label>
+                        <input type="text" id="productName" placeholder="Например: Беспроводные наушники Xiaomi">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ключевые особенности (через запятую)</label>
+                        <input type="text" id="features" placeholder="шумоподавление, влагозащита, 20 часов работы">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Целевая аудитория</label>
+                        <input type="text" id="audience" placeholder="Например: для спорта, для офиса, для подростков">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ключевые слова для SEO</label>
+                        <input type="text" id="keywords" placeholder="купить наушники, беспроводные наушники">
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary btn-large" id="generateBtn" onclick="generate()">
+                            ✨ Сгенерировать текст (1 токен)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Фото" -->
+                <div class="tab-content" id="advanced-tab">
+                    <div class="form-group">
+                        <label>Загрузить фото товара</label>
+                        <input type="file" id="productPhoto" accept="image/*" capture="environment">
+                        <small>Загрузите фото на белом фоне для лучшего результата</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Дополнительные пожелания к фото</label>
+                        <textarea id="photoPrompt" rows="2" placeholder="Например: на мраморном столе, с кофейными зернами вокруг, уютная атмосфера"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Выберите модель</label>
+                        <select id="photoModel">
+                            <option value="flux-2-pro">FLUX 2 Pro (лучшее качество)</option>
+                            <option value="nano-banana">Nano Banana Pro (стилизация)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary btn-large" onclick="generateProductPhoto()" id="generatePhotoBtn">
+                            ✨ Сгенерировать фото (2 токена)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Вкладка "Видео" -->
+                <div class="tab-content" id="video-tab">
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Тип видео</label>
+                            <select id="videoType">
+                                <option value="standard">Стандартный обзор</option>
+                                <option value="360">Обзор на 360°</option>
+                                <option value="lifestyle">Использование в жизни</option>
+                                <option value="unboxing">Распаковка</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group half">
+                            <label>Длительность</label>
+                            <select id="videoDuration">
+                                <option value="8">8 секунд</option>
+                                <option value="10">10 секунд</option>
+                                <option value="12">12 секунд</option>
+                                <option value="15">15 секунд</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Соотношение сторон</label>
+                            <select id="videoAspectRatio">
+                                <option value="1:1">1:1 (квадрат, для карточек)</option>
+                                <option value="9:16">9:16 (вертикаль, для Reels)</option>
+                                <option value="16:9">16:9 (горизонталь)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group half">
+                            <label>Категория товара</label>
+                            <select id="videoCategory">
+                                <option value="clothing">Одежда</option>
+                                <option value="electronics">Электроника</option>
+                                <option value="beauty">Косметика</option>
+                                <option value="home">Товары для дома</option>
+                                <option value="food">Еда</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Загрузить фото товара</label>
+                        <input type="file" id="videoPhoto" accept="image/*" capture="environment">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Дополнительные пожелания к видео</label>
+                        <textarea id="videoPrompt" rows="3" placeholder="Например: модель должна идти к камере, фон - город, вечернее освещение"></textarea>
+                    </div>
+
+                    <div class="template-hints" style="margin: 20px 0; padding: 15px; background: rgba(108,92,231,0.1); border-radius: 12px;">
+                        <p><strong>Пример промпта:</strong></p>
+                        <div id="promptExample">Выберите категорию</div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary btn-large" onclick="generateVideo()" id="generateVideoBtn">
+                            ✨ Сгенерировать видео (5 токенов)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Результаты генерации текста -->
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <h2>Результаты генерации</h2>
+                
+                <div class="result-tabs">
+                    <button class="result-tab active" data-result="names">📝 Названия</button>
+                    <button class="result-tab" data-result="description">📄 Описание</button>
+                    <button class="result-tab" data-result="specs">📊 Характеристики</button>
+                </div>
+
+                <div class="result-content active" id="names-result">
+                    <div class="result-list" id="namesList"></div>
+                </div>
+
+                <div class="result-content" id="description-result">
+                    <div class="result-text" id="descriptionText"></div>
+                    <button class="btn btn-small" onclick="copyText(descriptionText)">📋 Копировать</button>
+                </div>
+
+                <div class="result-content" id="specs-result">
+                    <table class="specs-table" id="specsTable"></table>
+                    <button class="btn btn-small" onclick="copySpecs()">📋 Копировать</button>
+                </div>
+
+                <div class="result-actions">
+                    <button class="btn btn-outline" onclick="saveToHistory()">💾 Сохранить в историю</button>
+                </div>
+            </div>
+
+            <!-- Результат генерации фото -->
+            <div id="photoResult" style="display: none; margin-top: 30px;">
+                <h3>Готовое фото:</h3>
+                <img id="generatedImage" style="max-width: 100%; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+                <div style="margin-top: 10px; display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-primary" onclick="downloadImage()">⬇️ Скачать</button>
+                    <button class="btn btn-outline" onclick="copyImageUrl()">🔗 Копировать ссылку</button>
+                </div>
+            </div>
+
+            <!-- Результат генерации видео -->
+            <div id="videoResult" style="display: none; margin-top: 30px;">
+                <h3>Готовое видео:</h3>
+                <video id="generatedVideo" controls style="width: 100%; max-width: 500px; border-radius: 16px; margin: 20px auto; display: block;">
+                    Your browser does not support the video tag.
+                </video>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button class="btn btn-primary" onclick="downloadVideo()">⬇️ Скачать</button>
+                    <button class="btn btn-outline" onclick="copyVideoUrl()">🔗 Копировать ссылку</button>
+                </div>
+            </div>
+
+            <!-- Индикатор загрузки для фото -->
+            <div id="photoLoading" style="display: none; text-align: center; padding: 40px;">
+                <div class="loading"></div>
+                <p>Генерация фото занимает 10-30 секунд...</p>
+            </div>
+
+            <!-- Индикатор загрузки для видео -->
+            <div id="videoLoading" style="display: none; text-align: center; padding: 60px;">
+                <div class="loading"></div>
+                <p>Генерация видео занимает 2-5 минут. Нейросеть создает профессиональный ролик...</p>
+            </div>
+
+            <!-- История генераций -->
+            <div class="history-section">
+                <h2>История генераций</h2>
+                <div class="history-list" id="historyList">
+                    <p class="text-gray">Загрузка...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

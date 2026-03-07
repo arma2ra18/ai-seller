@@ -1,0 +1,9 @@
+{
+  "name": "ai-seller-api",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "replicate": "^1.0.0",
+    "axios": "^1.6.0"
+  }
+}
