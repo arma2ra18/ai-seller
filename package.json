@@ -1,13 +1,16 @@
 {
   "name": "ai-seller",
   "version": "1.0.0",
+  "type": "module",
   "description": "AI генератор контента для Wildberries и Ozon",
   "scripts": {
     "dev": "vercel dev",
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "firebase": "^10.8.0"
+    "firebase": "^10.8.0",
+    "replicate": "^1.0.0",
+    "axios": "^1.6.0"
   },
   "devDependencies": {
     "vercel": "^33.0.0"
