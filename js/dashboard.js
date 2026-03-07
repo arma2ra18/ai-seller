@@ -8,6 +8,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 let currentUser = null;
 let userData = null;
 
+// Следим за авторизацией
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
@@ -17,6 +18,7 @@ onAuthStateChanged(auth, async (user) => {
     await loadUserData();
 });
 
+// Загрузка данных пользователя из Firestore
 async function loadUserData() {
     if (!currentUser) return;
     try {
@@ -25,6 +27,7 @@ async function loadUserData() {
             userData = userDoc.data();
             updateUI();
             loadHistory();
+            updateStats();
         } else {
             await setDoc(doc(db, 'users', currentUser.uid), {
                 email: currentUser.email,
@@ -41,20 +44,39 @@ async function loadUserData() {
     }
 }
 
+// Обновление интерфейса (баланс, тариф)
 function updateUI() {
     if (!userData) return;
-    document.getElementById('userEmail').textContent = currentUser.email;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
     const used = userData.usedGenerations || 0;
-    document.getElementById('usedGenerations').textContent = used;
-    document.getElementById('maxGenerations').textContent = maxGen;
-    document.getElementById('remainingGenerations').textContent = Math.max(0, maxGen - used);
-    const progress = (used / maxGen) * 100;
-    document.getElementById('generationProgress').style.width = `${Math.min(progress, 100)}%`;
+    const remaining = Math.max(0, maxGen - used);
+
+    // Обновляем все элементы с балансом
+    document.querySelectorAll('#remainingGenerations, #remainingGenerationsDetail').forEach(el => {
+        el.textContent = remaining;
+    });
+    document.querySelectorAll('#maxGenerations, #maxGenerationsDetail').forEach(el => {
+        el.textContent = maxGen;
+    });
+    document.getElementById('usedGenerationsDetail').textContent = used;
+    document.getElementById('userEmail').textContent = currentUser.email;
     const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
     document.getElementById('userPlan').textContent = planNames[userData.plan] || 'Старт';
 }
 
+// Обновление плиток статистики
+function updateStats() {
+    document.getElementById('statUser').textContent = currentUser.email.split('@')[0];
+    document.getElementById('statCards').textContent = userData?.usedGenerations || 0;
+    document.getElementById('statVideos').textContent = 0; // позже можно добавить реальные данные
+    document.getElementById('statDescriptions').textContent = userData?.usedGenerations || 0;
+    document.getElementById('statHistory').textContent = 0;
+    document.getElementById('statBalance').textContent = userData?.balance || 30;
+    document.getElementById('statNews').textContent = 29; // заглушка
+    document.getElementById('statBonus').textContent = 0;
+}
+
+// Выход
 window.logout = async function() {
     try {
         await signOut(auth);
@@ -64,69 +86,56 @@ window.logout = async function() {
     }
 };
 
-// ----- Пополнение баланса и подписка -----
-let currentPlan = null;
-let currentPrice = 0;
+// ----- Навигация по меню -----
+document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', function() {
+        const section = this.dataset.section;
+        document.querySelectorAll('.menu-item').forEach(i => i.classList.remove('active'));
+        this.classList.add('active');
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.getElementById(section + '-section').classList.add('active');
+    });
+});
 
-window.showPaymentModal = function() {
-    document.getElementById('modalTitle').textContent = 'Пополнение баланса';
-    document.getElementById('modalDescription').innerHTML = 'Выберите один из тарифов ниже.';
-    document.getElementById('selectedPlanName').textContent = '—';
-    document.getElementById('modalAmount').textContent = '0 ₽';
-    document.getElementById('paymentModal').classList.add('show');
-};
+// ----- Дропзоны для файлов -----
+function setupDropzone(dropzoneId, inputId) {
+    const dropzone = document.getElementById(dropzoneId);
+    const input = document.getElementById(inputId);
+    if (!dropzone || !input) return;
 
-window.selectPlan = function(plan) {
-    const plans = {
-        'start': { name: 'Старт', price: 990 },
-        'business': { name: 'Бизнес', price: 2990 },
-        'pro': { name: 'Профи', price: 9900 }
-    };
-    currentPlan = plan;
-    currentPrice = plans[plan].price;
-
-    document.getElementById('modalTitle').textContent = 'Оформление подписки';
-    document.getElementById('selectedPlanName').textContent = plans[plan].name;
-    document.getElementById('modalAmount').textContent = `${plans[plan].price} ₽`;
-    document.getElementById('paymentModal').classList.add('show');
-};
-
-window.confirmPayment = function() {
-    if (!currentPlan) {
-        showNotification('Сначала выберите тариф', 'warning');
-        return;
-    }
-
-    const tokensMap = { 'start': 30, 'business': 200, 'pro': 999999 };
-    const tokens = tokensMap[currentPlan];
-
-    showNotification('Оплата обрабатывается...', 'info');
-
-    setTimeout(async () => {
-        try {
-            await updateDoc(doc(db, 'users', currentUser.uid), {
-                plan: currentPlan,
-                balance: tokens,
-                usedGenerations: userData.usedGenerations || 0
-            });
-            userData.plan = currentPlan;
-            userData.balance = tokens;
-            updateUI();
-            showNotification(`Тариф "${currentPlan}" активирован!`, 'success');
-            closeModal();
-        } catch (error) {
-            showNotification('Ошибка при активации', 'error');
+    dropzone.addEventListener('click', () => input.click());
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--accent)';
+    });
+    dropzone.addEventListener('dragleave', () => {
+        dropzone.style.borderColor = 'var(--border)';
+    });
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--border)';
+        input.files = e.dataTransfer.files;
+        const names = Array.from(e.dataTransfer.files).map(f => f.name).join(', ');
+        dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
+    });
+    input.addEventListener('change', () => {
+        if (input.files.length > 0) {
+            const names = Array.from(input.files).map(f => f.name).join(', ');
+            dropzone.innerHTML = `<span>Выбрано: ${names}</span>`;
+        } else {
+            dropzone.innerHTML = '<span>Перетащите файлы или нажмите для выбора</span>';
         }
-    }, 2000);
-};
+    });
+}
 
-window.closeModal = function() {
-    document.getElementById('paymentModal').classList.remove('show');
-    currentPlan = null;
-    currentPrice = 0;
-};
+document.addEventListener('DOMContentLoaded', () => {
+    setupDropzone('wbDropzone', 'wbPhotos');
+    setupDropzone('ozonDropzone', 'ozonPhotos');
+    setupDropzone('photoDropzone', 'productPhoto');
+    setupDropzone('videoDropzone', 'videoPhoto');
+});
 
-// ----- Генерация карточек -----
+// ----- Генерация карточки для Wildberries -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
     const productName = document.getElementById('wbProductName').value.trim();
@@ -182,6 +191,7 @@ window.generateWBCard = async function() {
     }
 };
 
+// ----- Генерация карточки для Ozon -----
 window.generateOzonCard = async function() {
     if (!currentUser || !userData) return;
     const productName = document.getElementById('ozonProductName').value.trim();
@@ -237,6 +247,17 @@ window.generateOzonCard = async function() {
     }
 };
 
+// ----- Генерация фото (заглушка) -----
+window.generateProductPhoto = async function() {
+    showNotification('Функция генерации фото находится в разработке', 'info');
+};
+
+// ----- Генерация видео (заглушка) -----
+window.generateVideo = async function() {
+    showNotification('Функция генерации видео находится в разработке', 'info');
+};
+
+// Отображение результатов карточки
 function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
     container.style.display = 'block';
@@ -324,6 +345,68 @@ window.viewHistoryItem = async function(docId) {
     }
 };
 
+// ----- Пополнение баланса и подписка -----
+let currentPlan = null;
+let currentPrice = 0;
+
+window.showPaymentModal = function() {
+    document.getElementById('modalTitle').textContent = 'Пополнение баланса';
+    document.getElementById('modalDescription').innerHTML = 'Выберите один из тарифов ниже.';
+    document.getElementById('selectedPlanName').textContent = '—';
+    document.getElementById('modalAmount').textContent = '0 ₽';
+    document.getElementById('paymentModal').classList.add('show');
+};
+
+window.selectPlan = function(plan) {
+    const plans = {
+        'start': { name: 'Старт', price: 990 },
+        'business': { name: 'Бизнес', price: 2990 },
+        'pro': { name: 'Профи', price: 9900 }
+    };
+    currentPlan = plan;
+    currentPrice = plans[plan].price;
+
+    document.getElementById('modalTitle').textContent = 'Оформление подписки';
+    document.getElementById('selectedPlanName').textContent = plans[plan].name;
+    document.getElementById('modalAmount').textContent = `${plans[plan].price} ₽`;
+    document.getElementById('paymentModal').classList.add('show');
+};
+
+window.confirmPayment = function() {
+    if (!currentPlan) {
+        showNotification('Сначала выберите тариф', 'warning');
+        return;
+    }
+
+    const tokensMap = { 'start': 30, 'business': 200, 'pro': 999999 };
+    const tokens = tokensMap[currentPlan];
+
+    showNotification('Оплата обрабатывается...', 'info');
+
+    setTimeout(async () => {
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                plan: currentPlan,
+                balance: tokens,
+                usedGenerations: userData.usedGenerations || 0
+            });
+            userData.plan = currentPlan;
+            userData.balance = tokens;
+            updateUI();
+            showNotification(`Тариф "${currentPlan}" активирован!`, 'success');
+            closeModal();
+        } catch (error) {
+            showNotification('Ошибка при активации', 'error');
+        }
+    }, 2000);
+};
+
+window.closeModal = function() {
+    document.getElementById('paymentModal').classList.remove('show');
+    currentPlan = null;
+    currentPrice = 0;
+};
+
 // ----- Уведомления -----
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -333,20 +416,8 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// ----- Инициализация вкладок -----
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            const tabId = this.dataset.tab;
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            document.getElementById(`${tabId}-tab`).classList.add('active');
-        });
-    });
-
-    window.onclick = function(event) {
-        const modal = document.getElementById('paymentModal');
-        if (event.target === modal) closeModal();
-    };
-});
+// ----- Инициализация (закрытие модального окна по клику вне его) -----
+window.onclick = function(event) {
+    const modal = document.getElementById('paymentModal');
+    if (event.target === modal) closeModal();
+};

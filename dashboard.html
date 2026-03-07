@@ -7,52 +7,127 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <div class="logo">AI Seller</div>
-            <div class="user-menu">
-                <div class="user-info">
-                    <span class="user-email" id="userEmail">Загрузка...</span>
-                    <span class="user-plan" id="userPlan">Старт</span>
-                </div>
+    <div class="dashboard-wrapper">
+        <!-- Левое меню (сайдбар) -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">AI Seller</div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="menu-item active" data-section="tokens">💰 Токены</li>
+                    <li class="menu-item" data-section="wb">📦 Wildberries</li>
+                    <li class="menu-item" data-section="ozon">🛒 Ozon</li>
+                    <li class="menu-item" data-section="photo">🖼️ Фото</li>
+                    <li class="menu-item" data-section="video">🎬 Видео</li>
+                    <li class="menu-item" data-section="history">📜 История</li>
+                    <li class="menu-item" data-section="tariffs">💎 Тарифы</li>
+                    <li class="menu-item" data-section="settings">⚙️ Настройки</li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
                 <div class="user-balance">
                     <span>Баланс: <span id="remainingGenerations">30</span> / <span id="maxGenerations">30</span></span>
                     <button class="btn btn-small btn-primary" onclick="showPaymentModal()">Пополнить</button>
                 </div>
+                <div class="user-info">
+                    <span class="user-email" id="userEmail">Загрузка...</span>
+                    <span class="user-plan" id="userPlan">Старт</span>
+                </div>
                 <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
             </div>
-        </div>
-    </header>
+        </aside>
 
-    <main class="dashboard">
-        <div class="container">
-            <!-- Верхний блок с прогрессом -->
-            <div class="dashboard-header">
-                <h1>Генератор карточек</h1>
-                <div class="generation-counter">
-                    <span>Использовано <strong id="usedGenerations">0</strong> из <strong id="maxGenerations">30</strong></span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="generationProgress" style="width: 0%"></div>
+        <!-- Основной контент -->
+        <main class="main-content">
+            <!-- Блок приветствия -->
+            <div class="welcome-block">
+                <h1>Добро пожаловать!</h1>
+                <p>AI-сервис для создания карточек Wildberries и Ozon</p>
+            </div>
+
+            <!-- Статистика в плитках -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👤</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Пользователь</span>
+                        <span class="stat-value" id="statUser">-</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Карточки товара</span>
+                        <span class="stat-value" id="statCards">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎬</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Видеообложки</span>
+                        <span class="stat-value" id="statVideos">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Описания товара</span>
+                        <span class="stat-value" id="statDescriptions">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <span class="stat-label">История</span>
+                        <span class="stat-value" id="statHistory">0</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Баланс</span>
+                        <span class="stat-value" id="statBalance">30</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📰</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Новости</span>
+                        <span class="stat-value" id="statNews">29</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🎁</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Бонусы</span>
+                        <span class="stat-value" id="statBonus">0</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Вкладки -->
-            <div class="tabs-container">
-                <div class="tabs">
-                    <button class="tab active" data-tab="wb">Wildberries</button>
-                    <button class="tab" data-tab="ozon">Ozon</button>
-                    <button class="tab" data-tab="photo">🖼️ Фото</button>
-                    <button class="tab" data-tab="video">🎬 Видео</button>
+            <!-- Динамический контент (переключается меню) -->
+            <div class="content-area" id="contentArea">
+                <!-- Секция токенов (по умолчанию) -->
+                <div class="content-section active" id="tokens-section">
+                    <h2>Токены и статистика</h2>
+                    <div class="info-cards">
+                        <div class="info-card">
+                            <h3>Текущий баланс</h3>
+                            <p class="big-number"><span id="remainingGenerationsDetail">30</span> / <span id="maxGenerationsDetail">30</span></p>
+                            <p>Использовано: <span id="usedGenerationsDetail">0</span></p>
+                            <button class="btn btn-primary" onclick="showPaymentModal()">Пополнить</button>
+                        </div>
+                        <div class="info-card">
+                            <h3>Бонусы</h3>
+                            <p>Приглашайте друзей и получайте бонусные токены</p>
+                            <button class="btn btn-outline">Пригласить</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Содержимое вкладок -->
-            <div class="tab-contents">
-                <!-- Вкладка Wildberries -->
-                <div class="tab-content active" id="wb-tab">
-                    <div class="card-form">
-                        <h2>Создание карточки для Wildberries</h2>
+                <!-- Секция Wildberries -->
+                <div class="content-section" id="wb-section">
+                    <h2>Создание карточки для Wildberries</h2>
+                    <div class="generation-form">
                         <div class="form-group">
                             <label>Название товара</label>
                             <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4">
@@ -76,18 +151,20 @@
                             <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы">
                         </div>
                         <div class="form-group">
-                            <label>Загрузите фото товара (можно несколько)</label>
-                            <input type="file" id="wbPhotos" accept="image/*" multiple>
-                            <small>Первое фото будет использовано как основное для генерации</small>
+                            <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
+                            <div class="dropzone" id="wbDropzone">
+                                <span>Перетащите файлы или нажмите для выбора</span>
+                                <input type="file" id="wbPhotos" accept="image/*" multiple style="display:none;">
+                            </div>
                         </div>
                         <button class="btn btn-primary btn-large" onclick="generateWBCard()">✨ Создать карточку для WB</button>
                     </div>
                 </div>
 
-                <!-- Вкладка Ozon -->
-                <div class="tab-content" id="ozon-tab">
-                    <div class="card-form">
-                        <h2>Создание карточки для Ozon</h2>
+                <!-- Секция Ozon -->
+                <div class="content-section" id="ozon-section">
+                    <h2>Создание карточки для Ozon</h2>
+                    <div class="generation-form">
                         <div class="form-group">
                             <label>Название товара</label>
                             <input type="text" id="ozonProductName" placeholder="Например: Кроссовки Nike Air Max">
@@ -112,68 +189,108 @@
                         </div>
                         <div class="form-group">
                             <label>Загрузите фото товара</label>
-                            <input type="file" id="ozonPhotos" accept="image/*" multiple>
+                            <div class="dropzone" id="ozonDropzone">
+                                <span>Перетащите файлы или нажмите для выбора</span>
+                                <input type="file" id="ozonPhotos" accept="image/*" multiple style="display:none;">
+                            </div>
                         </div>
                         <button class="btn btn-primary btn-large" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
                     </div>
                 </div>
 
-                <!-- Вкладка Фото (заглушка) -->
-                <div class="tab-content" id="photo-tab">
-                    <div class="card-form">
-                        <h2>Генерация фото товара</h2>
-                        <p class="text-muted">Функция находится в разработке. Пока используйте создание карточек.</p>
+                <!-- Секция Фото -->
+                <div class="content-section" id="photo-section">
+                    <h2>Генерация фото товара</h2>
+                    <div class="generation-form">
+                        <div class="form-group">
+                            <label>Загрузите фото товара</label>
+                            <div class="dropzone" id="photoDropzone">
+                                <span>Перетащите файлы или нажмите для выбора</span>
+                                <input type="file" id="productPhoto" accept="image/*" style="display:none;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Дополнительные пожелания</label>
+                            <textarea id="photoPrompt" rows="3" placeholder="Например: на мраморном столе, с кофейными зернами"></textarea>
+                        </div>
+                        <button class="btn btn-primary btn-large" onclick="generateProductPhoto()">✨ Сгенерировать фото (2 токена)</button>
                     </div>
                 </div>
 
-                <!-- Вкладка Видео (заглушка) -->
-                <div class="tab-content" id="video-tab">
-                    <div class="card-form">
-                        <h2>Генерация видео</h2>
-                        <p class="text-muted">Функция находится в разработке. Пока используйте создание карточек.</p>
+                <!-- Секция Видео -->
+                <div class="content-section" id="video-section">
+                    <h2>Генерация видео товара</h2>
+                    <div class="generation-form">
+                        <div class="form-group">
+                            <label>Загрузите фото товара</label>
+                            <div class="dropzone" id="videoDropzone">
+                                <span>Перетащите файлы или нажмите для выбора</span>
+                                <input type="file" id="videoPhoto" accept="image/*" style="display:none;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Тип видео</label>
+                            <select id="videoType">
+                                <option value="standard">Стандартный обзор</option>
+                                <option value="360">Обзор на 360°</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-large" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
                     </div>
+                </div>
+
+                <!-- Секция История (дублируется основным блоком ниже, но можно оставить для навигации) -->
+                <div class="content-section" id="history-section">
+                    <h2>История генераций</h2>
+                    <div class="history-list" id="historyListDetail"></div>
+                </div>
+
+                <!-- Секция Тарифы -->
+                <div class="content-section" id="tariffs-section">
+                    <h2>Тарифы и подписка</h2>
+                    <div class="pricing-grid">
+                        <div class="pricing-card">
+                            <h3>Старт</h3>
+                            <div class="price">990 ₽<span>/мес</span></div>
+                            <ul class="features-list">
+                                <li>30 генераций</li>
+                                <li>Все типы контента</li>
+                                <li>История в облаке</li>
+                            </ul>
+                            <button class="btn btn-primary btn-block" onclick="selectPlan('start')">Выбрать</button>
+                        </div>
+                        <div class="pricing-card popular">
+                            <div class="popular-tag">🔥 Хит продаж</div>
+                            <h3>Бизнес</h3>
+                            <div class="price">2 990 ₽<span>/мес</span></div>
+                            <ul class="features-list">
+                                <li>200 генераций</li>
+                                <li>Все типы контента</li>
+                                <li>Массовая генерация</li>
+                            </ul>
+                            <button class="btn btn-primary btn-block" onclick="selectPlan('business')">Выбрать</button>
+                        </div>
+                        <div class="pricing-card">
+                            <h3>Профи</h3>
+                            <div class="price">9 900 ₽<span>/мес</span></div>
+                            <ul class="features-list">
+                                <li>Безлимит генераций</li>
+                                <li>Все типы контента</li>
+                                <li>VIP-поддержка</li>
+                            </ul>
+                            <button class="btn btn-primary btn-block" onclick="selectPlan('pro')">Выбрать</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Секция Настройки (заглушка) -->
+                <div class="content-section" id="settings-section">
+                    <h2>Настройки</h2>
+                    <p class="text-muted">Раздел в разработке</p>
                 </div>
             </div>
 
-            <!-- Секция тарифов и подписки -->
-            <div class="pricing-section">
-                <h2>Тарифы и подписка</h2>
-                <div class="pricing-grid">
-                    <div class="pricing-card">
-                        <h3>Старт</h3>
-                        <div class="price">990 ₽<span>/мес</span></div>
-                        <ul class="features-list">
-                            <li>30 генераций</li>
-                            <li>Все типы контента</li>
-                            <li>История в облаке</li>
-                        </ul>
-                        <button class="btn btn-primary btn-block" onclick="selectPlan('start')">Выбрать</button>
-                    </div>
-                    <div class="pricing-card popular">
-                        <div class="popular-tag">🔥 Хит продаж</div>
-                        <h3>Бизнес</h3>
-                        <div class="price">2 990 ₽<span>/мес</span></div>
-                        <ul class="features-list">
-                            <li>200 генераций</li>
-                            <li>Все типы контента</li>
-                            <li>Массовая генерация</li>
-                        </ul>
-                        <button class="btn btn-primary btn-block" onclick="selectPlan('business')">Выбрать</button>
-                    </div>
-                    <div class="pricing-card">
-                        <h3>Профи</h3>
-                        <div class="price">9 900 ₽<span>/мес</span></div>
-                        <ul class="features-list">
-                            <li>Безлимит генераций</li>
-                            <li>Все типы контента</li>
-                            <li>VIP-поддержка</li>
-                        </ul>
-                        <button class="btn btn-primary btn-block" onclick="selectPlan('pro')">Выбрать</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Блок результатов генерации -->
+            <!-- Блок результатов генерации (всегда отображается после генерации) -->
             <div id="cardResults" class="results-section" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
@@ -186,15 +303,15 @@
                 </div>
             </div>
 
-            <!-- Блок истории -->
+            <!-- Блок истории (основной) -->
             <div class="history-section">
                 <h2>История генераций</h2>
                 <div class="history-list" id="historyList">
                     <p class="text-muted">Загрузка...</p>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
 
     <!-- Модальное окно оплаты -->
     <div id="paymentModal" class="modal">
