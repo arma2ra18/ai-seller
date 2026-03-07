@@ -33,7 +33,7 @@ async function loadUserData() {
     }
 }
 
-// Обновляем интерфейс (баланс, тариф и т.д.)
+// Обновляем интерфейс (баланс, тариф)
 function updateUI() {
     if (!userData) return;
 
@@ -59,7 +59,7 @@ function updateUI() {
     document.getElementById('userPlan').textContent = planNames[userData.plan] || 'Старт';
 }
 
-// Генерация текста
+// ==================== ТЕКСТ ====================
 window.generate = async function() {
     if (!currentUser || !userData) return;
 
@@ -106,7 +106,6 @@ window.generate = async function() {
         const result = await response.json();
         displayResults(result);
 
-        // Сохраняем в историю
         await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'text',
             productName: data.productName,
@@ -114,7 +113,6 @@ window.generate = async function() {
             timestamp: new Date().toISOString()
         });
 
-        // Обновляем счётчик использованных генераций
         await updateDoc(doc(db, 'users', currentUser.uid), {
             usedGenerations: increment(1)
         });
@@ -131,7 +129,6 @@ window.generate = async function() {
     }
 };
 
-// Отображение результатов
 function displayResults(result) {
     document.getElementById('resultsSection').style.display = 'block';
 
@@ -154,13 +151,222 @@ function displayResults(result) {
     }
 }
 
-// Копирование текста
 window.copyText = function(element) {
     navigator.clipboard.writeText(element.textContent);
     alert('Скопировано!');
 };
 
-// Загрузка истории
+// ==================== ФОТО ====================
+window.generateProductPhoto = async function() {
+    if (!currentUser || !userData) return;
+
+    const maxGen = {
+        'start': 30,
+        'business': 200,
+        'pro': 999999
+    }[userData.plan] || 30;
+
+    if ((userData.usedGenerations || 0) + 2 > maxGen) {
+        alert('Недостаточно токенов (нужно 2)');
+        return;
+    }
+
+    const fileInput = document.getElementById('productPhoto');
+    if (!fileInput || !fileInput.files[0]) {
+        alert('Загрузите фото');
+        return;
+    }
+
+    const prompt = document.getElementById('photoPrompt').value;
+    const model = document.getElementById('photoModel').value;
+
+    // Показываем индикатор загрузки
+    document.getElementById('photoLoading').style.display = 'block';
+    document.getElementById('photoResult').style.display = 'none';
+    const btn = document.getElementById('generatePhotoBtn');
+    btn.disabled = true;
+
+    try {
+        const productImageBase64 = await fileToBase64(fileInput.files[0]);
+
+        const response = await fetch('/api/generate-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productImage: productImageBase64, prompt, model })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Ошибка: ${response.status} — ${text.substring(0, 100)}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            document.getElementById('generatedImage').src = result.imageUrl;
+            document.getElementById('photoResult').style.display = 'block';
+            window.lastImageUrl = result.imageUrl;
+
+            // Сохраняем в историю
+            await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+                type: 'image',
+                productName: document.getElementById('productName')?.value || 'Товар',
+                imageUrl: result.imageUrl,
+                prompt: prompt,
+                timestamp: new Date().toISOString()
+            });
+
+            // Списываем токены (2)
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                usedGenerations: increment(2)
+            });
+
+            userData.usedGenerations = (userData.usedGenerations || 0) + 2;
+            updateUI();
+            alert('Фото готово!');
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    } finally {
+        document.getElementById('photoLoading').style.display = 'none';
+        btn.disabled = false;
+    }
+};
+
+// ==================== ВИДЕО ====================
+window.generateVideo = async function() {
+    if (!currentUser || !userData) return;
+
+    const maxGen = {
+        'start': 30,
+        'business': 200,
+        'pro': 999999
+    }[userData.plan] || 30;
+
+    if ((userData.usedGenerations || 0) + 5 > maxGen) {
+        alert('Недостаточно токенов (нужно 5)');
+        return;
+    }
+
+    const fileInput = document.getElementById('videoPhoto');
+    if (!fileInput || !fileInput.files[0]) {
+        alert('Загрузите фото для видео');
+        return;
+    }
+
+    const videoType = document.getElementById('videoType').value;
+    const duration = parseInt(document.getElementById('videoDuration').value);
+    const aspectRatio = document.getElementById('videoAspectRatio').value;
+    const category = document.getElementById('videoCategory').value;
+    const customPrompt = document.getElementById('videoPrompt').value;
+
+    // Если пользователь не ввёл промпт, используем шаблон (можно подключить promptTemplates)
+    let finalPrompt = customPrompt;
+    if (!finalPrompt) {
+        // Здесь можно добавить импорт promptTemplates, если нужно
+        finalPrompt = `Professional product video, ${category} category, high quality`;
+    }
+
+    document.getElementById('videoLoading').style.display = 'block';
+    document.getElementById('videoResult').style.display = 'none';
+    const btn = document.getElementById('generateVideoBtn');
+    btn.disabled = true;
+
+    try {
+        const productImageBase64 = await fileToBase64(fileInput.files[0]);
+
+        const response = await fetch('/api/generate-video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                productImage: productImageBase64,
+                videoType,
+                duration,
+                aspectRatio,
+                customPrompt: finalPrompt
+            })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Ошибка: ${response.status} — ${text.substring(0, 100)}`);
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            const videoEl = document.getElementById('generatedVideo');
+            videoEl.src = result.videoUrl;
+            document.getElementById('videoResult').style.display = 'block';
+            window.lastVideoUrl = result.videoUrl;
+
+            await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+                type: 'video',
+                productName: document.getElementById('productName')?.value || 'Товар',
+                videoUrl: result.videoUrl,
+                videoType: videoType,
+                timestamp: new Date().toISOString()
+            });
+
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                usedGenerations: increment(5)
+            });
+
+            userData.usedGenerations = (userData.usedGenerations || 0) + 5;
+            updateUI();
+            alert('Видео готово!');
+        } else {
+            throw new Error(result.error || 'Неизвестная ошибка');
+        }
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    } finally {
+        document.getElementById('videoLoading').style.display = 'none';
+        btn.disabled = false;
+    }
+};
+
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+    });
+}
+
+window.downloadImage = function() {
+    if (!window.lastImageUrl) return;
+    const link = document.createElement('a');
+    link.href = window.lastImageUrl;
+    link.download = `product-${Date.now()}.jpg`;
+    link.click();
+};
+
+window.downloadVideo = function() {
+    if (!window.lastVideoUrl) return;
+    const link = document.createElement('a');
+    link.href = window.lastVideoUrl;
+    link.download = `video-${Date.now()}.mp4`;
+    link.click();
+};
+
+window.copyImageUrl = function() {
+    if (!window.lastImageUrl) return;
+    navigator.clipboard.writeText(window.lastImageUrl);
+    alert('Ссылка скопирована');
+};
+
+window.copyVideoUrl = function() {
+    if (!window.lastVideoUrl) return;
+    navigator.clipboard.writeText(window.lastVideoUrl);
+    alert('Ссылка скопирована');
+};
+
+// ==================== ИСТОРИЯ ====================
 async function loadHistory() {
     if (!currentUser) return;
     try {
@@ -183,7 +389,7 @@ async function loadHistory() {
             });
             historyList.innerHTML += `
                 <div class="history-item">
-                    <div><strong>${item.productName || 'Фото'}</strong> <div class="history-date">${date}</div></div>
+                    <div><strong>${item.productName || 'Фото/видео'}</strong> <div class="history-date">${date}</div></div>
                     <button class="btn btn-small" onclick="alert('Просмотр: ${doc.id}')">👁️</button>
                 </div>
             `;
@@ -193,7 +399,7 @@ async function loadHistory() {
     }
 }
 
-// Инициализация вкладок (текст/фото/видео)
+// ==================== ИНИЦИАЛИЗАЦИЯ ВКЛАДОК ====================
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.tab').forEach(tab => {
         tab.addEventListener('click', function() {
