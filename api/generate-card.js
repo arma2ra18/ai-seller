@@ -1,101 +1,63 @@
-import { IncomingForm } from 'formidable';
-import fs from 'fs';
-import Replicate from 'replicate';
-
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
-export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    try {
-        // 1. Правильное создание экземпляра IncomingForm
-        const form = new IncomingForm({
-            keepExtensions: true,
-            multiples: true, // разрешаем несколько файлов
+async function generateImagesWithGigaChat(prompt, count = 5) {
+    const images = [];
+    
+    for (let i = 0; i < count; i++) {
+        // Уникальный промпт для каждого изображения
+        const imagePrompt = `${prompt}, вариант ${i+1}, ${i % 2 === 0 ? 'белый фон' : 'студийный свет'}`;
+        
+        // 1. Запрос на генерацию
+        const completionResponse = await fetch('https://gigachat.devices.sberbank.ru/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.GIGACHAT_AUTH_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'GigaChat',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'Ты — профессиональный дизайнер. Создавай фото товаров для маркетплейсов.'
+                    },
+                    {
+                        role: 'user',
+                        content: imagePrompt
+                    }
+                ],
+                function_call: 'auto'
+            })
         });
 
-        // 2. Парсинг формы с помощью промиса
-        const { fields, files } = await new Promise((resolve, reject) => {
-            form.parse(req, (err, fields, files) => {
-                if (err) reject(err);
-                else resolve({ fields, files });
-            });
-        });
-
-        // 3. Извлекаем поля (учитываем, что formidable может вернуть массивы)
-        const productName = fields.productName?.[0] || fields.productName;
-        const brand = fields.brand?.[0] || fields.brand;
-        const category = fields.category?.[0] || fields.category;
-        const features = fields.features?.[0] || fields.features;
-        const platform = fields.platform?.[0] || fields.platform;
-
-        // 4. Обработка загруженных файлов
-        let photoArray = [];
-        if (files.photos) {
-            photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
+        const completionData = await completionResponse.json();
+        
+        // 2. Извлекаем file_id из ответа (он в теге <img src="..."/>)
+        const content = completionData.choices[0].message.content;
+        const match = content.match(/<img src="([^"]+)"/);
+        const fileId = match ? match[1] : null;
+        
+        if (!fileId) {
+            console.warn('Не удалось получить file_id');
+            continue;
         }
 
-        if (photoArray.length === 0) {
-            return res.status(400).json({ error: 'No photos uploaded' });
-        }
-
-        // Берём первое фото для генерации
-        const firstPhoto = photoArray[0];
-        const photoPath = firstPhoto.filepath;
-
-        // Читаем файл в base64
-        const fileBuffer = fs.readFileSync(photoPath);
-        const base64Image = `data:${firstPhoto.mimetype};base64,${fileBuffer.toString('base64')}`;
-
-        // 5. Инициализация Replicate
-        const replicate = new Replicate({
-            auth: process.env.REPLICATE_API_TOKEN,
-        });
-
-        // Формируем промпт
-        const prompt = `Профессиональное фото товара ${productName} от бренда ${brand}, категория ${category}. Особенности: ${features}. Белый фон, студийное освещение, высокая детализация, e-commerce стиль, 8k.`;
-
-        // 6. Запуск генерации изображений
-        const output = await replicate.run(
-            "black-forest-labs/flux-pro",
-            {
-                input: {
-                    prompt: prompt,
-                    image: base64Image,
-                    strength: 0.85,
-                    num_outputs: 5,
-                    aspect_ratio: "1:1",
-                    output_format: "jpg",
-                }
+        // 3. Скачиваем изображение
+        const imageResponse = await fetch(`https://gigachat.devices.sberbank.ru/api/v1/files/${fileId}/content`, {
+            headers: {
+                'Accept': 'application/jpg',
+                'Authorization': `Bearer ${process.env.GIGACHAT_AUTH_KEY}`
             }
-        );
+        });
 
-        const images = Array.isArray(output) ? output : [output];
-
-        // 7. Генерация описаний (заглушка)
-        const descriptions = [
-            `Превосходный ${productName} от бренда ${brand}. ${features}. Идеально подходит для повседневного использования. Закажите сейчас!`,
-            `${brand} ${productName} – высокое качество и надёжность. ${features}. Быстрая доставка по всей России.`,
-            `Купите ${productName} по лучшей цене! ${features}. Только оригинальная продукция.`
-        ];
-
-        // 8. Удаляем временный файл (опционально, можно закомментировать при ошибках)
-        try {
-            fs.unlinkSync(photoPath);
-        } catch (e) {
-            console.warn('Failed to delete temp file:', e.message);
-        }
-
-        res.status(200).json({ images, descriptions });
-
-    } catch (error) {
-        console.error('Generate card error:', error);
-        res.status(500).json({ error: error.message });
+        // 4. Сохраняем или возвращаем URL (можно загрузить в Firebase Storage)
+        const imageBuffer = await imageResponse.arrayBuffer();
+        const base64Image = Buffer.from(imageBuffer).toString('base64');
+        const imageUrl = `data:image/jpeg;base64,${base64Image}`;
+        
+        images.push(imageUrl);
+        
+        // Небольшая задержка между запросами
+        await new Promise(r => setTimeout(r, 1000));
     }
+    
+    return images;
 }
