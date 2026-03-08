@@ -12,15 +12,13 @@ const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
  * Генерация изображения через Gemini 3.1 Flash Image (Nano Banana 2)
- * @param {string} prompt - текстовое описание того, что должно быть на карточке
+ * @param {string} prompt - текстовое описание
  * @param {Buffer} referenceImage - буфер загруженного пользователем фото
- * @returns {Promise<string>} - data URL готового изображения в формате base64
+ * @returns {Promise<string>} - data URL готового изображения
  */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
         const base64Image = referenceImage.toString('base64');
-        
-        // Формируем содержимое запроса: изображение + текст
         const contents = [
             {
                 inlineData: {
@@ -32,23 +30,19 @@ async function generateGeminiImage(prompt, referenceImage) {
         ];
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-image-preview', // Правильная модель!
+            model: 'gemini-3.1-flash-image-preview',
             contents: contents,
             config: {
                 responseModalities: ['Image'],
-                // Настройки для лучшего качества
-                aspectRatio: '1:1', // Квадрат для карточек
-                // imageSize: '1K', // Можно указать 1K, 2K или 4K (по умолчанию 1K)
+                aspectRatio: '1:1',
             }
         });
 
-        // Извлекаем изображение из ответа
         for (const part of response.candidates[0].content.parts) {
             if (part.inlineData) {
                 return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
             }
         }
-        
         throw new Error('Ответ не содержит изображения');
     } catch (error) {
         console.error('Gemini generation error:', error);
@@ -57,7 +51,7 @@ async function generateGeminiImage(prompt, referenceImage) {
 }
 
 /**
- * Генерация описаний (оставляем как есть, можно потом тоже через Gemini)
+ * Генерация описаний (заглушка)
  */
 async function generateDescriptions(productName, brand, features, price, platform) {
     return [
@@ -99,7 +93,6 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Product name is required' });
         }
 
-        // Берём первое загруженное фото как референс
         let referenceBuffer = null;
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
@@ -112,30 +105,19 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Необходимо загрузить хотя бы одно фото' });
         }
 
-        // Детальный промпт для генерации карточки
         const basePrompt = `Создай профессиональную карточку для маркетплейса ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. 
-На изображении должен быть товар "${productName}" от бренда ${brand}. 
-Категория: ${category}. 
-Цена: ${price} ₽. 
-Ключевые особенности: ${features.join(', ')}.
+На изображении товар "${productName}" от бренда ${brand}. Цена: ${price} ₽. Особенности: ${features.join(', ')}.
+Стиль: студийное освещение, белый фон, высокое качество.
+Текст на карточке: название товара крупно, цена ярко, особенности иконками.
+Дизайн современный, премиальный. Сохрани форму товара с загруженного фото.`;
 
-Стиль: студийное освещение, белый фон, высокое качество, 8k.
-На изображении обязательно должен быть текст:
-- Название товара: "${productName}" (крупно, вверху или по центру)
-- Цена: "${price} ₽" (ярко, внизу)
-- Особенности: отобрази в виде иконок или буллитов с короткими подписями.
-
-Дизайн современный, премиальный, как в лучших карточках Wildberries. Текст должен быть хорошо читаемым, на русском языке. Сохрани форму и внешний вид товара с загруженного фото.`;
-
-        // Генерируем 5 вариантов
+        // Генерируем 3 изображения (без задержек, последовательно)
         const images = [];
-        for (let i = 0; i < 5; i++) {
-            const variationPrompt = `${basePrompt} Вариант ${i+1}, немного измени композицию и расположение текста.`;
+        for (let i = 0; i < 3; i++) {
+            const variationPrompt = `${basePrompt} Вариант ${i+1}.`;
             try {
                 const imageUrl = await generateGeminiImage(variationPrompt, referenceBuffer);
                 images.push(imageUrl);
-                // Небольшая задержка между запросами, чтобы не превысить лимиты
-                await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 console.error(`❌ Ошибка генерации изображения ${i+1}:`, err);
                 images.push(`https://via.placeholder.com/1024x1024?text=Generation+Failed+${i+1}`);
