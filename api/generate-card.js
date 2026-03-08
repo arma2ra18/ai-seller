@@ -38,7 +38,7 @@ async function generateGeminiImage(prompt, referenceImage = null) {
 
         // Вызываем модель
         const response = await ai.models.generateContent({
-            model: 'gemini-3.0-flash-image-preview', // или gemini-2.0-flash-image-exp
+            model: 'imagen-3.0-generate-001', // или 'imagen-3.0-fast-generate-001'
             contents: contents,
             config: {
                 responseModalities: ['Text', 'Image']
