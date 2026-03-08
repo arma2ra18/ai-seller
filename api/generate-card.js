@@ -8,47 +8,43 @@ export const config = {
     },
 };
 
-// Инициализация клиента Gemini
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Генерация изображения через Gemini 2.5 Flash Image
- * @param {string} prompt - текстовое описание
- * @param {Buffer} referenceImage - буфер загруженного пользователем фото (опционально)
- * @returns {Promise<string>} - data URL изображения в формате base64
+ * Генерация изображения через Gemini 3.1 Flash Image (Nano Banana 2)
+ * @param {string} prompt - текстовое описание того, что должно быть на карточке
+ * @param {Buffer} referenceImage - буфер загруженного пользователем фото
+ * @returns {Promise<string>} - data URL готового изображения в формате base64
  */
-async function generateGeminiImage(prompt, referenceImage = null) {
+async function generateGeminiImage(prompt, referenceImage) {
     try {
-        // Формируем содержимое запроса
-        const contents = [];
+        const base64Image = referenceImage.toString('base64');
         
-        if (referenceImage) {
-            // Если есть референсное изображение, отправляем его как base64
-            const base64Image = referenceImage.toString('base64');
-            contents.push({
+        // Формируем содержимое запроса: изображение + текст
+        const contents = [
+            {
                 inlineData: {
                     mimeType: 'image/jpeg',
                     data: base64Image
                 }
-            });
-        }
-        
-        // Добавляем текстовый промпт
-        contents.push(prompt);
+            },
+            prompt
+        ];
 
-        // Вызываем модель
         const response = await ai.models.generateContent({
-            model: 'imagen-3.0-generate-001', // или 'imagen-3.0-fast-generate-001'
+            model: 'gemini-3.1-flash-image-preview', // Правильная модель!
             contents: contents,
             config: {
-                responseModalities: ['Text', 'Image']
+                responseModalities: ['Image'],
+                // Настройки для лучшего качества
+                aspectRatio: '1:1', // Квадрат для карточек
+                // imageSize: '1K', // Можно указать 1K, 2K или 4K (по умолчанию 1K)
             }
         });
 
         // Извлекаем изображение из ответа
         for (const part of response.candidates[0].content.parts) {
             if (part.inlineData) {
-                // Возвращаем как data URL
                 return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
             }
         }
@@ -61,7 +57,7 @@ async function generateGeminiImage(prompt, referenceImage = null) {
 }
 
 /**
- * Генерация описаний (заглушка)
+ * Генерация описаний (оставляем как есть, можно потом тоже через Gemini)
  */
 async function generateDescriptions(productName, brand, features, price, platform) {
     return [
@@ -112,14 +108,24 @@ export default async function handler(req, res) {
             }
         }
 
-        // Базовый промпт для генерации карточки
-        const basePrompt = `Создай профессиональное изображение для карточки товара на маркетплейсе Wildberries. 
-На изображении должен быть товар "${productName}" от бренда ${brand}. Категория: ${category}. 
-Особенности товара: ${features.join(', ')}. 
-Цена: ${price} ₽.
+        if (!referenceBuffer) {
+            return res.status(400).json({ error: 'Необходимо загрузить хотя бы одно фото' });
+        }
+
+        // Детальный промпт для генерации карточки
+        const basePrompt = `Создай профессиональную карточку для маркетплейса ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. 
+На изображении должен быть товар "${productName}" от бренда ${brand}. 
+Категория: ${category}. 
+Цена: ${price} ₽. 
+Ключевые особенности: ${features.join(', ')}.
+
 Стиль: студийное освещение, белый фон, высокое качество, 8k.
-На изображении обязательно должен быть крупно написан текст с названием товара, ценой и краткими особенностями (в виде иконок или буллитов). 
-Дизайн современный, премиальный, как в примерах wbgen.ru.`;
+На изображении обязательно должен быть текст:
+- Название товара: "${productName}" (крупно, вверху или по центру)
+- Цена: "${price} ₽" (ярко, внизу)
+- Особенности: отобрази в виде иконок или буллитов с короткими подписями.
+
+Дизайн современный, премиальный, как в лучших карточках Wildberries. Текст должен быть хорошо читаемым, на русском языке. Сохрани форму и внешний вид товара с загруженного фото.`;
 
         // Генерируем 5 вариантов
         const images = [];
@@ -128,7 +134,7 @@ export default async function handler(req, res) {
             try {
                 const imageUrl = await generateGeminiImage(variationPrompt, referenceBuffer);
                 images.push(imageUrl);
-                // Небольшая задержка между запросами
+                // Небольшая задержка между запросами, чтобы не превысить лимиты
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 console.error(`❌ Ошибка генерации изображения ${i+1}:`, err);
