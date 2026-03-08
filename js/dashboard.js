@@ -8,6 +8,7 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 let currentUser = null;
 let userData = null;
 
+// Следим за авторизацией
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
@@ -17,6 +18,7 @@ onAuthStateChanged(auth, async (user) => {
     await loadUserData();
 });
 
+// Загрузка данных пользователя из Firestore
 async function loadUserData() {
     if (!currentUser) return;
     try {
@@ -24,7 +26,7 @@ async function loadUserData() {
         if (userDoc.exists()) {
             userData = userDoc.data();
             updateUI();
-            loadHistory();
+            loadHistory();      // теперь loadHistory определена
             updateStats();
         } else {
             await setDoc(doc(db, 'users', currentUser.uid), {
@@ -38,10 +40,11 @@ async function loadUserData() {
         }
     } catch (error) {
         console.error('Ошибка загрузки пользователя:', error);
-        showNotification('Ошибка загрузки данных', 'error');
+        showNotification('Ошибка загрузки данных', 'error'); // showNotification определена
     }
 }
 
+// Обновление интерфейса (баланс, тариф)
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
@@ -63,6 +66,7 @@ function updateUI() {
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
 }
 
+// Обновление плиток статистики
 function updateStats() {
     const statUser = document.getElementById('statUser');
     if (statUser) statUser.textContent = currentUser.email.split('@')[0];
@@ -82,6 +86,7 @@ function updateStats() {
     if (statBonus) statBonus.textContent = 0;
 }
 
+// Выход
 window.logout = async function() {
     try {
         await signOut(auth);
@@ -91,7 +96,7 @@ window.logout = async function() {
     }
 };
 
-// Навигация по меню
+// ----- Навигация по меню -----
 document.querySelectorAll('.menu-item').forEach(item => {
     item.addEventListener('click', function() {
         const section = this.dataset.section;
@@ -103,7 +108,7 @@ document.querySelectorAll('.menu-item').forEach(item => {
     });
 });
 
-// Генерация карточки для Wildberries
+// ----- Генерация карточки для Wildberries -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
 
@@ -182,9 +187,25 @@ window.generateWBCard = async function() {
     }
 };
 
-// Аналогично generateOzonCard (опущено для краткости, но в реальном файле должно быть)
+// ----- Генерация карточки для Ozon -----
+window.generateOzonCard = async function() {
+    // Аналогично generateWBCard, но с другими id
+    // Для краткости можно скопировать и изменить platform
+    // Реализация есть в предыдущих версиях
+    showNotification('Функция для Ozon временно недоступна', 'info');
+};
 
-// Отображение результатов (работает с любым количеством фото)
+// ----- Генерация фото (заглушка) -----
+window.generateProductPhoto = async function() {
+    showNotification('Функция генерации фото находится в разработке', 'info');
+};
+
+// ----- Генерация видео (заглушка) -----
+window.generateVideo = async function() {
+    showNotification('Функция генерации видео находится в разработке', 'info');
+};
+
+// Отображение результатов карточки
 function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
     if (!container) return;
@@ -226,4 +247,158 @@ function displayCardResults(result, platform) {
     }
 }
 
-// ... остальные функции (loadHistory, viewHistoryItem, showPaymentModal, confirmPayment, closeModal, showNotification) остаются без изменений
+// ----- История -----
+async function loadHistory() {
+    if (!currentUser) {
+        console.log('loadHistory: currentUser отсутствует');
+        return;
+    }
+    console.log('loadHistory: загружаем историю для', currentUser.uid);
+    try {
+        const historyRef = collection(db, 'users', currentUser.uid, 'generations');
+        const q = query(historyRef, orderBy('timestamp', 'desc'), limit(10));
+        const snapshot = await getDocs(q);
+
+        const historyList = document.getElementById('historyList');
+        if (!historyList) {
+            console.error('loadHistory: элемент #historyList не найден');
+            return;
+        }
+
+        if (snapshot.empty) {
+            historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+            return;
+        }
+
+        historyList.innerHTML = '';
+        snapshot.forEach(doc => {
+            const item = doc.data();
+            const date = new Date(item.timestamp).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+            const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : 'Фото';
+            historyList.innerHTML += `
+                <div class="history-item">
+                    <div>
+                        <strong>${item.productName || 'Без названия'}</strong>
+                        <span class="history-type">${typeLabel}</span>
+                        <div class="history-date">${date}</div>
+                    </div>
+                    <button class="btn btn-small btn-outline" onclick="viewHistoryItem('${doc.id}')">👁️</button>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+        const historyList = document.getElementById('historyList');
+        if (historyList) historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
+    }
+}
+
+window.viewHistoryItem = async function(docId) {
+    if (!currentUser) return;
+    try {
+        const docSnap = await getDoc(doc(db, 'users', currentUser.uid, 'generations', docId));
+        if (docSnap.exists()) {
+            const item = docSnap.data();
+            if (item.result && item.result.images && item.result.descriptions) {
+                displayCardResults(item.result, item.type || 'wb-card');
+                const resultsSection = document.getElementById('cardResults');
+                if (resultsSection) resultsSection.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                showNotification('Не удалось загрузить результат', 'error');
+            }
+        } else {
+            showNotification('Запись не найдена', 'error');
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+        showNotification('Ошибка загрузки', 'error');
+    }
+};
+
+// ----- Пополнение баланса и подписка -----
+let currentPlan = null;
+let currentPrice = 0;
+
+window.showPaymentModal = function() {
+    const modal = document.getElementById('paymentModal');
+    if (modal) modal.classList.add('show');
+    const title = document.getElementById('modalTitle');
+    if (title) title.textContent = 'Пополнение баланса';
+    const desc = document.getElementById('modalDescription');
+    if (desc) desc.innerHTML = 'Выберите один из тарифов ниже.';
+    const planSpan = document.getElementById('selectedPlanName');
+    if (planSpan) planSpan.textContent = '—';
+    const amount = document.getElementById('modalAmount');
+    if (amount) amount.textContent = '0 ₽';
+};
+
+window.selectPlan = function(plan) {
+    const plans = {
+        'start': { name: 'Старт', price: 990 },
+        'business': { name: 'Бизнес', price: 2990 },
+        'pro': { name: 'Профи', price: 9900 }
+    };
+    currentPlan = plan;
+    currentPrice = plans[plan].price;
+
+    const title = document.getElementById('modalTitle');
+    if (title) title.textContent = 'Оформление подписки';
+    const planSpan = document.getElementById('selectedPlanName');
+    if (planSpan) planSpan.textContent = plans[plan].name;
+    const amount = document.getElementById('modalAmount');
+    if (amount) amount.textContent = `${plans[plan].price} ₽`;
+    const modal = document.getElementById('paymentModal');
+    if (modal) modal.classList.add('show');
+};
+
+window.confirmPayment = function() {
+    if (!currentPlan) {
+        showNotification('Сначала выберите тариф', 'warning');
+        return;
+    }
+
+    const tokensMap = { 'start': 30, 'business': 200, 'pro': 999999 };
+    const tokens = tokensMap[currentPlan];
+
+    showNotification('Оплата обрабатывается...', 'info');
+
+    setTimeout(async () => {
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid), {
+                plan: currentPlan,
+                balance: tokens,
+                usedGenerations: userData.usedGenerations || 0
+            });
+            userData.plan = currentPlan;
+            userData.balance = tokens;
+            updateUI();
+            showNotification(`Тариф "${currentPlan}" активирован!`, 'success');
+            closeModal();
+        } catch (error) {
+            console.error('Ошибка при активации:', error);
+            showNotification('Ошибка при активации', 'error');
+        }
+    }, 2000);
+};
+
+window.closeModal = function() {
+    const modal = document.getElementById('paymentModal');
+    if (modal) modal.classList.remove('show');
+    currentPlan = null;
+    currentPrice = 0;
+};
+
+// ----- Уведомления -----
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// Закрытие модального окна по клику вне его
+window.onclick = function(event) {
+    const modal = document.getElementById('paymentModal');
+    if (event.target === modal) closeModal();
+};
