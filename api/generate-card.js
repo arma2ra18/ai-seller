@@ -1,6 +1,6 @@
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
-import sharp from 'sharp';
+import { GoogleGenAI } from '@google/genai';
 
 export const config = {
     api: {
@@ -8,118 +8,56 @@ export const config = {
     },
 };
 
-const GIGACHAT_API_URL = 'https://gigachat.devices.sberbank.ru/api/v1';
+// Инициализация клиента Gemini
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Генерация одного изображения через GigaChat
- * @param {string} prompt - текстовое описание изображения
- * @param {string} token - токен авторизации GigaChat
+ * Генерация изображения через Gemini 2.5 Flash Image
+ * @param {string} prompt - текстовое описание
+ * @param {Buffer} referenceImage - буфер загруженного пользователем фото (опционально)
  * @returns {Promise<string>} - data URL изображения в формате base64
  */
-async function generateImage(prompt, token) {
+async function generateGeminiImage(prompt, referenceImage = null) {
     try {
-        // 1. Запрос на генерацию изображения
-        const completionResponse = await fetch(`${GIGACHAT_API_URL}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                model: 'GigaChat',
-                messages: [
-                    {
-                        role: 'system',
-                        content: 'Ты — профессиональный дизайнер товаров для маркетплейсов. Генерируй реалистичные изображения товаров на белом фоне, студийное освещение, высокое качество.'
-                    },
-                    {
-                        role: 'user',
-                        content: prompt
-                    }
-                ],
-                function_call: 'auto',
-            }),
+        // Формируем содержимое запроса
+        const contents = [];
+        
+        if (referenceImage) {
+            // Если есть референсное изображение, отправляем его как base64
+            const base64Image = referenceImage.toString('base64');
+            contents.push({
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Image
+                }
+            });
+        }
+        
+        // Добавляем текстовый промпт
+        contents.push(prompt);
+
+        // Вызываем модель
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image-preview', // или gemini-2.0-flash-image-exp
+            contents: contents,
+            config: {
+                responseModalities: ['Text', 'Image']
+            }
         });
 
-        // Если статус не 200, пробуем прочитать тело ошибки
-        if (!completionResponse.ok) {
-            const errorText = await completionResponse.text();
-            console.error('❌ GigaChat completion error:', completionResponse.status, errorText);
-            throw new Error(`GigaChat completion error: ${completionResponse.status} - ${errorText}`);
+        // Извлекаем изображение из ответа
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                // Возвращаем как data URL
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
         }
-
-        const completionData = await completionResponse.json();
-        console.log('✅ GigaChat completion response:', JSON.stringify(completionData, null, 2));
-
-        // Извлекаем file_id из тега <img src="..."/>
-        const content = completionData.choices?.[0]?.message?.content || '';
-        const match = content.match(/<img\s+src="([^"]+)"/i);
-        const fileId = match ? match[1] : null;
-
-        if (!fileId) {
-            console.error('❌ Не удалось найти file_id в ответе:', content);
-            throw new Error('Не удалось получить file_id из ответа GigaChat');
-        }
-
-        console.log('✅ Получен file_id:', fileId);
-
-        // 2. Скачиваем файл изображения
-        const fileResponse = await fetch(`${GIGACHAT_API_URL}/files/${fileId}/content`, {
-            method: 'GET',
-            headers: {
-                'Accept': 'image/jpeg, image/png, */*',
-                'Authorization': `Bearer ${token}`,
-            },
-        });
-
-        if (!fileResponse.ok) {
-            const errorText = await fileResponse.text();
-            console.error('❌ GigaChat file download error:', fileResponse.status, errorText);
-            throw new Error(`GigaChat file download error: ${fileResponse.status} - ${errorText}`);
-        }
-
-        const arrayBuffer = await fileResponse.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const contentType = fileResponse.headers.get('content-type') || 'image/jpeg';
-        const base64 = buffer.toString('base64');
-        return `data:${contentType};base64,${base64}`;
+        
+        throw new Error('Ответ не содержит изображения');
     } catch (error) {
-        console.error('❌ Ошибка в generateImage:', error);
+        console.error('Gemini generation error:', error);
         throw error;
     }
-}
-
-/**
- * Наложение текста на изображение с помощью sharp
- */
-async function overlayText(base64Image, data) {
-    const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, "");
-    const imgBuffer = Buffer.from(base64Data, 'base64');
-    const metadata = await sharp(imgBuffer).metadata();
-    const width = metadata.width || 1024;
-    const height = metadata.height || 1024;
-
-    const svgText = `
-    <svg width="${width}" height="${height}">
-        <style>
-            .title { fill: white; font-size: 42px; font-family: 'Inter', Arial; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-            .price { fill: gold; font-size: 58px; font-family: 'Inter', Arial; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
-            .feature { fill: #ddd; font-size: 28px; font-family: 'Inter', Arial; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-        </style>
-        <text x="50" y="${height - 150}" class="title">${data.productName}</text>
-        <text x="50" y="${height - 80}" class="price">${data.price} ₽</text>
-        ${data.features.slice(0,3).map((feat, i) => 
-            `<text x="50" y="${height - 200 - i*35}" class="feature">• ${feat}</text>`
-        ).join('')}
-    </svg>`;
-
-    const svgBuffer = Buffer.from(svgText);
-    const finalBuffer = await sharp(imgBuffer)
-        .composite([{ input: svgBuffer, top: 0, left: 0 }])
-        .jpeg({ quality: 90 })
-        .toBuffer();
-    return `data:image/jpeg;base64,${finalBuffer.toString('base64')}`;
 }
 
 /**
@@ -138,10 +76,10 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const token = process.env.GIGACHAT_AUTH_KEY;
-    if (!token) {
-        console.error('❌ GIGACHAT_AUTH_KEY not set');
-        return res.status(500).json({ error: 'GIGACHAT_AUTH_KEY not set' });
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+        console.error('❌ GOOGLE_API_KEY not set');
+        return res.status(500).json({ error: 'GOOGLE_API_KEY not set' });
     }
 
     try {
@@ -165,24 +103,32 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Product name is required' });
         }
 
-        let photoArray = [];
+        // Берём первое загруженное фото как референс
+        let referenceBuffer = null;
         if (files.photos) {
-            photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
+            const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
+            if (photoArray.length > 0) {
+                referenceBuffer = fs.readFileSync(photoArray[0].filepath);
+            }
         }
 
-        const basePrompt = `Профессиональное фото товара "${productName}" от бренда ${brand}. Категория: ${category}. Особенности: ${features.join(', ')}. Белый фон, студийное освещение, высокое качество, 8k.`;
+        // Базовый промпт для генерации карточки
+        const basePrompt = `Создай профессиональное изображение для карточки товара на маркетплейсе Wildberries. 
+На изображении должен быть товар "${productName}" от бренда ${brand}. Категория: ${category}. 
+Особенности товара: ${features.join(', ')}. 
+Цена: ${price} ₽.
+Стиль: студийное освещение, белый фон, высокое качество, 8k.
+На изображении обязательно должен быть крупно написан текст с названием товара, ценой и краткими особенностями (в виде иконок или буллитов). 
+Дизайн современный, премиальный, как в примерах wbgen.ru.`;
 
+        // Генерируем 5 вариантов
         const images = [];
         for (let i = 0; i < 5; i++) {
-            const variationPrompt = `${basePrompt} Вариант ${i+1}, ракурс ${i+1}.`;
+            const variationPrompt = `${basePrompt} Вариант ${i+1}, немного измени композицию и расположение текста.`;
             try {
-                const imageDataUrl = await generateImage(variationPrompt, token);
-                const finalImage = await overlayText(imageDataUrl, {
-                    productName,
-                    price,
-                    features
-                });
-                images.push(finalImage);
+                const imageUrl = await generateGeminiImage(variationPrompt, referenceBuffer);
+                images.push(imageUrl);
+                // Небольшая задержка между запросами
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 console.error(`❌ Ошибка генерации изображения ${i+1}:`, err);
@@ -192,11 +138,15 @@ export default async function handler(req, res) {
 
         const descriptions = await generateDescriptions(productName, brand, features, price, platform);
 
-        photoArray.forEach(file => {
-            if (file.filepath && fs.existsSync(file.filepath)) {
-                fs.unlinkSync(file.filepath);
-            }
-        });
+        // Удаляем временные файлы
+        if (files.photos) {
+            const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
+            photoArray.forEach(file => {
+                if (file.filepath && fs.existsSync(file.filepath)) {
+                    fs.unlinkSync(file.filepath);
+                }
+            });
+        }
 
         res.status(200).json({ images, descriptions });
 
