@@ -1,6 +1,7 @@
 /* ===== ОСНОВНЫЕ ПЕРЕМЕННЫЕ ===== */
 :root {
     --bg-dark: #0a0c10;
+    --bg-sidebar: #111317;
     --bg-card: #1a1d24;
     --bg-input: #2a2e36;
     --accent: #2f6ed6;
@@ -799,40 +800,129 @@ h2 {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* ===== МОБИЛЬНАЯ ВЕРСИЯ (до 768px) ===== */
 @media (max-width: 768px) {
+    /* Перестраиваем сайдбар */
     .sidebar {
         width: 100%;
         position: relative;
         height: auto;
+        padding-bottom: 20px;
     }
+    .sidebar-logo {
+        text-align: center;
+        padding: 15px;
+    }
+    .sidebar-nav ul {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 5px;
+        padding: 0 10px;
+    }
+    .menu-item {
+        padding: 8px 12px;
+        font-size: 14px;
+        border-left: none;
+        border-radius: 20px;
+    }
+    .menu-item.active {
+        border-left: none;
+        background: var(--accent-gradient);
+    }
+
+    /* Основной контент */
     .main-content {
         margin-left: 0;
+        padding: 20px 15px;
     }
-    .pricing-grid {
-        grid-template-columns: 1fr;
-    }
+
+    /* Плитки статистики */
     .stats-grid {
         grid-template-columns: 1fr;
+        gap: 10px;
     }
+    .stat-card {
+        padding: 15px;
+    }
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 22px;
+    }
+    .stat-value {
+        font-size: 18px;
+    }
+
+    /* Формы */
     .form-row {
         flex-direction: column;
+        gap: 15px;
+    }
+    .generation-form {
+        padding: 20px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        font-size: 16px; /* чтобы не было зума на iOS */
+    }
+
+    /* Результаты и история */
+    .image-gallery {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .history-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .history-item button {
+        align-self: flex-end;
+    }
+
+    /* Модальное окно */
+    .modal-content {
+        padding: 25px;
+        width: 95%;
+    }
+    .modal-content h2 {
+        font-size: 24px;
+    }
+
+    /* Уведомления */
+    .notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        width: auto;
+        text-align: center;
+    }
+
+    /* Блок приветствия */
+    .welcome-block h1 {
+        font-size: 28px;
+    }
+    .welcome-block p {
+        font-size: 14px;
     }
 }
-/* Стили для обычного input file */
-.file-input {
-    width: 100%;
-    padding: 10px;
-    background: var(--bg-input);
-    border: 1px dashed var(--border);
-    border-radius: 8px;
-    color: var(--text-primary);
-    cursor: pointer;
-}
-.file-input:hover {
-    border-color: var(--accent);
-}
-.file-input-info {
-    margin-top: 5px;
-    font-size: 13px;
-    color: var(--text-secondary);
+
+/* Дополнительно для очень маленьких экранов (до 480px) */
+@media (max-width: 480px) {
+    .image-gallery {
+        grid-template-columns: 1fr;
+    }
+    .sidebar-nav ul {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .menu-item {
+        text-align: center;
+    }
+    .btn-large {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
 }
