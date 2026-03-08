@@ -69,7 +69,7 @@ export default async function handler(req, res) {
         try {
             imageUrl = await generateGeminiImage(prompt, referenceBuffer);
         } catch (err) {
-            imageUrl = 'https://via.placeholder.com/1024x1024?text=Generation+Failed';
+            imageUrl = 'https://dummyimage.com/1024x1024/2f6ed6/ffffff.png&text=Generation+Failed';
         }
 
         const descriptions = [
