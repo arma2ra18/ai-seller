@@ -11,25 +11,37 @@ export const config = {
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 async function generateGeminiImage(prompt, referenceImage) {
-    const base64Image = referenceImage.toString('base64');
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp-image-generation', // самая быстрая экспериментальная
-        contents: [
-            { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
+    try {
+        const base64Image = referenceImage.toString('base64');
+        const contents = [
+            {
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Image
+                }
+            },
             prompt
-        ],
-        config: {
-            responseModalities: ['Image'],
-            aspectRatio: '1:1',
-            // imageSize: '0.5K', // можно попробовать уменьшить разрешение
+        ];
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-pro-image-preview', // Правильная модель для генерации изображений!
+            contents: contents,
+            config: {
+                responseModalities: ['Image'],
+                aspectRatio: '1:1',
+            }
+        });
+
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
         }
-    });
-    for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-        }
+        throw new Error('Ответ не содержит изображения');
+    } catch (error) {
+        console.error('Gemini generation error:', error);
+        throw error;
     }
-    throw new Error('Нет изображения');
 }
 
 export default async function handler(req, res) {
@@ -62,15 +74,18 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // Максимально короткий промпт
-        const prompt = `Карточка ${platform === 'wb' ? 'Wildberries' : 'Ozon'}: ${productName}, ${brand}, ${price}₽, особенности: ${features.join(', ')}. Белый фон, студийное освещение. На карточке текст: название, цена, особенности.`;
+        // Промпт для генерации карточки с текстом
+        const prompt = `Создай профессиональную карточку для маркетплейса ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. 
+На изображении товар "${productName}" от бренда ${brand}. Цена: ${price} ₽. Особенности: ${features.join(', ')}.
+Стиль: студийное освещение, белый фон, высокое качество.
+Текст на карточке: название товара крупно, цена ярко, особенности иконками или буллитами.
+Дизайн современный, премиальный. Сохрани форму товара с загруженного фото.`;
 
         let imageUrl;
         try {
             imageUrl = await generateGeminiImage(prompt, referenceBuffer);
         } catch (err) {
             console.error(err);
-            // НЕТ ЗАГЛУШКИ – просто возвращаем ошибку, чтобы клиент её увидел
             return res.status(500).json({ error: 'Gemini generation failed: ' + err.message });
         }
 
