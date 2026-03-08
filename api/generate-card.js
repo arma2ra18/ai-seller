@@ -13,7 +13,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 async function generateGeminiImage(prompt, referenceImage) {
     const base64Image = referenceImage.toString('base64');
     const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash-exp-image-generation', // быстрее?
+        model: 'gemini-2.0-flash-exp-image-generation', // самая быстрая экспериментальная
         contents: [
             { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
             prompt
@@ -21,6 +21,7 @@ async function generateGeminiImage(prompt, referenceImage) {
         config: {
             responseModalities: ['Image'],
             aspectRatio: '1:1',
+            // imageSize: '0.5K', // можно попробовать уменьшить разрешение
         }
     });
     for (const part of response.candidates[0].content.parts) {
@@ -54,7 +55,6 @@ export default async function handler(req, res) {
 
         if (!productName) return res.status(400).json({ error: 'Name required' });
 
-        // Берём первое фото
         let referenceBuffer = null;
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
@@ -62,14 +62,16 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // Короткий промпт
-        const prompt = `Карточка для ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. Товар: ${productName}, бренд: ${brand}, цена: ${price}₽, особенности: ${features.join(', ')}. Белый фон, студийное освещение. На карточке название, цена и особенности.`;
+        // Максимально короткий промпт
+        const prompt = `Карточка ${platform === 'wb' ? 'Wildberries' : 'Ozon'}: ${productName}, ${brand}, ${price}₽, особенности: ${features.join(', ')}. Белый фон, студийное освещение. На карточке текст: название, цена, особенности.`;
 
         let imageUrl;
         try {
             imageUrl = await generateGeminiImage(prompt, referenceBuffer);
         } catch (err) {
-            imageUrl = 'https://dummyimage.com/1024x1024/2f6ed6/ffffff.png&text=Generation+Failed';
+            console.error(err);
+            // НЕТ ЗАГЛУШКИ – просто возвращаем ошибку, чтобы клиент её увидел
+            return res.status(500).json({ error: 'Gemini generation failed: ' + err.message });
         }
 
         const descriptions = [
