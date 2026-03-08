@@ -10,64 +10,32 @@ export const config = {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-/**
- * Генерация одного изображения через Gemini 3.1 Flash Image
- */
 async function generateGeminiImage(prompt, referenceImage) {
-    try {
-        const base64Image = referenceImage.toString('base64');
-        const contents = [
-            {
-                inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: base64Image
-                }
-            },
+    const base64Image = referenceImage.toString('base64');
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.0-flash-exp-image-generation', // быстрее?
+        contents: [
+            { inlineData: { mimeType: 'image/jpeg', data: base64Image } },
             prompt
-        ];
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-image-preview',
-            contents: contents,
-            config: {
-                responseModalities: ['Image'],
-                aspectRatio: '1:1',
-            }
-        });
-
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            }
+        ],
+        config: {
+            responseModalities: ['Image'],
+            aspectRatio: '1:1',
         }
-        throw new Error('Ответ не содержит изображения');
-    } catch (error) {
-        console.error('Gemini generation error:', error);
-        throw error;
+    });
+    for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
     }
-}
-
-/**
- * Генерация описаний (заглушка)
- */
-async function generateDescriptions(productName, brand, features, price, platform) {
-    return [
-        `Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Идеально подходит для повседневного использования. Закажите сейчас!`,
-        `${brand} ${productName} – высокое качество и надёжность. ${features.join(', ')}. Всего ${price} ₽. Быстрая доставка по всей России.`,
-        `Купите ${productName} по лучшей цене – ${price} ₽! ${features.join(', ')}. Только оригинальная продукция.`
-    ];
+    throw new Error('Нет изображения');
 }
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+    if (req.method !== 'POST') return res.status(405).end();
 
     const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) {
-        console.error('❌ GOOGLE_API_KEY not set');
-        return res.status(500).json({ error: 'GOOGLE_API_KEY not set' });
-    }
+    if (!apiKey) return res.status(500).json({ error: 'No API key' });
 
     try {
         const form = new IncomingForm({ keepExtensions: true, multiples: true });
@@ -78,64 +46,49 @@ export default async function handler(req, res) {
             });
         });
 
-        const productName = fields.productName?.[0] || fields.productName || '';
-        const brand = fields.brand?.[0] || fields.brand || '';
-        const category = fields.category?.[0] || fields.category || '';
-        const price = fields.price?.[0] || fields.price || '1990';
-        const featuresStr = fields.features?.[0] || fields.features || '';
-        const features = featuresStr.split(',').map(f => f.trim()).filter(Boolean);
-        const platform = fields.platform?.[0] || fields.platform || 'wb';
+        const productName = fields.productName?.[0] || '';
+        const brand = fields.brand?.[0] || '';
+        const price = fields.price?.[0] || '1990';
+        const features = (fields.features?.[0] || '').split(',').map(f => f.trim()).filter(Boolean);
+        const platform = fields.platform?.[0] || 'wb';
 
-        if (!productName) {
-            return res.status(400).json({ error: 'Product name is required' });
-        }
+        if (!productName) return res.status(400).json({ error: 'Name required' });
 
-        // Берём первое загруженное фото
+        // Берём первое фото
         let referenceBuffer = null;
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
-            if (photoArray.length > 0) {
-                referenceBuffer = fs.readFileSync(photoArray[0].filepath);
-            }
+            if (photoArray.length) referenceBuffer = fs.readFileSync(photoArray[0].filepath);
         }
+        if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        if (!referenceBuffer) {
-            return res.status(400).json({ error: 'Необходимо загрузить хотя бы одно фото' });
-        }
+        // Короткий промпт
+        const prompt = `Карточка для ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. Товар: ${productName}, бренд: ${brand}, цена: ${price}₽, особенности: ${features.join(', ')}. Белый фон, студийное освещение. На карточке название, цена и особенности.`;
 
-        // Промпт для генерации одной карточки
-        const prompt = `Создай профессиональную карточку для маркетплейса ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. 
-На изображении товар "${productName}" от бренда ${brand}. Цена: ${price} ₽. Особенности: ${features.join(', ')}.
-Стиль: студийное освещение, белый фон, высокое качество.
-Текст на карточке: название товара крупно, цена ярко, особенности иконками.
-Дизайн современный, премиальный. Сохрани форму товара с загруженного фото.`;
-
-        // Генерируем только одно изображение
-        let images = [];
+        let imageUrl;
         try {
-            const imageUrl = await generateGeminiImage(prompt, referenceBuffer);
-            images = [imageUrl];
+            imageUrl = await generateGeminiImage(prompt, referenceBuffer);
         } catch (err) {
-            console.error('❌ Ошибка генерации изображения:', err);
-            images = [`https://via.placeholder.com/1024x1024?text=Generation+Failed`];
+            imageUrl = 'https://via.placeholder.com/1024x1024?text=Generation+Failed';
         }
 
-        const descriptions = await generateDescriptions(productName, brand, features, price, platform);
+        const descriptions = [
+            `Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽.`,
+            `${brand} ${productName} – высокое качество. Всего ${price} ₽.`,
+            `Купите ${productName} по лучшей цене – ${price} ₽!`
+        ];
 
         // Удаляем временные файлы
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             photoArray.forEach(file => {
-                if (file.filepath && fs.existsSync(file.filepath)) {
-                    fs.unlinkSync(file.filepath);
-                }
+                if (file.filepath && fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
             });
         }
 
-        res.status(200).json({ images, descriptions });
-
+        res.status(200).json({ images: [imageUrl], descriptions });
     } catch (error) {
-        console.error('❌ Generate card error:', error);
+        console.error(error);
         res.status(500).json({ error: error.message });
     }
 }
