@@ -11,10 +11,7 @@ export const config = {
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Генерация изображения через Gemini 3.1 Flash Image (Nano Banana 2)
- * @param {string} prompt - текстовое описание
- * @param {Buffer} referenceImage - буфер загруженного пользователем фото
- * @returns {Promise<string>} - data URL готового изображения
+ * Генерация одного изображения через Gemini 3.1 Flash Image
  */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
@@ -93,6 +90,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Product name is required' });
         }
 
+        // Берём первое загруженное фото
         let referenceBuffer = null;
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
@@ -105,23 +103,21 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Необходимо загрузить хотя бы одно фото' });
         }
 
-        const basePrompt = `Создай профессиональную карточку для маркетплейса ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. 
+        // Промпт для генерации одной карточки
+        const prompt = `Создай профессиональную карточку для маркетплейса ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. 
 На изображении товар "${productName}" от бренда ${brand}. Цена: ${price} ₽. Особенности: ${features.join(', ')}.
 Стиль: студийное освещение, белый фон, высокое качество.
 Текст на карточке: название товара крупно, цена ярко, особенности иконками.
 Дизайн современный, премиальный. Сохрани форму товара с загруженного фото.`;
 
-        // Генерируем 3 изображения (без задержек, последовательно)
-        const images = [];
-        for (let i = 0; i < 3; i++) {
-            const variationPrompt = `${basePrompt} Вариант ${i+1}.`;
-            try {
-                const imageUrl = await generateGeminiImage(variationPrompt, referenceBuffer);
-                images.push(imageUrl);
-            } catch (err) {
-                console.error(`❌ Ошибка генерации изображения ${i+1}:`, err);
-                images.push(`https://via.placeholder.com/1024x1024?text=Generation+Failed+${i+1}`);
-            }
+        // Генерируем только одно изображение
+        let images = [];
+        try {
+            const imageUrl = await generateGeminiImage(prompt, referenceBuffer);
+            images = [imageUrl];
+        } catch (err) {
+            console.error('❌ Ошибка генерации изображения:', err);
+            images = [`https://via.placeholder.com/1024x1024?text=Generation+Failed`];
         }
 
         const descriptions = await generateDescriptions(productName, brand, features, price, platform);
