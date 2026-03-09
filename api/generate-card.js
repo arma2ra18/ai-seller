@@ -1,34 +1,6 @@
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
-import admin from 'firebase-admin';
-
-// Инициализация Firebase Admin SDK (только один раз)
-let bucket;
-try {
-  if (!admin.apps.length) {
-    // Пробуем получить сервисный аккаунт из переменной окружения
-    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountEnv) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
-    }
-    // Пытаемся распарсить JSON (может быть передан как строка или уже объект)
-    const serviceAccount = typeof serviceAccountEnv === 'string' 
-      ? JSON.parse(serviceAccountEnv) 
-      : serviceAccountEnv;
-    
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    });
-    console.log('Firebase Admin initialized successfully');
-  }
-  bucket = admin.storage().bucket();
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
-  // Пробрасываем ошибку дальше, чтобы функция упала и мы увидели её в логах
-  throw new Error(`Firebase init failed: ${error.message}`);
-}
 
 export const config = {
     api: {
@@ -69,35 +41,6 @@ async function generateGeminiImage(prompt, referenceImage) {
     } catch (error) {
         console.error('Gemini generation error:', error);
         throw error;
-    }
-}
-
-/**
- * Загружает изображение в Firebase Storage и возвращает публичный URL.
- * Если загрузка не удалась, возвращает исходный dataURL (для отладки).
- */
-async function uploadToStorage(base64Data, fileName) {
-    try {
-        const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (!matches || matches.length !== 3) {
-            throw new Error('Invalid base64 data');
-        }
-        const mimeType = matches[1];
-        const base64 = matches[2];
-        const buffer = Buffer.from(base64, 'base64');
-
-        const file = bucket.file(`generated/${fileName}`);
-        await file.save(buffer, {
-            metadata: { contentType: mimeType },
-            public: true,
-        });
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-        console.log(`Uploaded to Storage: ${publicUrl}`);
-        return publicUrl;
-    } catch (error) {
-        console.error('Upload to Storage failed:', error);
-        // Возвращаем dataURL как запасной вариант (чтобы клиент не падал)
-        return base64Data;
     }
 }
 
@@ -149,14 +92,11 @@ The image must be square, 1024x1024, 8k resolution, sharp focus, no white backgr
             const variation = ` (variation ${i+1}: slightly different composition, lighting angle, or text placement)`;
             try {
                 const imageDataUrl = await generateGeminiImage(basePrompt + variation, referenceBuffer);
-                const fileName = `card_${Date.now()}_${i}.jpg`;
-                // Пытаемся загрузить в Storage
-                const finalUrl = await uploadToStorage(imageDataUrl, fileName);
-                images.push(finalUrl);
+                images.push(imageDataUrl);
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 console.error(`Error generating image ${i+1}:`, err);
-                // Если не удалось, просто пропускаем (не добавляем null)
+                // Если не удалось, просто пропускаем (не добавляем)
             }
         }
 
