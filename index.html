@@ -9,8 +9,9 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
+    <!-- Полупрозрачная плавающая панель навигации -->
     <header class="header">
-        <div class="container">
+        <div class="container header-container">
             <div class="logo">AI Seller</div>
             <nav class="nav">
                 <a href="#features">Возможности</a>
@@ -22,144 +23,140 @@
         </div>
     </header>
 
-    <section class="hero">
-        <div class="container">
-            <h1>Генерация карточек<br>для WB и Ozon за 5 секунд</h1>
-            <p class="hero-subtitle">Нейросеть создаёт продающие описания, SEO-названия, фото и видео. Экономьте 3 часа на каждой карточке.</p>
-            <div class="hero-cta">
-                <a href="/login.html" class="btn btn-large btn-primary">Начать бесплатно</a>
-                <a href="#how-it-works" class="btn btn-large btn-outline">Как это работает</a>
+    <main>
+        <!-- Главный экран с гигантским изображением продукта -->
+        <section class="hero">
+            <div class="hero-image">
+                <!-- Здесь будет большое изображение продукта (стилизовано через CSS) -->
+                <div class="hero-placeholder"></div>
             </div>
-            <div class="stats">
-                <div class="stat-item">
-                    <div class="stat-number">50 000+</div>
-                    <div class="stat-label">сгенерировано карточек</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">15 000+</div>
-                    <div class="stat-label">довольных продавцов</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-number">4.9</div>
-                    <div class="stat-label">средняя оценка</div>
+            <div class="hero-content">
+                <h1>AI Seller</h1>
+                <p class="hero-subtitle">Генератор карточек для Wildberries и Ozon</p>
+                <div class="hero-links">
+                    <a href="#features" class="hero-link">Подробнее</a>
+                    <a href="/login.html" class="hero-link">Купить</a>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="features" class="features">
-        <div class="container">
-            <h2>Что умеет AI Seller</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">📝</div>
-                    <h3>SEO-названия</h3>
-                    <p>10 вариантов кликбейтных названий с ключевыми словами под требования WB и Ozon</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📄</div>
-                    <h3>Продающие описания</h3>
-                    <p>Структурированные тексты с эмодзи, преимуществами и призывами к действию</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3>Характеристики</h3>
-                    <p>Автоматическое заполнение всех свойств товара под выбранную категорию</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🖼️</div>
-                    <h3>Фото товара</h3>
-                    <p>Загрузите фото — нейросеть создаст профессиональную карточку</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🎬</div>
-                    <h3>Видео для карточки</h3>
-                    <p>Генерация 15-секундных роликов: обзор, 360°, распаковка</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">💾</div>
-                    <h3>История в облаке</h3>
-                    <p>Все генерации сохраняются и доступны с любого устройства</p>
+        <!-- Сетка продуктов (наши возможности) -->
+        <section id="features" class="features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📝</div>
+                        <h3>SEO-названия</h3>
+                        <p>10 вариантов кликбейтных названий с ключевыми словами под требования WB и Ozon</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📄</div>
+                        <h3>Продающие описания</h3>
+                        <p>Структурированные тексты с эмодзи, преимуществами и призывами к действию</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3>Характеристики</h3>
+                        <p>Автоматическое заполнение всех свойств товара под выбранную категорию</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🖼️</div>
+                        <h3>Фото товара</h3>
+                        <p>Загрузите фото — нейросеть создаст профессиональную карточку</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎬</div>
+                        <h3>Видео для карточки</h3>
+                        <p>Генерация 15-секундных роликов: обзор, 360°, распаковка</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">💾</div>
+                        <h3>История в облаке</h3>
+                        <p>Все генерации сохраняются и доступны с любого устройства</p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="how-it-works" class="how-it-works">
-        <div class="container">
-            <h2>Как это работает</h2>
-            <div class="steps">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h4>Введите данные или загрузите фото</h4>
-                    <p>Название товара, особенности, целевую аудиторию или просто фото с телефона</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h4>Нажмите «Сгенерировать»</h4>
-                    <p>Нейросеть создаст текст за 5 секунд, фото за 30 секунд, видео за 2 минуты</p>
-                </div>
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h4>Скопируйте или выгрузите</h4>
-                    <p>Готовая карточка — сразу на маркетплейс. Вся история сохраняется</p>
+        <!-- Секция "Как это работает" (в стиле Apple) -->
+        <section id="how-it-works" class="how-it-works">
+            <div class="container">
+                <h2>Как это работает</h2>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h4>Введите данные или загрузите фото</h4>
+                        <p>Название товара, особенности, целевую аудиторию или просто фото с телефона</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h4>Нажмите «Сгенерировать»</h4>
+                        <p>Нейросеть создаст текст за 5 секунд, фото за 30 секунд, видео за 2 минуты</p>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h4>Скопируйте или выгрузите</h4>
+                        <p>Готовая карточка — сразу на маркетплейс. Вся история сохраняется</p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="pricing" class="pricing">
-        <div class="container">
-            <h2>Тарифы</h2>
-            <div class="pricing-grid">
-                <div class="pricing-card">
-                    <h3>Старт</h3>
-                    <div class="price">990 ₽<span>/мес</span></div>
-                    <ul class="features-list">
-                        <li>30 генераций</li>
-                        <li>Все типы контента</li>
-                        <li>История в облаке</li>
-                    </ul>
-                    <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
-                </div>
-                <div class="pricing-card popular">
-                    <div class="popular-tag">🔥 Хит продаж</div>
-                    <h3>Бизнес</h3>
-                    <div class="price">2 990 ₽<span>/мес</span></div>
-                    <ul class="features-list">
-                        <li>200 генераций</li>
-                        <li>Все типы контента</li>
-                        <li>Массовая генерация</li>
-                    </ul>
-                    <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
-                </div>
-                <div class="pricing-card">
-                    <h3>Профи</h3>
-                    <div class="price">9 900 ₽<span>/мес</span></div>
-                    <ul class="features-list">
-                        <li>Безлимит генераций</li>
-                        <li>Все типы контента</li>
-                        <li>VIP-поддержка</li>
-                    </ul>
-                    <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
+        <!-- Секция тарифов (сетка из трёх карточек) -->
+        <section id="pricing" class="pricing">
+            <div class="container">
+                <h2>Тарифы</h2>
+                <div class="pricing-grid">
+                    <div class="pricing-card">
+                        <h3>Старт</h3>
+                        <div class="price">990 ₽<span>/мес</span></div>
+                        <ul class="features-list">
+                            <li>30 генераций</li>
+                            <li>Все типы контента</li>
+                            <li>История в облаке</li>
+                        </ul>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
+                    </div>
+                    <div class="pricing-card popular">
+                        <div class="popular-tag">🔥 Хит продаж</div>
+                        <h3>Бизнес</h3>
+                        <div class="price">2 990 ₽<span>/мес</span></div>
+                        <ul class="features-list">
+                            <li>200 генераций</li>
+                            <li>Все типы контента</li>
+                            <li>Массовая генерация</li>
+                        </ul>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
+                    </div>
+                    <div class="pricing-card">
+                        <h3>Профи</h3>
+                        <div class="price">9 900 ₽<span>/мес</span></div>
+                        <ul class="features-list">
+                            <li>Безлимит генераций</li>
+                            <li>Все типы контента</li>
+                            <li>VIP-поддержка</li>
+                        </ul>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">AI Seller</div>
-                <div class="footer-links">
-                    <a href="#">Политика конфиденциальности</a>
-                    <a href="#">Пользовательское соглашение</a>
-                    <a href="mailto:support@ai-seller.ru">Поддержка</a>
+        <!-- Футер -->
+        <footer class="footer">
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-logo">AI Seller</div>
+                    <div class="footer-links">
+                        <a href="#">Политика конфиденциальности</a>
+                        <a href="#">Пользовательское соглашение</a>
+                        <a href="mailto:support@ai-seller.ru">Поддержка</a>
+                    </div>
+                    <div class="footer-copyright">© 2026 AI Seller. Все права защищены.</div>
                 </div>
-                <div class="footer-copyright">© 2026 AI Seller. Все права защищены.</div>
             </div>
-        </div>
-    </footer>
+        </footer>
+    </main>
 
     <script src="js/main.js"></script>
 </body>
