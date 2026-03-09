@@ -10,6 +10,9 @@ export const config = {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
+/**
+ * Генерация одного изображения через Gemini
+ */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
         const base64Image = referenceImage.toString('base64');
@@ -48,7 +51,10 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
 
     const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: 'No API key' });
+    if (!apiKey) {
+        console.error('❌ GOOGLE_API_KEY not set');
+        return res.status(500).json({ error: 'GOOGLE_API_KEY not set' });
+    }
 
     try {
         const form = new IncomingForm({ keepExtensions: true, multiples: true });
@@ -65,16 +71,22 @@ export default async function handler(req, res) {
         const features = (fields.features?.[0] || '').split(',').map(f => f.trim()).filter(Boolean);
         const platform = fields.platform?.[0] || 'wb';
 
-        if (!productName) return res.status(400).json({ error: 'Name required' });
+        if (!productName) {
+            return res.status(400).json({ error: 'Product name is required' });
+        }
 
         let referenceBuffer = null;
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
-            if (photoArray.length) referenceBuffer = fs.readFileSync(photoArray[0].filepath);
+            if (photoArray.length) {
+                referenceBuffer = fs.readFileSync(photoArray[0].filepath);
+            }
         }
-        if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
+        if (!referenceBuffer) {
+            return res.status(400).json({ error: 'No photo uploaded' });
+        }
 
-        // Промпт для генерации (премиум, с надписями)
+        // Промпт с 3D-текстом и премиальным стилем
         const basePrompt = `Generate an ultra-premium product image for Wildberries marketplace, as if designed by the world's most expensive designer. 
 The image should feature the product "${productName}" by brand ${brand} in the center, rendered in hyper-realistic 3D with cinematic lighting, reflections, and sharp details. 
 Around the product, place multiple 3D text elements with luxurious effects: 
@@ -86,17 +98,17 @@ The background should be a soft gradient or an abstract luxurious studio environ
 Overall style: ultra-modern, opulent, photorealistic, with reflections and ambient occlusion. All text must be crisp, readable, and seamlessly integrated as if part of a high-end 3D render.
 The image must be square, 1024x1024, 8k resolution, sharp focus, no white background.`;
 
-        // Генерируем 3 изображения
         const images = [];
         for (let i = 0; i < 3; i++) {
             const variation = ` (variation ${i+1}: slightly different composition, lighting angle, or text placement)`;
             try {
                 const imageDataUrl = await generateGeminiImage(basePrompt + variation, referenceBuffer);
                 images.push(imageDataUrl);
+                // Небольшая задержка между запросами
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
-                console.error(`Error generating image ${i+1}:`, err);
-                // Если не удалось, просто пропускаем (не добавляем)
+                console.error(`❌ Ошибка при генерации изображения ${i+1}:`, err);
+                // Продолжаем со следующим, не добавляем null
             }
         }
 
@@ -105,22 +117,25 @@ The image must be square, 1024x1024, 8k resolution, sharp focus, no white backgr
         }
 
         const descriptions = [
-            `✨ Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Идеально подходит для повседневного использования. Закажите сейчас!`,
-            `💎 ${brand} ${productName} – высокое качество и надёжность. ${features.join(', ')}. Всего ${price} ₽. Быстрая доставка по всей России.`,
-            `🔥 Купите ${productName} по лучшей цене – ${price} ₽! ${features.join(', ')}. Только оригинальная продукция.`
+            `✨ Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Закажите сейчас!`,
+            `💎 ${brand} ${productName} – высокое качество. Всего ${price} ₽. Быстрая доставка.`,
+            `🔥 Купите ${productName} по лучшей цене – ${price} ₽! Только оригинал.`
         ];
 
         // Удаляем временные файлы
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             photoArray.forEach(file => {
-                if (file.filepath && fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
+                if (file.filepath && fs.existsSync(file.filepath)) {
+                    fs.unlinkSync(file.filepath);
+                }
             });
         }
 
+        console.log('✅ Успешно сгенерировано изображений:', images.length);
         res.status(200).json({ images, descriptions });
     } catch (error) {
-        console.error('❌ Handler error:', error);
+        console.error('❌ Ошибка в handler:', error);
         res.status(500).json({ error: error.message });
     }
 }
