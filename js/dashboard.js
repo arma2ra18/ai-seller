@@ -103,6 +103,19 @@ document.querySelectorAll('.menu-item').forEach(item => {
     });
 });
 
+// ----- Обновление информации о выбранных файлах -----
+window.updateFileInfo = function(inputId, infoId) {
+    const input = document.getElementById(inputId);
+    const info = document.getElementById(infoId);
+    if (!input || !info) return;
+    if (input.files.length === 0) {
+        info.textContent = input.multiple ? 'Файлы не выбраны' : 'Файл не выбран';
+    } else {
+        const names = Array.from(input.files).map(f => f.name).join(', ');
+        info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
+    }
+};
+
 // ----- Генерация для Wildberries -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
@@ -183,8 +196,90 @@ window.generateWBCard = async function() {
 
 // ----- Генерация для Ozon -----
 window.generateOzonCard = async function() {
-    // Аналогично WB (с другими ID), для краткости можно не повторять
-    // ... (здесь должен быть код)
+    if (!currentUser || !userData) return;
+
+    const fileInput = document.getElementById('ozonPhotos');
+    if (!fileInput) {
+        showNotification('Ошибка: элемент загрузки не найден.', 'error');
+        return;
+    }
+    
+    const productName = document.getElementById('ozonProductName')?.value.trim();
+    const brand = document.getElementById('ozonBrand')?.value.trim();
+    const category = document.getElementById('ozonCategory')?.value;
+    const price = document.getElementById('ozonPrice')?.value.trim() || '1990';
+    const features = document.getElementById('ozonFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
+    const files = fileInput.files;
+    
+    if (!productName) {
+        showNotification('Введите название товара', 'error');
+        return;
+    }
+    if (files.length === 0) {
+        showNotification('Выберите хотя бы одно фото', 'error');
+        return;
+    }
+
+    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
+    if ((userData.usedGenerations || 0) + 3 > maxGen) {
+        showNotification('Недостаточно токенов (требуется 3)', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('generateOzonBtn') || document.querySelector('[onclick="generateOzonCard()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Генерация...';
+    }
+
+    try {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
+        formData.append('productName', productName);
+        formData.append('brand', brand);
+        formData.append('category', category);
+        formData.append('price', price);
+        formData.append('features', JSON.stringify(features));
+        formData.append('platform', 'ozon');
+
+        const response = await fetch('/api/generate-card', {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        displayCardResults(result, 'ozon');
+
+        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+            type: 'ozon-card',
+            productName,
+            result,
+            timestamp: new Date().toISOString()
+        });
+        await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
+        userData.usedGenerations += 3;
+        updateUI();
+        loadHistory();
+        showNotification('Карточка для Ozon создана!', 'success');
+    } catch (error) {
+        console.error('Ошибка генерации:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '✨ Создать карточку для Ozon';
+        }
+    }
+};
+
+// ----- Генерация фото (заглушка) -----
+window.generateProductPhoto = async function() {
+    showNotification('Функция генерации фото находится в разработке', 'info');
+};
+
+// ----- Генерация видео (заглушка) -----
+window.generateVideo = async function() {
+    showNotification('Функция генерации видео находится в разработке', 'info');
 };
 
 // ----- Отображение результатов -----
@@ -201,7 +296,6 @@ function displayCardResults(result, platform) {
                 const img = document.createElement('img');
                 img.src = url;
                 img.alt = 'Generated';
-                // Используем глобальную функцию openLightbox
                 img.onclick = () => window.openLightbox(url);
                 gallery.appendChild(img);
             });
@@ -230,7 +324,7 @@ function displayCardResults(result, platform) {
     }
 }
 
-// ----- Лайтбокс (глобальные функции) -----
+// ----- Лайтбокс -----
 window.openLightbox = function(imageUrl) {
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
@@ -247,7 +341,6 @@ window.closeLightbox = function() {
     document.body.style.overflow = '';
 };
 
-// Закрытие по Escape
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         window.closeLightbox();
@@ -388,7 +481,6 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Закрытие модалки по клику вне её
 window.onclick = function(event) {
     const modal = document.getElementById('paymentModal');
     if (event.target === modal) closeModal();
