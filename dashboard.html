@@ -225,7 +225,7 @@
                 <!-- ... -->
             </div>
 
-            <!-- Результаты генерации -->
+            <!-- Блок результатов генерации -->
             <div id="cardResults" class="results-section glass" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
@@ -238,7 +238,7 @@
                 </div>
             </div>
 
-            <!-- История -->
+            <!-- Блок истории -->
             <div class="history-section glass">
                 <h2>История генераций</h2>
                 <div class="history-list" id="historyList">
@@ -261,6 +261,12 @@
                 <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
             </div>
         </div>
+    </div>
+
+    <!-- Модальное окно для увеличения фото (lightbox) -->
+    <div id="imageModal" class="modal" onclick="closeImageModal()">
+        <span class="modal-close" onclick="closeImageModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
     </div>
 
     <script type="module" src="js/dashboard.js"></script>
