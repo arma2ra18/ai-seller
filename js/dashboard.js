@@ -12,28 +12,27 @@ let userData = null;
 let generationInterval;
 let generationStartTime;
 
+// Следим за состоянием авторизации
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
         return;
     }
     currentUser = user;
-    console.log('User logged in:', currentUser.uid);
     await loadUserData();
 });
 
+// Загрузка данных пользователя из Firestore
 async function loadUserData() {
     if (!currentUser) return;
     try {
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists()) {
             userData = userDoc.data();
-            console.log('User data loaded:', userData);
             updateUI();
             loadHistory();
             updateStats();
         } else {
-            console.log('Creating new user document');
             await setDoc(doc(db, 'users', currentUser.uid), {
                 email: currentUser.email,
                 plan: 'start',
@@ -49,6 +48,7 @@ async function loadUserData() {
     }
 }
 
+// Обновление интерфейса (баланс, тариф)
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
@@ -70,6 +70,7 @@ function updateUI() {
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
 }
 
+// Обновление плиток статистики
 function updateStats() {
     const statUser = document.getElementById('statUser');
     if (statUser) statUser.textContent = currentUser.email.split('@')[0];
@@ -89,6 +90,7 @@ function updateStats() {
     if (statBonus) statBonus.textContent = 0;
 }
 
+// Выход
 window.logout = async function() {
     try {
         await signOut(auth);
@@ -163,11 +165,7 @@ function updateGenerationTimer() {
 
 // ----- Генерация для Wildberries -----
 window.generateWBCard = async function() {
-    if (!currentUser || !userData) {
-        console.error('No currentUser or userData');
-        showNotification('Ошибка: пользователь не авторизован', 'error');
-        return;
-    }
+    if (!currentUser || !userData) return;
 
     const fileInput = document.getElementById('wbPhotos');
     if (!fileInput) {
@@ -223,25 +221,16 @@ window.generateWBCard = async function() {
         const result = await response.json();
         displayCardResults(result, 'wb');
 
-        // Сохраняем в историю
-        console.log('Saving generation to Firestore...');
-        if (!db) {
-            console.error('Firestore db not initialized');
-            throw new Error('Firestore not available');
-        }
-        const genCollection = collection(db, 'users', currentUser.uid, 'generations');
-        const docRef = await addDoc(genCollection, {
+        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'wb-card',
             productName,
             result,
             timestamp: new Date().toISOString()
         });
-        console.log('Generation saved with ID:', docRef.id);
-
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         userData.usedGenerations += 3;
         updateUI();
-        await loadHistory(); // принудительно перезагружаем историю
+        loadHistory();
         showNotification('Карточка для WB создана!', 'success');
     } catch (error) {
         console.error('Ошибка генерации:', error);
@@ -313,20 +302,16 @@ window.generateOzonCard = async function() {
         const result = await response.json();
         displayCardResults(result, 'ozon');
 
-        console.log('Saving Ozon generation...');
-        const genCollection = collection(db, 'users', currentUser.uid, 'generations');
-        const docRef = await addDoc(genCollection, {
+        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'ozon-card',
             productName,
             result,
             timestamp: new Date().toISOString()
         });
-        console.log('Ozon generation saved with ID:', docRef.id);
-
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         userData.usedGenerations += 3;
         updateUI();
-        await loadHistory();
+        loadHistory();
         showNotification('Карточка для Ozon создана!', 'success');
     } catch (error) {
         console.error('Ошибка генерации:', error);
@@ -417,21 +402,12 @@ document.addEventListener('keydown', (e) => {
 
 // ----- История -----
 async function loadHistory() {
-    if (!currentUser) {
-        console.log('loadHistory: no currentUser');
-        return;
-    }
+    if (!currentUser) return;
     try {
-        console.log('Loading history for user', currentUser.uid);
-        const genCollection = collection(db, 'users', currentUser.uid, 'generations');
-        const q = query(genCollection, orderBy('timestamp', 'desc'), limit(10));
+        const q = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
         const snapshot = await getDocs(q);
-        console.log('History snapshot size:', snapshot.size);
         const historyList = document.getElementById('historyList');
-        if (!historyList) {
-            console.error('historyList element not found');
-            return;
-        }
+        if (!historyList) return;
         if (snapshot.empty) {
             historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
             return;
@@ -559,6 +535,7 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
+// Закрытие модального окна по клику вне его
 window.onclick = function(event) {
     const modal = document.getElementById('paymentModal');
     if (event.target === modal) closeModal();
