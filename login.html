@@ -7,8 +7,22 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
+    <!-- Видеофон (тот же, что на главной) -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="https://videos.pexels.com/video-files/28742939/12549676_1920_1080_60fps.mp4" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
+
+    <!-- Плавающие элементы -->
+    <div class="floating-elements">
+        <div class="floating-icon" style="top: 20%; left: 10%;">🔐</div>
+        <div class="floating-icon" style="top: 60%; right: 15%;">✨</div>
+    </div>
+
     <div class="auth-container">
-        <div class="auth-card">
+        <div class="auth-card glass">
             <div class="auth-logo">AI Seller</div>
             <h2>Вход в личный кабинет</h2>
             
@@ -26,7 +40,7 @@
                     <label>Пароль</label>
                     <input type="password" id="loginPassword" placeholder="••••••••">
                 </div>
-                <button class="btn btn-primary btn-block" onclick="handleLogin()">Войти</button>
+                <button class="btn btn-primary btn-block glow" onclick="handleLogin()">Войти</button>
                 <div class="forgot-password">
                     <a href="#" onclick="resetPassword()">Забыли пароль?</a>
                 </div>
@@ -45,7 +59,7 @@
                     <label>Повторите пароль</label>
                     <input type="password" id="registerConfirm" placeholder="••••••••">
                 </div>
-                <button class="btn btn-primary btn-block" onclick="handleRegister()">Зарегистрироваться</button>
+                <button class="btn btn-primary btn-block glow" onclick="handleRegister()">Зарегистрироваться</button>
                 <p style="text-align: center; margin-top: 20px; color: var(--text-secondary);">После регистрации вы получите 30 бесплатных генераций</p>
             </div>
 
