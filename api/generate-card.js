@@ -74,17 +74,19 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // ⭐ НОВЫЙ ПРОМПТ: Wildberries premium с надписями
-        const prompt = `Generate a professional product image for Wildberries marketplace. 
-The image should feature the product "${productName}" by brand ${brand}. 
-The scene should have a premium 3D look with soft studio lighting, high detail, realistic textures. 
-The background can be a subtle gradient or soft studio environment (no white background). 
-Crucially, the image must include the following text elements integrated into the design:
-- The product name "${productName}" in a large, stylish font.
-- The price: "${price} ₽" in a prominent, eye-catching style (e.g., gold or highlighted).
-- Brief key features: ${features.slice(0,3).join(', ')} as small icons or stylish badges.
-The composition should be dynamic, with the product as the centerpiece and the text elements placed harmoniously around it. 
-The overall style should be modern, luxurious, and instantly recognizable as a high-end Wildberries card. 
+        // ⭐ УЛУЧШЕННЫЙ ПРОМПТ: больше надписей, окружающих товар
+        const prompt = `Generate a premium product image for Wildberries marketplace. 
+The image should feature the product "${productName}" by brand ${brand} prominently in the center. 
+The product must be rendered in high-quality 3D with realistic textures and soft studio lighting.
+Around the product, add multiple stylish text elements (in Russian) that describe the key features:
+${features.slice(0,4).map(f => `- "${f}"`).join('\n')}
+Also include:
+- The product name "${productName}" in a large, elegant font at the top.
+- The price "${price} ₽" in a prominent, eye-catching style (e.g., gold or with a badge) at the bottom.
+- Small icons or badges for each key feature (e.g., waterproof icon, noise-cancelling icon) placed around the product.
+The background should be a soft gradient or subtle studio environment (not white) that makes the product stand out.
+The overall design should be modern, luxurious, and instantly recognizable as a top-tier Wildberries card.
+All text must be clearly readable and integrated harmoniously with the product.
 The image should be square, 1024x1024, high resolution, 8k, sharp focus.`;
 
         let imageUrl;
@@ -102,7 +104,6 @@ The image should be square, 1024x1024, high resolution, 8k, sharp focus.`;
             `🔥 Купите ${productName} по лучшей цене – ${price} ₽! ${features.join(', ')}. Только оригинальная продукция.`
         ];
 
-        // Удаляем временные файлы
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             photoArray.forEach(file => {
