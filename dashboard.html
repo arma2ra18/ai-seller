@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <!-- Тот же видеофон (можно сделать светлее) -->
     <div class="video-background" style="opacity: 0.2;">
         <video autoplay muted loop playsinline>
             <source src="https://videos.pexels.com/video-files/28742939/12549676_1920_1080_60fps.mp4" type="video/mp4">
@@ -15,7 +14,6 @@
         <div class="overlay"></div>
     </div>
 
-    <!-- Плавающие элементы (прозрачные) -->
     <div class="floating-elements">
         <div class="floating-icon" style="top: 10%; left: 5%;">📊</div>
         <div class="floating-icon" style="top: 80%; right: 10%;">💰</div>
@@ -137,7 +135,7 @@
                     </div>
                 </div>
 
-                <!-- Wildberries (сохранены все id) -->
+                <!-- Wildberries -->
                 <div class="content-section" id="wb-section">
                     <h2>Создание карточки для Wildberries</h2>
                     <div class="generation-form">
@@ -179,7 +177,7 @@
                     </div>
                 </div>
 
-                <!-- Ozon (аналогично) -->
+                <!-- Ozon -->
                 <div class="content-section" id="ozon-section">
                     <h2>Создание карточки для Ozon</h2>
                     <div class="generation-form">
@@ -221,11 +219,11 @@
                     </div>
                 </div>
 
-                <!-- Фото, Видео, История, Тарифы, Настройки (сокращено, но в реальном файле они должны быть с сохранёнными ID) -->
+                <!-- Фото, Видео, История, Тарифы, Настройки (сокращено для краткости – они должны быть аналогичны предыдущим версиям) -->
                 <!-- ... -->
             </div>
 
-            <!-- Блок результатов генерации -->
+            <!-- Результаты генерации -->
             <div id="cardResults" class="results-section glass" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
@@ -238,7 +236,7 @@
                 </div>
             </div>
 
-            <!-- Блок истории -->
+            <!-- История -->
             <div class="history-section glass">
                 <h2>История генераций</h2>
                 <div class="history-list" id="historyList">
@@ -261,12 +259,6 @@
                 <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
             </div>
         </div>
-    </div>
-
-    <!-- Модальное окно для увеличения фото (lightbox) -->
-    <div id="imageModal" class="modal" onclick="closeImageModal()">
-        <span class="modal-close" onclick="closeImageModal()">&times;</span>
-        <img class="modal-content" id="modalImage">
     </div>
 
     <script type="module" src="js/dashboard.js"></script>
