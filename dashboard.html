@@ -135,7 +135,7 @@
                     </div>
                 </div>
 
-                <!-- Wildberries -->
+                <!-- Wildberries (обновлённый блок загрузки) -->
                 <div class="content-section" id="wb-section">
                     <h2>Создание карточки для Wildberries</h2>
                     <div class="generation-form">
@@ -170,14 +170,17 @@
                         </div>
                         <div class="form-group">
                             <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
-                            <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input">
-                            <div class="file-input-info">Выберите файлы</div>
+                            <div class="file-upload-wrapper">
+                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('wbPhotos').click()">Выбрать файлы</button>
+                                <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('wbPhotos', 'wbFileInfo')">
+                                <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
+                            </div>
                         </div>
                         <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку для WB</button>
                     </div>
                 </div>
 
-                <!-- Ozon -->
+                <!-- Ozon (обновлённый блок загрузки) -->
                 <div class="content-section" id="ozon-section">
                     <h2>Создание карточки для Ozon</h2>
                     <div class="generation-form">
@@ -212,15 +215,108 @@
                         </div>
                         <div class="form-group">
                             <label>Загрузите фото товара</label>
-                            <input type="file" id="ozonPhotos" accept="image/*" multiple class="file-input">
-                            <div class="file-input-info">Выберите файлы</div>
+                            <div class="file-upload-wrapper">
+                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('ozonPhotos').click()">Выбрать файлы</button>
+                                <input type="file" id="ozonPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('ozonPhotos', 'ozonFileInfo')">
+                                <span class="file-upload-info" id="ozonFileInfo">Файлы не выбраны</span>
+                            </div>
                         </div>
                         <button class="btn btn-primary btn-large glow" id="generateOzonBtn" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
                     </div>
                 </div>
 
-                <!-- Остальные секции (фото, видео, тарифы, настройки) – для краткости опущены, но в реальном файле они должны быть с сохранёнными ID -->
-                <!-- ... -->
+                <!-- Фото (обновлённый блок загрузки) -->
+                <div class="content-section" id="photo-section">
+                    <h2>Генерация фото товара</h2>
+                    <div class="generation-form">
+                        <div class="form-group">
+                            <label>Загрузите фото товара</label>
+                            <div class="file-upload-wrapper">
+                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('productPhoto').click()">Выбрать файл</button>
+                                <input type="file" id="productPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileInfo('productPhoto', 'photoFileInfo')">
+                                <span class="file-upload-info" id="photoFileInfo">Файл не выбран</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Дополнительные пожелания</label>
+                            <textarea id="photoPrompt" rows="3" placeholder="Например: на мраморном столе, с кофейными зернами"></textarea>
+                        </div>
+                        <button class="btn btn-primary btn-large glow" id="generatePhotoBtn" onclick="generateProductPhoto()">✨ Сгенерировать фото (2 токена)</button>
+                    </div>
+                </div>
+
+                <!-- Видео (обновлённый блок загрузки) -->
+                <div class="content-section" id="video-section">
+                    <h2>Генерация видео товара</h2>
+                    <div class="generation-form">
+                        <div class="form-group">
+                            <label>Загрузите фото товара</label>
+                            <div class="file-upload-wrapper">
+                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('videoPhoto').click()">Выбрать файл</button>
+                                <input type="file" id="videoPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileInfo('videoPhoto', 'videoFileInfo')">
+                                <span class="file-upload-info" id="videoFileInfo">Файл не выбран</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Тип видео</label>
+                            <select id="videoType">
+                                <option value="standard">Стандартный обзор</option>
+                                <option value="360">Обзор на 360°</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-large glow" id="generateVideoBtn" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
+                    </div>
+                </div>
+
+                <!-- История -->
+                <div class="content-section" id="history-section">
+                    <h2>История генераций</h2>
+                    <div class="history-list" id="historyListDetail"></div>
+                </div>
+
+                <!-- Тарифы -->
+                <div class="content-section" id="tariffs-section">
+                    <h2>Тарифы и подписка</h2>
+                    <div class="pricing-grid">
+                        <div class="pricing-card glass card-hover">
+                            <h3>Старт</h3>
+                            <div class="price">990 ₽<span>/мес</span></div>
+                            <ul class="features-list">
+                                <li>30 генераций</li>
+                                <li>Все типы контента</li>
+                                <li>История в облаке</li>
+                            </ul>
+                            <button class="btn btn-primary btn-block glow" onclick="selectPlan('start')">Выбрать</button>
+                        </div>
+                        <div class="pricing-card popular glass card-hover">
+                            <div class="popular-tag">🔥 Хит продаж</div>
+                            <h3>Бизнес</h3>
+                            <div class="price">2 990 ₽<span>/мес</span></div>
+                            <ul class="features-list">
+                                <li>200 генераций</li>
+                                <li>Все типы контента</li>
+                                <li>Массовая генерация</li>
+                            </ul>
+                            <button class="btn btn-primary btn-block glow" onclick="selectPlan('business')">Выбрать</button>
+                        </div>
+                        <div class="pricing-card glass card-hover">
+                            <h3>Профи</h3>
+                            <div class="price">9 900 ₽<span>/мес</span></div>
+                            <ul class="features-list">
+                                <li>Безлимит генераций</li>
+                                <li>Все типы контента</li>
+                                <li>VIP-поддержка</li>
+                            </ul>
+                            <button class="btn btn-primary btn-block glow" onclick="selectPlan('pro')">Выбрать</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Настройки -->
+                <div class="content-section" id="settings-section">
+                    <h2>Настройки</h2>
+                    <p class="text-muted">Раздел в разработке</p>
+                </div>
             </div>
 
             <!-- Результаты генерации -->
@@ -236,7 +332,7 @@
                 </div>
             </div>
 
-            <!-- История -->
+            <!-- История (основная) -->
             <div class="history-section glass">
                 <h2>История генераций</h2>
                 <div class="history-list" id="historyList">
