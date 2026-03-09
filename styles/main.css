@@ -111,7 +111,7 @@ h2 {
     pointer-events: none;
 }
 
-/* ===== ХЕДЕР ===== */
+/* ===== ХЕДЕР (плавающая панель) ===== */
 .header {
     background: rgba(0,0,0,0.8);
     backdrop-filter: blur(20px);
@@ -149,58 +149,55 @@ h2 {
     color: white;
 }
 
-/* ===== ГЛАВНАЯ СТРАНИЦА ===== */
+/* ===== ГЛАВНАЯ СТРАНИЦА (APPLE-СТИЛЬ) ===== */
 .hero {
-    padding: 120px 0 100px;
+    padding: 80px 0 60px;
     text-align: center;
 }
-.hero h1 {
-    max-width: 900px;
-    margin: 0 auto 30px;
+.hero-image {
+    margin-bottom: 40px;
+}
+.hero-placeholder {
+    width: 100%;
+    max-width: 800px;
+    height: 400px;
+    margin: 0 auto;
+    background: linear-gradient(145deg, #f2f2f2, #e0e0e0);
+    border-radius: 40px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    /* Для реального изображения используйте background-image */
+}
+.hero-content h1 {
+    font-size: 56px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--text-primary);
 }
 .hero-subtitle {
-    font-size: 20px;
+    font-size: 24px;
     color: var(--text-secondary);
-    max-width: 650px;
-    margin: 0 auto 40px;
+    margin-bottom: 20px;
+    font-weight: 400;
 }
-.hero-cta {
+.hero-links {
     display: flex;
-    gap: 20px;
+    gap: 30px;
     justify-content: center;
-    margin-bottom: 70px;
 }
-.stats {
-    display: flex;
-    justify-content: center;
-    gap: 80px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 60px;
-    padding: 30px 60px;
-    max-width: 900px;
-    margin: 0 auto;
+.hero-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 18px;
+    font-weight: 500;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
 }
-.stat-item {
-    text-align: center;
-}
-.stat-number {
-    font-size: 42px;
-    font-weight: 700;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.stat-label {
-    color: var(--text-secondary);
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-top: 5px;
+.hero-link:hover {
+    border-bottom-color: var(--accent);
 }
 
 .features {
-    padding: 100px 0;
+    padding: 80px 0;
 }
 .features-grid {
     display: grid;
@@ -225,7 +222,7 @@ h2 {
 }
 
 .how-it-works {
-    padding: 100px 0;
+    padding: 80px 0;
 }
 .steps {
     display: grid;
@@ -254,7 +251,7 @@ h2 {
 }
 
 .pricing {
-    padding: 100px 0;
+    padding: 80px 0;
 }
 .pricing-grid {
     display: grid;
@@ -344,7 +341,7 @@ h2 {
     font-size: 14px;
 }
 
-/* ===== СТРАНИЦА ВХОДА ===== */
+/* ===== СТРАНИЦА ВХОДА (APPLE-СТИЛЬ) ===== */
 .auth-container {
     min-height: 100vh;
     display: flex;
@@ -431,7 +428,7 @@ h2 {
     color: var(--accent);
 }
 
-/* ===== ДАШБОРД С САЙДБАРОМ ===== */
+/* ===== ДАШБОРД (ЛИЧНЫЙ КАБИНЕТ) ===== */
 .dashboard-wrapper {
     display: flex;
     min-height: 100vh;
@@ -806,7 +803,7 @@ h2 {
 }
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(0%); opacity: 1; }
 }
 
 /* Загрузчик */
@@ -823,8 +820,36 @@ h2 {
     to { transform: rotate(360deg); }
 }
 
-/* ===== МОБИЛЬНАЯ АДАПТАЦИЯ (стиль Apple) ===== */
+/* ===== АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ ===== */
 @media (max-width: 768px) {
+    /* Главная */
+    .header .container {
+        flex-direction: column;
+        height: auto;
+        padding: 15px;
+    }
+    .nav {
+        margin-top: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .hero-content h1 {
+        font-size: 40px;
+    }
+    .hero-subtitle {
+        font-size: 18px;
+    }
+    .hero-links {
+        gap: 20px;
+    }
+    .steps {
+        grid-template-columns: 1fr;
+    }
+    .pricing-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Дашборд */
     .dashboard-wrapper {
         flex-direction: column;
     }
@@ -883,6 +908,17 @@ h2 {
     .history-item {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    /* Футер */
+    .footer-content {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    .footer-links {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 }
 
