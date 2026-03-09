@@ -125,7 +125,6 @@ function showGenerationModal() {
     const modal = document.getElementById('generationModal');
     if (modal) {
         modal.classList.add('show');
-        // Сброс прогресса и таймера
         const progressFill = document.getElementById('generationProgress');
         if (progressFill) progressFill.style.width = '0%';
         const timerEl = document.getElementById('generationTimer');
@@ -151,10 +150,9 @@ function updateGenerationTimer() {
     const elapsed = Math.floor((Date.now() - generationStartTime) / 1000);
     const timerEl = document.getElementById('generationTimer');
     if (timerEl) timerEl.textContent = `${elapsed} сек.`;
-    // Прогресс-бар (до 70 секунд)
     const progressFill = document.getElementById('generationProgress');
     if (progressFill) {
-        const max = 70; // изменено с 30 на 70
+        const max = 70;
         const percent = Math.min(100, (elapsed / max) * 100);
         progressFill.style.width = percent + '%';
     }
@@ -198,7 +196,6 @@ window.generateWBCard = async function() {
         btn.innerHTML = '<span class="loading"></span> Генерация...';
     }
 
-    // Показываем красивое окно загрузки
     showGenerationModal();
 
     try {
@@ -219,22 +216,25 @@ window.generateWBCard = async function() {
         const result = await response.json();
         displayCardResults(result, 'wb');
 
-        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+        // Сохраняем в историю
+        console.log('Saving generation to Firestore...');
+        const docRef = await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'wb-card',
             productName,
             result,
             timestamp: new Date().toISOString()
         });
+        console.log('Saved with ID:', docRef.id);
+
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         userData.usedGenerations += 3;
         updateUI();
-        loadHistory();
+        loadHistory(); // перезагружаем историю
         showNotification('Карточка для WB создана!', 'success');
     } catch (error) {
         console.error('Ошибка генерации:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     } finally {
-        // Скрываем окно загрузки
         hideGenerationModal();
         if (btn) {
             btn.disabled = false;
@@ -301,12 +301,16 @@ window.generateOzonCard = async function() {
         const result = await response.json();
         displayCardResults(result, 'ozon');
 
-        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+        // Сохраняем в историю
+        console.log('Saving generation to Firestore...');
+        const docRef = await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'ozon-card',
             productName,
             result,
             timestamp: new Date().toISOString()
         });
+        console.log('Saved with ID:', docRef.id);
+
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         userData.usedGenerations += 3;
         updateUI();
@@ -403,8 +407,10 @@ document.addEventListener('keydown', (e) => {
 async function loadHistory() {
     if (!currentUser) return;
     try {
+        console.log('Loading history for user', currentUser.uid);
         const q = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
         const snapshot = await getDocs(q);
+        console.log('History snapshot size:', snapshot.size);
         const historyList = document.getElementById('historyList');
         if (!historyList) return;
         if (snapshot.empty) {
@@ -429,7 +435,8 @@ async function loadHistory() {
         });
     } catch (error) {
         console.error('Ошибка загрузки истории:', error);
-        document.getElementById('historyList').innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
+        const historyList = document.getElementById('historyList');
+        if (historyList) historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
     }
 }
 
