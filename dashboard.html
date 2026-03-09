@@ -7,9 +7,23 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
+    <!-- Тот же видеофон (можно сделать светлее) -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://videos.pexels.com/video-files/28742939/12549676_1920_1080_60fps.mp4" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
+
+    <!-- Плавающие элементы (прозрачные) -->
+    <div class="floating-elements">
+        <div class="floating-icon" style="top: 10%; left: 5%;">📊</div>
+        <div class="floating-icon" style="top: 80%; right: 10%;">💰</div>
+    </div>
+
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
-        <aside class="sidebar">
+        <aside class="sidebar glass">
             <div class="sidebar-logo">AI Seller</div>
             <nav class="sidebar-nav">
                 <ul>
@@ -39,62 +53,62 @@
         <!-- Основной контент -->
         <main class="main-content">
             <div class="welcome-block">
-                <h1>Добро пожаловать!</h1>
+                <h1 class="gradient-text">Добро пожаловать!</h1>
                 <p>AI-сервис для создания карточек Wildberries и Ozon</p>
             </div>
 
             <!-- Статистика -->
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card glass card-hover">
                     <div class="stat-icon">👤</div>
                     <div class="stat-info">
                         <span class="stat-label">Пользователь</span>
                         <span class="stat-value" id="statUser">-</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card glass card-hover">
                     <div class="stat-icon">📦</div>
                     <div class="stat-info">
                         <span class="stat-label">Карточки товара</span>
                         <span class="stat-value" id="statCards">0</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card glass card-hover">
                     <div class="stat-icon">🎬</div>
                     <div class="stat-info">
                         <span class="stat-label">Видеообложки</span>
                         <span class="stat-value" id="statVideos">0</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card glass card-hover">
                     <div class="stat-icon">📝</div>
                     <div class="stat-info">
                         <span class="stat-label">Описания товара</span>
                         <span class="stat-value" id="statDescriptions">0</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card glass card-hover">
                     <div class="stat-icon">📊</div>
                     <div class="stat-info">
                         <span class="stat-label">История</span>
                         <span class="stat-value" id="statHistory">0</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card glass card-hover">
                     <div class="stat-icon">💰</div>
                     <div class="stat-info">
                         <span class="stat-label">Баланс</span>
                         <span class="stat-value" id="statBalance">30</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card glass card-hover">
                     <div class="stat-icon">📰</div>
                     <div class="stat-info">
                         <span class="stat-label">Новости</span>
                         <span class="stat-value" id="statNews">29</span>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card glass card-hover">
                     <div class="stat-icon">🎁</div>
                     <div class="stat-info">
                         <span class="stat-label">Бонусы</span>
@@ -104,18 +118,18 @@
             </div>
 
             <!-- Динамические секции -->
-            <div class="content-area" id="contentArea">
+            <div class="content-area glass" id="contentArea">
                 <!-- Токены -->
                 <div class="content-section active" id="tokens-section">
                     <h2>Токены и статистика</h2>
                     <div class="info-cards">
-                        <div class="info-card">
+                        <div class="info-card glass card-hover">
                             <h3>Текущий баланс</h3>
                             <p class="big-number"><span id="remainingGenerationsDetail">30</span> / <span id="maxGenerationsDetail">30</span></p>
                             <p>Использовано: <span id="usedGenerationsDetail">0</span></p>
                             <button class="btn btn-primary" onclick="showPaymentModal()">Пополнить</button>
                         </div>
-                        <div class="info-card">
+                        <div class="info-card glass card-hover">
                             <h3>Бонусы</h3>
                             <p>Приглашайте друзей и получайте бонусные токены</p>
                             <button class="btn btn-outline">Пригласить</button>
@@ -123,7 +137,7 @@
                     </div>
                 </div>
 
-                <!-- Wildberries -->
+                <!-- Wildberries (сохранены все id) -->
                 <div class="content-section" id="wb-section">
                     <h2>Создание карточки для Wildberries</h2>
                     <div class="generation-form">
@@ -161,11 +175,11 @@
                             <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input">
                             <div class="file-input-info">Выберите файлы</div>
                         </div>
-                        <button class="btn btn-primary btn-large" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку для WB</button>
+                        <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку для WB</button>
                     </div>
                 </div>
 
-                <!-- Ozon (аналогично, сохранены ID) -->
+                <!-- Ozon (аналогично) -->
                 <div class="content-section" id="ozon-section">
                     <h2>Создание карточки для Ozon</h2>
                     <div class="generation-form">
@@ -203,16 +217,16 @@
                             <input type="file" id="ozonPhotos" accept="image/*" multiple class="file-input">
                             <div class="file-input-info">Выберите файлы</div>
                         </div>
-                        <button class="btn btn-primary btn-large" id="generateOzonBtn" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
+                        <button class="btn btn-primary btn-large glow" id="generateOzonBtn" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
                     </div>
                 </div>
 
-                <!-- Фото, Видео, История, Тарифы, Настройки (сокращено для краткости, но в реальном файле они должны быть) -->
-                <!-- ... (сохранены все секции с их ID) ... -->
+                <!-- Фото, Видео, История, Тарифы, Настройки (сокращено, но в реальном файле они должны быть с сохранёнными ID) -->
+                <!-- ... -->
             </div>
 
             <!-- Результаты генерации -->
-            <div id="cardResults" class="results-section" style="display: none;">
+            <div id="cardResults" class="results-section glass" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
                     <h3>Изображения</h3>
@@ -225,7 +239,7 @@
             </div>
 
             <!-- История -->
-            <div class="history-section">
+            <div class="history-section glass">
                 <h2>История генераций</h2>
                 <div class="history-list" id="historyList">
                     <p class="text-muted">Загрузка...</p>
@@ -236,14 +250,14 @@
 
     <!-- Модальное окно оплаты -->
     <div id="paymentModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content glass">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <h2 id="modalTitle">Пополнение баланса</h2>
             <p id="modalDescription">Вы выбрали тариф: <span id="selectedPlanName">—</span></p>
             <p>Сумма к оплате: <strong id="modalAmount">0 ₽</strong></p>
             <p class="text-muted">Оплата будет выполнена через ЮKassa.</p>
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-primary" onclick="confirmPayment()">Оплатить</button>
+                <button class="btn btn-primary glow" onclick="confirmPayment()">Оплатить</button>
                 <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
             </div>
         </div>
