@@ -18,6 +18,7 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
     currentUser = user;
+    console.log('User logged in:', currentUser.uid);
     await loadUserData();
 });
 
@@ -27,10 +28,12 @@ async function loadUserData() {
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists()) {
             userData = userDoc.data();
+            console.log('User data loaded:', userData);
             updateUI();
             loadHistory();
             updateStats();
         } else {
+            console.log('Creating new user document');
             await setDoc(doc(db, 'users', currentUser.uid), {
                 email: currentUser.email,
                 plan: 'start',
@@ -160,7 +163,11 @@ function updateGenerationTimer() {
 
 // ----- Генерация для Wildberries -----
 window.generateWBCard = async function() {
-    if (!currentUser || !userData) return;
+    if (!currentUser || !userData) {
+        console.error('No currentUser or userData');
+        showNotification('Ошибка: пользователь не авторизован', 'error');
+        return;
+    }
 
     const fileInput = document.getElementById('wbPhotos');
     if (!fileInput) {
@@ -218,18 +225,23 @@ window.generateWBCard = async function() {
 
         // Сохраняем в историю
         console.log('Saving generation to Firestore...');
-        const docRef = await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+        if (!db) {
+            console.error('Firestore db not initialized');
+            throw new Error('Firestore not available');
+        }
+        const genCollection = collection(db, 'users', currentUser.uid, 'generations');
+        const docRef = await addDoc(genCollection, {
             type: 'wb-card',
             productName,
             result,
             timestamp: new Date().toISOString()
         });
-        console.log('Saved with ID:', docRef.id);
+        console.log('Generation saved with ID:', docRef.id);
 
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         userData.usedGenerations += 3;
         updateUI();
-        loadHistory(); // перезагружаем историю
+        await loadHistory(); // принудительно перезагружаем историю
         showNotification('Карточка для WB создана!', 'success');
     } catch (error) {
         console.error('Ошибка генерации:', error);
@@ -301,20 +313,20 @@ window.generateOzonCard = async function() {
         const result = await response.json();
         displayCardResults(result, 'ozon');
 
-        // Сохраняем в историю
-        console.log('Saving generation to Firestore...');
-        const docRef = await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+        console.log('Saving Ozon generation...');
+        const genCollection = collection(db, 'users', currentUser.uid, 'generations');
+        const docRef = await addDoc(genCollection, {
             type: 'ozon-card',
             productName,
             result,
             timestamp: new Date().toISOString()
         });
-        console.log('Saved with ID:', docRef.id);
+        console.log('Ozon generation saved with ID:', docRef.id);
 
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         userData.usedGenerations += 3;
         updateUI();
-        loadHistory();
+        await loadHistory();
         showNotification('Карточка для Ozon создана!', 'success');
     } catch (error) {
         console.error('Ошибка генерации:', error);
@@ -405,14 +417,21 @@ document.addEventListener('keydown', (e) => {
 
 // ----- История -----
 async function loadHistory() {
-    if (!currentUser) return;
+    if (!currentUser) {
+        console.log('loadHistory: no currentUser');
+        return;
+    }
     try {
         console.log('Loading history for user', currentUser.uid);
-        const q = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
+        const genCollection = collection(db, 'users', currentUser.uid, 'generations');
+        const q = query(genCollection, orderBy('timestamp', 'desc'), limit(10));
         const snapshot = await getDocs(q);
         console.log('History snapshot size:', snapshot.size);
         const historyList = document.getElementById('historyList');
-        if (!historyList) return;
+        if (!historyList) {
+            console.error('historyList element not found');
+            return;
+        }
         if (snapshot.empty) {
             historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
             return;
