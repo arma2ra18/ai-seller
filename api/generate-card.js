@@ -4,14 +4,31 @@ import { GoogleGenAI } from '@google/genai';
 import admin from 'firebase-admin';
 
 // Инициализация Firebase Admin SDK (только один раз)
-if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  });
+let bucket;
+try {
+  if (!admin.apps.length) {
+    // Пробуем получить сервисный аккаунт из переменной окружения
+    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountEnv) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
+    }
+    // Пытаемся распарсить JSON (может быть передан как строка или уже объект)
+    const serviceAccount = typeof serviceAccountEnv === 'string' 
+      ? JSON.parse(serviceAccountEnv) 
+      : serviceAccountEnv;
+    
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    });
+    console.log('Firebase Admin initialized successfully');
+  }
+  bucket = admin.storage().bucket();
+} catch (error) {
+  console.error('Firebase Admin initialization error:', error);
+  // Пробрасываем ошибку дальше, чтобы функция упала и мы увидели её в логах
+  throw new Error(`Firebase init failed: ${error.message}`);
 }
-const bucket = admin.storage().bucket();
 
 export const config = {
     api: {
@@ -57,22 +74,31 @@ async function generateGeminiImage(prompt, referenceImage) {
 
 /**
  * Загружает изображение в Firebase Storage и возвращает публичный URL.
+ * Если загрузка не удалась, возвращает исходный dataURL (для отладки).
  */
 async function uploadToStorage(base64Data, fileName) {
-    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-        throw new Error('Invalid base64 data');
-    }
-    const mimeType = matches[1];
-    const base64 = matches[2];
-    const buffer = Buffer.from(base64, 'base64');
+    try {
+        const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) {
+            throw new Error('Invalid base64 data');
+        }
+        const mimeType = matches[1];
+        const base64 = matches[2];
+        const buffer = Buffer.from(base64, 'base64');
 
-    const file = bucket.file(`generated/${fileName}`);
-    await file.save(buffer, {
-        metadata: { contentType: mimeType },
-        public: true,
-    });
-    return `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+        const file = bucket.file(`generated/${fileName}`);
+        await file.save(buffer, {
+            metadata: { contentType: mimeType },
+            public: true,
+        });
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+        console.log(`Uploaded to Storage: ${publicUrl}`);
+        return publicUrl;
+    } catch (error) {
+        console.error('Upload to Storage failed:', error);
+        // Возвращаем dataURL как запасной вариант (чтобы клиент не падал)
+        return base64Data;
+    }
 }
 
 export default async function handler(req, res) {
@@ -124,12 +150,13 @@ The image must be square, 1024x1024, 8k resolution, sharp focus, no white backgr
             try {
                 const imageDataUrl = await generateGeminiImage(basePrompt + variation, referenceBuffer);
                 const fileName = `card_${Date.now()}_${i}.jpg`;
-                const publicUrl = await uploadToStorage(imageDataUrl, fileName);
-                images.push(publicUrl);
+                // Пытаемся загрузить в Storage
+                const finalUrl = await uploadToStorage(imageDataUrl, fileName);
+                images.push(finalUrl);
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 console.error(`Error generating image ${i+1}:`, err);
-                // Если не удалось, просто пропускаем
+                // Если не удалось, просто пропускаем (не добавляем null)
             }
         }
 
@@ -153,7 +180,7 @@ The image must be square, 1024x1024, 8k resolution, sharp focus, no white backgr
 
         res.status(200).json({ images, descriptions });
     } catch (error) {
-        console.error(error);
+        console.error('❌ Handler error:', error);
         res.status(500).json({ error: error.message });
     }
 }
