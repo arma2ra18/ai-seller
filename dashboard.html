@@ -135,7 +135,7 @@
                     </div>
                 </div>
 
-                <!-- Wildberries (обновлённый блок загрузки) -->
+                <!-- Wildberries -->
                 <div class="content-section" id="wb-section">
                     <h2>Создание карточки для Wildberries</h2>
                     <div class="generation-form">
@@ -180,7 +180,7 @@
                     </div>
                 </div>
 
-                <!-- Ozon (обновлённый блок загрузки) -->
+                <!-- Ozon -->
                 <div class="content-section" id="ozon-section">
                     <h2>Создание карточки для Ozon</h2>
                     <div class="generation-form">
@@ -225,7 +225,7 @@
                     </div>
                 </div>
 
-                <!-- Фото (обновлённый блок загрузки) -->
+                <!-- Фото -->
                 <div class="content-section" id="photo-section">
                     <h2>Генерация фото товара</h2>
                     <div class="generation-form">
@@ -245,7 +245,7 @@
                     </div>
                 </div>
 
-                <!-- Видео (обновлённый блок загрузки) -->
+                <!-- Видео -->
                 <div class="content-section" id="video-section">
                     <h2>Генерация видео товара</h2>
                     <div class="generation-form">
@@ -354,6 +354,22 @@
                 <button class="btn btn-primary glow" onclick="confirmPayment()">Оплатить</button>
                 <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно загрузки (генерация) -->
+    <div id="generationModal" class="modal">
+        <div class="modal-content glass loading-content">
+            <h2 class="gradient-text">✨ Генерация карточек ✨</h2>
+            <div class="loading-animation">
+                <div class="spinner"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="generationProgress" style="width: 0%;"></div>
+                </div>
+            </div>
+            <p>Подождите, создаём шедевры...</p>
+            <p class="timer" id="generationTimer">0 сек.</p>
+            <p class="text-muted">Обычно это занимает 20-30 секунд</p>
         </div>
     </div>
 

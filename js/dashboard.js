@@ -8,6 +8,10 @@ import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/
 let currentUser = null;
 let userData = null;
 
+// Переменные для модального окна загрузки
+let generationInterval;
+let generationStartTime;
+
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
@@ -116,6 +120,46 @@ window.updateFileInfo = function(inputId, infoId) {
     }
 };
 
+// ----- Модальное окно загрузки -----
+function showGenerationModal() {
+    const modal = document.getElementById('generationModal');
+    if (modal) {
+        modal.classList.add('show');
+        // Сброс прогресса и таймера
+        const progressFill = document.getElementById('generationProgress');
+        if (progressFill) progressFill.style.width = '0%';
+        const timerEl = document.getElementById('generationTimer');
+        if (timerEl) timerEl.textContent = '0 сек.';
+        generationStartTime = Date.now();
+        if (generationInterval) clearInterval(generationInterval);
+        generationInterval = setInterval(updateGenerationTimer, 1000);
+    }
+}
+
+function hideGenerationModal() {
+    const modal = document.getElementById('generationModal');
+    if (modal) {
+        modal.classList.remove('show');
+        if (generationInterval) {
+            clearInterval(generationInterval);
+            generationInterval = null;
+        }
+    }
+}
+
+function updateGenerationTimer() {
+    const elapsed = Math.floor((Date.now() - generationStartTime) / 1000);
+    const timerEl = document.getElementById('generationTimer');
+    if (timerEl) timerEl.textContent = `${elapsed} сек.`;
+    // Прогресс-бар (до 30 секунд)
+    const progressFill = document.getElementById('generationProgress');
+    if (progressFill) {
+        const max = 30;
+        const percent = Math.min(100, (elapsed / max) * 100);
+        progressFill.style.width = percent + '%';
+    }
+}
+
 // ----- Генерация для Wildberries -----
 window.generateWBCard = async function() {
     if (!currentUser || !userData) return;
@@ -154,6 +198,9 @@ window.generateWBCard = async function() {
         btn.innerHTML = '<span class="loading"></span> Генерация...';
     }
 
+    // Показываем красивое окно загрузки
+    showGenerationModal();
+
     try {
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
@@ -187,6 +234,8 @@ window.generateWBCard = async function() {
         console.error('Ошибка генерации:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     } finally {
+        // Скрываем окно загрузки
+        hideGenerationModal();
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = '✨ Создать карточку для WB';
@@ -232,6 +281,8 @@ window.generateOzonCard = async function() {
         btn.innerHTML = '<span class="loading"></span> Генерация...';
     }
 
+    showGenerationModal();
+
     try {
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
@@ -265,6 +316,7 @@ window.generateOzonCard = async function() {
         console.error('Ошибка генерации:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     } finally {
+        hideGenerationModal();
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = '✨ Создать карточку для Ozon';
