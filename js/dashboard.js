@@ -26,7 +26,7 @@ async function loadUserData() {
         if (userDoc.exists()) {
             userData = userDoc.data();
             updateUI();
-            loadHistory();      // теперь loadHistory определена
+            loadHistory();
             updateStats();
         } else {
             await setDoc(doc(db, 'users', currentUser.uid), {
@@ -40,7 +40,7 @@ async function loadUserData() {
         }
     } catch (error) {
         console.error('Ошибка загрузки пользователя:', error);
-        showNotification('Ошибка загрузки данных', 'error'); // showNotification определена
+        showNotification('Ошибка загрузки данных', 'error');
     }
 }
 
@@ -189,10 +189,80 @@ window.generateWBCard = async function() {
 
 // ----- Генерация карточки для Ozon -----
 window.generateOzonCard = async function() {
-    // Аналогично generateWBCard, но с другими id
-    // Для краткости можно скопировать и изменить platform
-    // Реализация есть в предыдущих версиях
-    showNotification('Функция для Ozon временно недоступна', 'info');
+    if (!currentUser || !userData) return;
+
+    const fileInput = document.getElementById('ozonPhotos');
+    if (!fileInput) {
+        showNotification('Ошибка: элемент загрузки не найден.', 'error');
+        return;
+    }
+    
+    const productName = document.getElementById('ozonProductName')?.value.trim();
+    const brand = document.getElementById('ozonBrand')?.value.trim();
+    const category = document.getElementById('ozonCategory')?.value;
+    const price = document.getElementById('ozonPrice')?.value.trim() || '1990';
+    const features = document.getElementById('ozonFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
+    const files = fileInput.files;
+    
+    if (!productName) {
+        showNotification('Введите название товара', 'error');
+        return;
+    }
+    if (files.length === 0) {
+        showNotification('Выберите хотя бы одно фото', 'error');
+        return;
+    }
+
+    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
+    if ((userData.usedGenerations || 0) + 3 > maxGen) {
+        showNotification('Недостаточно токенов (требуется 3)', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('generateOzonBtn') || document.querySelector('[onclick="generateOzonCard()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Генерация...';
+    }
+
+    try {
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
+        formData.append('productName', productName);
+        formData.append('brand', brand);
+        formData.append('category', category);
+        formData.append('price', price);
+        formData.append('features', JSON.stringify(features));
+        formData.append('platform', 'ozon');
+
+        const response = await fetch('/api/generate-card', {
+            method: 'POST',
+            body: formData
+        });
+        if (!response.ok) throw new Error(await response.text());
+        const result = await response.json();
+        displayCardResults(result, 'ozon');
+
+        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+            type: 'ozon-card',
+            productName,
+            result,
+            timestamp: new Date().toISOString()
+        });
+        await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
+        userData.usedGenerations += 3;
+        updateUI();
+        loadHistory();
+        showNotification('Карточка для Ozon создана!', 'success');
+    } catch (error) {
+        console.error('Ошибка генерации:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '✨ Создать карточку для Ozon';
+        }
+    }
 };
 
 // ----- Генерация фото (заглушка) -----
@@ -205,7 +275,7 @@ window.generateVideo = async function() {
     showNotification('Функция генерации видео находится в разработке', 'info');
 };
 
-// Отображение результатов карточки
+// Отображение результатов карточки (с адаптивным размером и лайтбоксом)
 function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
     if (!container) return;
@@ -219,7 +289,7 @@ function displayCardResults(result, platform) {
                 const img = document.createElement('img');
                 img.src = url;
                 img.alt = 'Generated';
-                img.onclick = () => window.open(url, '_blank');
+                img.onclick = () => openImageModal(url);
                 gallery.appendChild(img);
             });
         } else {
@@ -249,27 +319,16 @@ function displayCardResults(result, platform) {
 
 // ----- История -----
 async function loadHistory() {
-    if (!currentUser) {
-        console.log('loadHistory: currentUser отсутствует');
-        return;
-    }
-    console.log('loadHistory: загружаем историю для', currentUser.uid);
+    if (!currentUser) return;
     try {
-        const historyRef = collection(db, 'users', currentUser.uid, 'generations');
-        const q = query(historyRef, orderBy('timestamp', 'desc'), limit(10));
+        const q = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
         const snapshot = await getDocs(q);
-
         const historyList = document.getElementById('historyList');
-        if (!historyList) {
-            console.error('loadHistory: элемент #historyList не найден');
-            return;
-        }
-
+        if (!historyList) return;
         if (snapshot.empty) {
             historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
             return;
         }
-
         historyList.innerHTML = '';
         snapshot.forEach(doc => {
             const item = doc.data();
@@ -397,8 +456,34 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Закрытие модального окна по клику вне его
+// ----- Модальное окно для изображений (лайтбокс) -----
+window.openImageModal = function(src) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    if (modal && modalImg) {
+        modalImg.src = src;
+        modal.classList.add('show');
+    }
+};
+
+window.closeImageModal = function() {
+    const modal = document.getElementById('imageModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+};
+
+// Закрытие модального окна по Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
+
+// Закрытие модального окна оплаты по клику вне его
 window.onclick = function(event) {
     const modal = document.getElementById('paymentModal');
     if (event.target === modal) closeModal();
+    const imageModal = document.getElementById('imageModal');
+    if (event.target === imageModal) closeImageModal();
 };
