@@ -10,6 +10,12 @@ export const config = {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
+/**
+ * Генерация изображения через Gemini 3 Pro Image Preview
+ * @param {string} prompt - новый промпт для Wildberries
+ * @param {Buffer} referenceImage - буфер загруженного пользователем фото
+ * @returns {Promise<string>} - data URL готового изображения
+ */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
         const base64Image = referenceImage.toString('base64');
@@ -24,7 +30,7 @@ async function generateGeminiImage(prompt, referenceImage) {
         ];
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-image-preview', // Правильная модель для генерации изображений!
+            model: 'gemini-3-pro-image-preview',
             contents: contents,
             config: {
                 responseModalities: ['Image'],
@@ -74,12 +80,15 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // Промпт для генерации карточки с текстом
-        const prompt = `Создай профессиональную карточку для маркетплейса ${platform === 'wb' ? 'Wildberries' : 'Ozon'}. 
-На изображении товар "${productName}" от бренда ${brand}. Цена: ${price} ₽. Особенности: ${features.join(', ')}.
-Стиль: студийное освещение, белый фон, высокое качество.
-Текст на карточке: название товара крупно, цена ярко, особенности иконками или буллитами.
-Дизайн современный, премиальный. Сохрани форму товара с загруженного фото.`;
+        // ⭐ НОВЫЙ ПРОМПТ: Wildberries Premium 3D
+        const prompt = `Generate a professional 3D product image for Wildberries marketplace. 
+The image should feature the product "${productName}" by brand ${brand}. 
+The scene should have a premium look, with soft studio lighting, a clean gradient background (light to white). 
+The product should be rendered in 3D with high detail, realistic textures, and reflections. 
+Add subtle floating graphical elements like price tag or feature icons to make it look like a premium e-commerce card. 
+The composition should be dynamic and eye-catching, emphasizing the product's best features. 
+The image should be square, 1024x1024, with high resolution and sharp focus. 
+Style: luxury, modern, elegant, like top Wildberries cards.`;
 
         let imageUrl;
         try {
@@ -89,10 +98,11 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Gemini generation failed: ' + err.message });
         }
 
+        // Текстовые описания (можно оставить как есть или тоже улучшить)
         const descriptions = [
-            `Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽.`,
-            `${brand} ${productName} – высокое качество. Всего ${price} ₽.`,
-            `Купите ${productName} по лучшей цене – ${price} ₽!`
+            `✨ Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Идеально подходит для повседневного использования. Закажите сейчас!`,
+            `💎 ${brand} ${productName} – высокое качество и надёжность. ${features.join(', ')}. Всего ${price} ₽. Быстрая доставка по всей России.`,
+            `🔥 Купите ${productName} по лучшей цене – ${price} ₽! ${features.join(', ')}. Только оригинальная продукция.`
         ];
 
         // Удаляем временные файлы
