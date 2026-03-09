@@ -10,12 +10,6 @@ export const config = {
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-/**
- * Генерация изображения через Gemini 3 Pro Image Preview
- * @param {string} prompt - новый промпт для Wildberries
- * @param {Buffer} referenceImage - буфер загруженного пользователем фото
- * @returns {Promise<string>} - data URL готового изображения
- */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
         const base64Image = referenceImage.toString('base64');
@@ -80,15 +74,18 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // ⭐ НОВЫЙ ПРОМПТ: Wildberries Premium 3D
-        const prompt = `Generate a professional 3D product image for Wildberries marketplace. 
+        // ⭐ НОВЫЙ ПРОМПТ: Wildberries premium с надписями
+        const prompt = `Generate a professional product image for Wildberries marketplace. 
 The image should feature the product "${productName}" by brand ${brand}. 
-The scene should have a premium look, with soft studio lighting, a clean gradient background (light to white). 
-The product should be rendered in 3D with high detail, realistic textures, and reflections. 
-Add subtle floating graphical elements like price tag or feature icons to make it look like a premium e-commerce card. 
-The composition should be dynamic and eye-catching, emphasizing the product's best features. 
-The image should be square, 1024x1024, with high resolution and sharp focus. 
-Style: luxury, modern, elegant, like top Wildberries cards.`;
+The scene should have a premium 3D look with soft studio lighting, high detail, realistic textures. 
+The background can be a subtle gradient or soft studio environment (no white background). 
+Crucially, the image must include the following text elements integrated into the design:
+- The product name "${productName}" in a large, stylish font.
+- The price: "${price} ₽" in a prominent, eye-catching style (e.g., gold or highlighted).
+- Brief key features: ${features.slice(0,3).join(', ')} as small icons or stylish badges.
+The composition should be dynamic, with the product as the centerpiece and the text elements placed harmoniously around it. 
+The overall style should be modern, luxurious, and instantly recognizable as a high-end Wildberries card. 
+The image should be square, 1024x1024, high resolution, 8k, sharp focus.`;
 
         let imageUrl;
         try {
@@ -98,7 +95,7 @@ Style: luxury, modern, elegant, like top Wildberries cards.`;
             return res.status(500).json({ error: 'Gemini generation failed: ' + err.message });
         }
 
-        // Текстовые описания (можно оставить как есть или тоже улучшить)
+        // Текстовые описания (можно оставить или тоже улучшить)
         const descriptions = [
             `✨ Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Идеально подходит для повседневного использования. Закажите сейчас!`,
             `💎 ${brand} ${productName} – высокое качество и надёжность. ${features.join(', ')}. Всего ${price} ₽. Быстрая доставка по всей России.`,
