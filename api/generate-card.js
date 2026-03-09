@@ -31,11 +31,11 @@ async function generateGeminiImage(prompt, referenceImage) {
         ];
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-image-preview',
+            model: 'gemini-3-pro-image-preview', // или gemini-3.1-flash-image-preview
             contents: contents,
             config: {
                 responseModalities: ['Image'],
-                aspectRatio: '3:4', // Wildberries требует соотношение 3:4 для главного фото [citation:7]
+                aspectRatio: '1:1',
             }
         });
 
@@ -61,78 +61,36 @@ async function overlayText(base64Image, data) {
     const width = metadata.width || 1024;
     const height = metadata.height || 1024;
 
-    // Оптимизированный SVG для Wildberries – крупный читаемый текст, премиальный стиль
     const svgText = `
     <svg width="${width}" height="${height}">
         <style>
-            .title { 
-                fill: white; 
-                font-size: 48px; 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-                font-weight: 700; 
-                text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
-                letter-spacing: -0.5px;
-            }
-            .price { 
-                fill: #ffd700; 
-                font-size: 64px; 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-                font-weight: 800; 
-                text-shadow: 2px 2px 6px rgba(0,0,0,0.7);
-                letter-spacing: -0.5px;
-            }
-            .feature { 
-                fill: #ffffff; 
-                font-size: 32px; 
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-                font-weight: 500; 
-                text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
-            }
+            .title { fill: white; font-size: 42px; font-family: 'Inter', Arial; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+            .price { fill: gold; font-size: 58px; font-family: 'Inter', Arial; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+            .feature { fill: #ddd; font-size: 28px; font-family: 'Inter', Arial; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
         </style>
         <text x="50" y="${height - 150}" class="title">${data.productName}</text>
-        <text x="50" y="${height - 70}" class="price">${data.price} ₽</text>
+        <text x="50" y="${height - 80}" class="price">${data.price} ₽</text>
         ${data.features.slice(0,3).map((feat, i) => 
-            `<text x="50" y="${height - 220 - i*45}" class="feature">• ${feat}</text>`
+            `<text x="50" y="${height - 200 - i*35}" class="feature">• ${feat}</text>`
         ).join('')}
     </svg>`;
 
     const svgBuffer = Buffer.from(svgText);
     const finalBuffer = await sharp(imgBuffer)
         .composite([{ input: svgBuffer, top: 0, left: 0 }])
-        .jpeg({ quality: 95 }) // Высокое качество, но не превышаем 10 МБ
+        .jpeg({ quality: 90 })
         .toBuffer();
     return `data:image/jpeg;base64,${finalBuffer.toString('base64')}`;
 }
 
 /**
- * Генерация описаний для Wildberries – структурированные, продающие, SEO-оптимизированные
- * Согласно требованиям Wildberries: максимум 2000 символов, без спама, с ключевыми характеристиками [citation:1][citation:3]
+ * Генерация описаний (заглушка)
  */
 async function generateDescriptions(productName, brand, features, price, platform) {
-    // Формируем список особенностей для читаемого текста
-    const featureList = features.map(f => `• ${f}`).join('\n');
-    
-    // Базовое описание для всех категорий
-    const baseDescription = `${productName} от бренда ${brand} — это качество и надёжность, подтверждённые тысячами довольных покупателей. Товар сертифицирован и полностью соответствует заявленным характеристикам.\n\n`;
-
-    const usageDescription = `🔹 Идеально подходит для: повседневного использования, подарка, создания уюта и комфорта.\n🔹 Преимущества: ${features.slice(0,3).join(', ')}.\n🔹 В комплекте: всё необходимое для начала использования.\n\n`;
-
-    const priceDescription = `💰 Цена: ${price} ₽ — лучшее предложение на рынке с учётом качества и функциональности.\n\n`;
-
-    const guaranteeDescription = `✅ Гарантия качества — вся продукция проходит строгий контроль.\n✅ Быстрая доставка по всей России.\n✅ Лёгкий возврат в случае необходимости.\n\n`;
-
-    // SEO-блок с ключевыми словами (естественно встроенными)
-    const seoDescription = `Купить ${productName} в интернет-магазине Wildberries. ${brand} ${productName} — это ${features.slice(0,2).join(' и ')}. Заказывайте ${productName} с доставкой по России.`;
-
-    const fullDescription = baseDescription + usageDescription + priceDescription + guaranteeDescription + seoDescription;
-
-    // Возвращаем три варианта с разными акцентами
     return [
-        fullDescription.substring(0, 1800) + '...', // Обрезаем до лимита
-        
-        `✨ ${productName} от ${brand} — ваш идеальный выбор!\n\nОсобенности:\n${featureList}\n\n📦 Комплектация: всё как на фото и в описании.\n🚚 Доставка по всей России 1-3 дня.\n\n💰 Цена: ${price} ₽ — лучшее соотношение цены и качества.`,
-        
-        `🔥 ХИТ ПРОДАЖ! ${productName} (${brand}) уже в наличии на Wildberries.\n\n✅ Проверенное качество\n✅ ${features[0] || 'Высокая надёжность'}\n✅ ${features[1] || 'Стильный дизайн'}\n✅ ${features[2] || 'Доступная цена'}\n\n⭐ Более 1000 положительных отзывов! Цена: ${price} ₽.`
+        `Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Идеально подходит для повседневного использования. Закажите сейчас!`,
+        `${brand} ${productName} – высокое качество и надёжность. ${features.join(', ')}. Всего ${price} ₽. Быстрая доставка по всей России.`,
+        `Купите ${productName} по лучшей цене – ${price} ₽! ${features.join(', ')}. Только оригинальная продукция.`
     ];
 }
 
@@ -180,52 +138,21 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Необходимо загрузить хотя бы одно фото' });
         }
 
-        /* ===== ОПТИМИЗИРОВАННЫЕ ПРОМПТЫ ДЛЯ WILDBERRIES ===== */
-        
-        // 1. Промпт для главного фото (обложка) – строгие требования WB: белый фон, без текста, товар в фокусе [citation:1][citation:8]
-        const mainPhotoPrompt = `Product photography of ${productName}. Isolated on pure white background (RGB 255,255,255). Studio softbox lighting, even illumination, no harsh shadows. High resolution, 8k, sharp focus, detailed texture, photorealistic. Product centered in frame, full view. Professional e-commerce photo for Wildberries, clean and modern style. Aspect ratio 3:4, no text, no watermarks, no logos.`;
+        // Промпт для генерации фона (без текста, так как текст наложим отдельно)
+        const prompt = `Product photography of ${productName} from brand ${brand}. Minimalistic composition, isolated on a pure white soft gradient background (light grey to white). Studio softbox lighting, no shadows, high resolution, 8k, sharp focus, detailed texture, photorealistic. Professional e-commerce photo, clean and modern style. Keep the product shape exactly as in the reference image.`;
 
-        // 2. Промпт для фото в использовании (lifestyle) – эмоциональное фото, повышает CTR [citation:5]
-        const lifestylePrompt = `Lifestyle photo of ${productName} in natural setting. ${productName} by brand ${brand} being used in real life scenario. Warm natural lighting, shallow depth of field, product in focus, background slightly blurred. Photorealistic, high quality, cinematic composition. For Wildberries marketplace, showing product in context, making viewer want to buy.`;
-
-        // 3. Промпт для детального фото – крупный план, показывает качество материалов [citation:2]
-        const detailPrompt = `Extreme close-up macro photography of ${productName}. Detailed texture of materials, high-end craftsmanship visible. Sharp focus on surface details, fabric texture, stitching, finish. Studio lighting, high contrast, 8k resolution. Professional product detail shot for Wildberries e-commerce.`;
-
-        // 4. Промпт для фото с размерами – для понимания габаритов [citation:3]
-        const sizePrompt = `Product photo of ${productName} showing scale and dimensions. ${productName} next to common objects for size reference. Clear, professional composition, studio lighting, white background. High resolution, 8k. Perfect for Wildberries card to show actual size.`;
-
-        // 5. Промпт для фото комплектации – что входит в набор [citation:4]
-        const packagePrompt = `Product photography of ${productName} complete package contents. All items included in the set arranged neatly on white background. Studio lighting, flat lay composition, high detail, 8k. For Wildberries listing showing full комплектация.`;
-
-        // Создаём массив из 5 промптов для 5 вариаций
-        const prompts = [
-            mainPhotoPrompt,
-            lifestylePrompt,
-            detailPrompt,
-            sizePrompt,
-            packagePrompt
-        ];
-
-        // Генерируем 5 изображений
-        const images = [];
-        for (let i = 0; i < 5; i++) {
-            try {
-                const imageDataUrl = await generateGeminiImage(prompts[i], referenceBuffer);
-                const finalImage = await overlayText(imageDataUrl, {
-                    productName,
-                    price,
-                    features
-                });
-                images.push(finalImage);
-                // Небольшая задержка между запросами
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            } catch (err) {
-                console.error(`❌ Ошибка генерации изображения ${i+1}:`, err);
-                images.push(`https://dummyimage.com/1024x1024/0071e3/ffffff.png&text=${encodeURIComponent(productName)}`);
-            }
+        // Генерируем только одно изображение (фон)
+        let imageDataUrl;
+        try {
+            imageDataUrl = await generateGeminiImage(prompt, referenceBuffer);
+        } catch (err) {
+            console.error('❌ Ошибка генерации изображения:', err);
+            return res.status(500).json({ error: 'Gemini generation failed: ' + err.message });
         }
 
-        // Генерируем оптимизированные описания для Wildberries
+        // Накладываем текст
+        const finalImage = await overlayText(imageDataUrl, { productName, price, features });
+
         const descriptions = await generateDescriptions(productName, brand, features, price, platform);
 
         // Удаляем временные файлы
@@ -238,7 +165,7 @@ export default async function handler(req, res) {
             });
         }
 
-        res.status(200).json({ images, descriptions });
+        res.status(200).json({ images: [finalImage], descriptions });
 
     } catch (error) {
         console.error('❌ Generate card error:', error);
