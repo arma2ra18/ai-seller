@@ -219,7 +219,7 @@
                     </div>
                 </div>
 
-                <!-- Фото, Видео, История, Тарифы, Настройки (сокращено для краткости – они должны быть аналогичны предыдущим версиям) -->
+                <!-- Остальные секции (фото, видео, тарифы, настройки) – аналогично предыдущим версиям, но для краткости опущены -->
                 <!-- ... -->
             </div>
 
@@ -259,6 +259,12 @@
                 <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
             </div>
         </div>
+    </div>
+
+    <!-- Лайтбокс для изображений -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightbox-img" alt="">
     </div>
 
     <script type="module" src="js/dashboard.js"></script>
