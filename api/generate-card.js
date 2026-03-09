@@ -74,7 +74,7 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // Промпт с 3D эффектами и надписями
+        // Основной промпт для одной карточки (премиум, 3D, металлик)
         const basePrompt = `Generate an ultra-premium product image for Wildberries marketplace, as if designed by the world's most expensive designer. 
 The image should feature the product "${productName}" by brand ${brand} in the center, rendered in hyper-realistic 3D with cinematic lighting, reflections, and sharp details. 
 Around the product, place multiple 3D text elements with luxurious effects: 
@@ -93,21 +93,26 @@ The image must be square, 1024x1024, 8k resolution, sharp focus, no white backgr
             try {
                 const imageUrl = await generateGeminiImage(basePrompt + variation, referenceBuffer);
                 images.push(imageUrl);
+                // Задержка между запросами, чтобы не перегрузить API
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 console.error(`Error generating image ${i+1}:`, err);
+                // Если генерация не удалась, добавляем null, чтобы потом отфильтровать
                 images.push(null);
             }
         }
 
+        // Оставляем только успешно сгенерированные изображения (без null)
         const successfulImages = images.filter(img => img !== null);
 
+        // Текстовые описания (можно оставить как есть или улучшить)
         const descriptions = [
             `✨ Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Идеально подходит для повседневного использования. Закажите сейчас!`,
             `💎 ${brand} ${productName} – высокое качество и надёжность. ${features.join(', ')}. Всего ${price} ₽. Быстрая доставка по всей России.`,
             `🔥 Купите ${productName} по лучшей цене – ${price} ₽! ${features.join(', ')}. Только оригинальная продукция.`
         ];
 
+        // Удаляем временные файлы
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             photoArray.forEach(file => {
