@@ -151,10 +151,10 @@ function updateGenerationTimer() {
     const elapsed = Math.floor((Date.now() - generationStartTime) / 1000);
     const timerEl = document.getElementById('generationTimer');
     if (timerEl) timerEl.textContent = `${elapsed} сек.`;
-    // Прогресс-бар (до 30 секунд)
+    // Прогресс-бар (до 70 секунд)
     const progressFill = document.getElementById('generationProgress');
     if (progressFill) {
-        const max = 30;
+        const max = 70; // изменено с 30 на 70
         const percent = Math.min(100, (elapsed / max) * 100);
         progressFill.style.width = percent + '%';
     }
