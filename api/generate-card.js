@@ -74,20 +74,17 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // ⭐ УЛУЧШЕННЫЙ ПРОМПТ: больше надписей, окружающих товар
-        const prompt = `Generate a premium product image for Wildberries marketplace. 
-The image should feature the product "${productName}" by brand ${brand} prominently in the center. 
-The product must be rendered in high-quality 3D with realistic textures and soft studio lighting.
-Around the product, add multiple stylish text elements (in Russian) that describe the key features:
-${features.slice(0,4).map(f => `- "${f}"`).join('\n')}
-Also include:
-- The product name "${productName}" in a large, elegant font at the top.
-- The price "${price} ₽" in a prominent, eye-catching style (e.g., gold or with a badge) at the bottom.
-- Small icons or badges for each key feature (e.g., waterproof icon, noise-cancelling icon) placed around the product.
-The background should be a soft gradient or subtle studio environment (not white) that makes the product stand out.
-The overall design should be modern, luxurious, and instantly recognizable as a top-tier Wildberries card.
-All text must be clearly readable and integrated harmoniously with the product.
-The image should be square, 1024x1024, high resolution, 8k, sharp focus.`;
+        // ⭐ НОВЫЙ ПРОМПТ: 3D надписи, металлик, глянец, супер-дорогой стиль
+        const prompt = `Generate an ultra-premium product image for Wildberries marketplace, as if designed by the world's most expensive designer. 
+The image should feature the product "${productName}" by brand ${brand} in the center, rendered in hyper-realistic 3D with cinematic lighting, reflections, and sharp details. 
+Around the product, place multiple 3D text elements with luxurious effects: 
+- The product name "${productName}" at the top in a large, elegant 3D gold/metallic font with subtle glow and bevel.
+- The price "${price} ₽" at the bottom in a prominent 3D gold or diamond-encrusted style, with sparkling highlights.
+- For each key feature, create small 3D badges or icons with accompanying text (in Russian): ${features.slice(0,4).map(f => `"${f}"`).join(', ')}. 
+These badges should have a premium look (e.g., glossy, with metallic edges, subtle shadows) and be placed around the product in a balanced composition.
+The background should be a soft gradient or an abstract luxurious studio environment with depth-of-field, making the product and text pop.
+Overall style: ultra-modern, opulent, photorealistic, with reflections and ambient occlusion. All text must be crisp, readable, and seamlessly integrated as if part of a high-end 3D render.
+The image must be square, 1024x1024, 8k resolution, sharp focus, no white background.`;
 
         let imageUrl;
         try {
@@ -97,7 +94,6 @@ The image should be square, 1024x1024, high resolution, 8k, sharp focus.`;
             return res.status(500).json({ error: 'Gemini generation failed: ' + err.message });
         }
 
-        // Текстовые описания (можно оставить или тоже улучшить)
         const descriptions = [
             `✨ Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Идеально подходит для повседневного использования. Закажите сейчас!`,
             `💎 ${brand} ${productName} – высокое качество и надёжность. ${features.join(', ')}. Всего ${price} ₽. Быстрая доставка по всей России.`,
