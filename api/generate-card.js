@@ -74,8 +74,8 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // ⭐ НОВЫЙ ПРОМПТ: 3D надписи, металлик, глянец, супер-дорогой стиль
-        const prompt = `Generate an ultra-premium product image for Wildberries marketplace, as if designed by the world's most expensive designer. 
+        // Базовый промпт (без вариации)
+        const basePrompt = `Generate an ultra-premium product image for Wildberries marketplace, as if designed by the world's most expensive designer. 
 The image should feature the product "${productName}" by brand ${brand} in the center, rendered in hyper-realistic 3D with cinematic lighting, reflections, and sharp details. 
 Around the product, place multiple 3D text elements with luxurious effects: 
 - The product name "${productName}" at the top in a large, elegant 3D gold/metallic font with subtle glow and bevel.
@@ -86,12 +86,21 @@ The background should be a soft gradient or an abstract luxurious studio environ
 Overall style: ultra-modern, opulent, photorealistic, with reflections and ambient occlusion. All text must be crisp, readable, and seamlessly integrated as if part of a high-end 3D render.
 The image must be square, 1024x1024, 8k resolution, sharp focus, no white background.`;
 
-        let imageUrl;
-        try {
-            imageUrl = await generateGeminiImage(prompt, referenceBuffer);
-        } catch (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Gemini generation failed: ' + err.message });
+        // Генерируем 5 вариантов
+        const images = [];
+        for (let i = 0; i < 5; i++) {
+            // Добавляем небольшую вариацию для каждого варианта
+            const variation = `Style variation ${i+1}: slightly different composition, lighting angle, or arrangement of text elements.`;
+            const prompt = basePrompt + ' ' + variation;
+            
+            try {
+                const imageUrl = await generateGeminiImage(prompt, referenceBuffer);
+                images.push(imageUrl);
+                console.log(`✅ Изображение ${i+1} сгенерировано`);
+            } catch (err) {
+                console.error(`❌ Ошибка генерации изображения ${i+1}:`, err);
+                images.push(`https://dummyimage.com/1024x1024/0071e3/ffffff.png&text=Generation+Failed+${i+1}`);
+            }
         }
 
         const descriptions = [
@@ -107,7 +116,7 @@ The image must be square, 1024x1024, 8k resolution, sharp focus, no white backgr
             });
         }
 
-        res.status(200).json({ images: [imageUrl], descriptions });
+        res.status(200).json({ images, descriptions });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });
