@@ -281,6 +281,14 @@ function displayCardResults(result, platform) {
     if (!container) return;
     container.style.display = 'block';
 
+    // Если пришло seoTitle, показываем его
+    if (result.seoTitle) {
+        const titleBlock = document.createElement('div');
+        titleBlock.className = 'seo-title';
+        titleBlock.innerHTML = `<h3>SEO-название</h3><p>${result.seoTitle}</p>`;
+        container.insertBefore(titleBlock, container.firstChild);
+    }
+
     const gallery = document.getElementById('resultImages');
     if (gallery) {
         gallery.innerHTML = '';
