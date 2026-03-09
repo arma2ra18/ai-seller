@@ -1,6 +1,17 @@
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
+import admin from 'firebase-admin';
+
+// Инициализация Firebase Admin SDK (только один раз)
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  });
+}
+const bucket = admin.storage().bucket();
 
 export const config = {
     api: {
@@ -44,6 +55,26 @@ async function generateGeminiImage(prompt, referenceImage) {
     }
 }
 
+/**
+ * Загружает изображение в Firebase Storage и возвращает публичный URL.
+ */
+async function uploadToStorage(base64Data, fileName) {
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+        throw new Error('Invalid base64 data');
+    }
+    const mimeType = matches[1];
+    const base64 = matches[2];
+    const buffer = Buffer.from(base64, 'base64');
+
+    const file = bucket.file(`generated/${fileName}`);
+    await file.save(buffer, {
+        metadata: { contentType: mimeType },
+        public: true,
+    });
+    return `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).end();
 
@@ -74,7 +105,7 @@ export default async function handler(req, res) {
         }
         if (!referenceBuffer) return res.status(400).json({ error: 'Photo required' });
 
-        // Основной промпт для одной карточки (премиум, 3D, металлик)
+        // Промпт для генерации (премиум, с надписями)
         const basePrompt = `Generate an ultra-premium product image for Wildberries marketplace, as if designed by the world's most expensive designer. 
 The image should feature the product "${productName}" by brand ${brand} in the center, rendered in hyper-realistic 3D with cinematic lighting, reflections, and sharp details. 
 Around the product, place multiple 3D text elements with luxurious effects: 
@@ -86,26 +117,26 @@ The background should be a soft gradient or an abstract luxurious studio environ
 Overall style: ultra-modern, opulent, photorealistic, with reflections and ambient occlusion. All text must be crisp, readable, and seamlessly integrated as if part of a high-end 3D render.
 The image must be square, 1024x1024, 8k resolution, sharp focus, no white background.`;
 
-        // Генерируем 3 изображения с небольшими вариациями
+        // Генерируем 3 изображения
         const images = [];
         for (let i = 0; i < 3; i++) {
             const variation = ` (variation ${i+1}: slightly different composition, lighting angle, or text placement)`;
             try {
-                const imageUrl = await generateGeminiImage(basePrompt + variation, referenceBuffer);
-                images.push(imageUrl);
-                // Задержка между запросами, чтобы не перегрузить API
+                const imageDataUrl = await generateGeminiImage(basePrompt + variation, referenceBuffer);
+                const fileName = `card_${Date.now()}_${i}.jpg`;
+                const publicUrl = await uploadToStorage(imageDataUrl, fileName);
+                images.push(publicUrl);
                 await new Promise(resolve => setTimeout(resolve, 1000));
             } catch (err) {
                 console.error(`Error generating image ${i+1}:`, err);
-                // Если генерация не удалась, добавляем null, чтобы потом отфильтровать
-                images.push(null);
+                // Если не удалось, просто пропускаем
             }
         }
 
-        // Оставляем только успешно сгенерированные изображения (без null)
-        const successfulImages = images.filter(img => img !== null);
+        if (images.length === 0) {
+            throw new Error('Не удалось сгенерировать ни одного изображения');
+        }
 
-        // Текстовые описания (можно оставить как есть или улучшить)
         const descriptions = [
             `✨ Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Идеально подходит для повседневного использования. Закажите сейчас!`,
             `💎 ${brand} ${productName} – высокое качество и надёжность. ${features.join(', ')}. Всего ${price} ₽. Быстрая доставка по всей России.`,
@@ -120,7 +151,7 @@ The image must be square, 1024x1024, 8k resolution, sharp focus, no white backgr
             });
         }
 
-        res.status(200).json({ images: successfulImages, descriptions });
+        res.status(200).json({ images, descriptions });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: error.message });
