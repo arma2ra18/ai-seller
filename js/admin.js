@@ -1,3 +1,10 @@
+/**
+ * ================================================
+ * Prodiger Admin Panel
+ * Полный файл управления админ-панелью
+ * ================================================
+ */
+
 import { auth, db } from './firebase.js';
 import { 
     signInWithEmailAndPassword, 
@@ -10,15 +17,21 @@ import {
     writeBatch, increment
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-let currentAdmin = null;
-let currentPage = 1;
-let usersList = [];
-let generationsList = [];
-let logsList = [];
-const pageSize = 20;
-const ONLINE_TIMEOUT = 15 * 60 * 1000; // 15 минут
+// ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
+let currentAdmin = null;            // Текущий администратор
+let currentPage = 1;                // Текущая страница пагинации
+let usersList = [];                 // Кэш списка пользователей
+let generationsList = [];           // Кэш списка генераций
+let logsList = [];                  // Кэш списка логов
+const pageSize = 20;                 // Количество элементов на странице
+const ONLINE_TIMEOUT = 15 * 60 * 1000; // 15 минут для определения онлайн
 
 // ========== АВТОРИЗАЦИЯ ==========
+
+/**
+ * Вход в админ-панель
+ * Проверяет email/пароль и наличие прав администратора
+ */
 window.adminLogin = async function() {
     const email = document.getElementById('adminEmail').value.trim();
     const password = document.getElementById('adminPassword').value;
@@ -56,7 +69,33 @@ window.adminLogin = async function() {
     }
 };
 
+/**
+ * Выход из системы
+ */
+window.logout = async function() {
+    await signOut(auth);
+    window.location.href = '/admin/index.html';
+};
+
+/**
+ * Показывает уведомление на странице
+ * @param {string} message - Текст уведомления
+ * @param {string} type - Тип (success/error/info)
+ */
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
 // ========== ЗАЩИТА СТРАНИЦ ==========
+
+/**
+ * Проверка авторизации при загрузке каждой страницы
+ * Загружает соответствующие данные в зависимости от URL
+ */
 onAuthStateChanged(auth, async (user) => {
     const path = window.location.pathname;
     console.log('Текущий путь:', path);
@@ -95,7 +134,7 @@ onAuthStateChanged(auth, async (user) => {
             await loadSystemLogs();
             await loadPayments();
         } else if (path.includes('settings.html')) {
-            loadSettings();
+            await loadSettings();
         }
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
@@ -103,21 +142,11 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
-
-// ========== ВЫХОД ==========
-window.logout = async function() {
-    await signOut(auth);
-    window.location.href = '/admin/index.html';
-};
-
 // ========== ДАШБОРД ==========
+
+/**
+ * Загружает общую статистику для главной страницы
+ */
 async function loadDashboardStats() {
     try {
         console.log('Загружаем статистику дашборда...');
@@ -177,6 +206,9 @@ async function loadDashboardStats() {
     }
 }
 
+/**
+ * Загружает последние действия для отображения в дашборде
+ */
 async function loadRecentActivity() {
     try {
         const list = document.getElementById('activityList');
@@ -184,11 +216,17 @@ async function loadRecentActivity() {
         
         list.innerHTML = '<li class="activity-item"><span>Загрузка...</span></li>';
         
-        // Смесь последних событий
-        const logsQuery = query(collection(db, 'adminLogs'), orderBy('timestamp', 'desc'), limit(20));
-        const logsSnapshot = await getDocs(logsQuery);
+        // Пробуем получить логи админов
+        let logsSnapshot;
+        try {
+            const logsQuery = query(collection(db, 'adminLogs'), orderBy('timestamp', 'desc'), limit(20));
+            logsSnapshot = await getDocs(logsQuery);
+        } catch (e) {
+            console.warn('Коллекция adminLogs не найдена, используем заглушку');
+            logsSnapshot = { empty: true };
+        }
         
-        if (logsSnapshot.empty) {
+        if (!logsSnapshot || logsSnapshot.empty) {
             list.innerHTML = '<li class="activity-item"><span>Нет действий</span></li>';
             return;
         }
@@ -210,6 +248,8 @@ async function loadRecentActivity() {
                 actionText = `✏️ Редактирование пользователя`;
             } else if (log.action === 'delete_user') {
                 actionText = `🗑️ Удаление пользователя`;
+            } else if (log.action === 'update_settings') {
+                actionText = `⚙️ Изменение настроек`;
             }
             
             list.innerHTML += `
@@ -222,9 +262,14 @@ async function loadRecentActivity() {
         
     } catch (error) {
         console.error('Ошибка загрузки активности:', error);
+        const list = document.getElementById('activityList');
+        if (list) list.innerHTML = '<li class="activity-item"><span>Ошибка загрузки</span></li>';
     }
 }
 
+/**
+ * Инициализирует графики на дашборде
+ */
 async function initCharts() {
     // Получаем реальные данные регистраций за последние 7 дней
     const usersSnapshot = await getDocs(collection(db, 'users'));
@@ -253,7 +298,7 @@ async function initCharts() {
     
     // График регистраций
     const ctx1 = document.getElementById('regChart')?.getContext('2d');
-    if (ctx1) {
+    if (ctx1 && typeof Chart !== 'undefined') {
         new Chart(ctx1, {
             type: 'line',
             data: {
@@ -284,7 +329,7 @@ async function initCharts() {
     
     // График выручки (можно тоже сделать реальный)
     const ctx2 = document.getElementById('revenueChart')?.getContext('2d');
-    if (ctx2) {
+    if (ctx2 && typeof Chart !== 'undefined') {
         new Chart(ctx2, {
             type: 'bar',
             data: {
@@ -307,6 +352,11 @@ async function initCharts() {
 }
 
 // ========== УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ ==========
+
+/**
+ * Загружает список пользователей с пагинацией
+ * @param {number} page - Номер страницы
+ */
 window.loadUsers = async function(page = 1) {
     currentPage = page;
     try {
@@ -330,6 +380,9 @@ window.loadUsers = async function(page = 1) {
     }
 };
 
+/**
+ * Применяет фильтры к списку пользователей
+ */
 window.applyFilters = function() {
     let filtered = [...usersList];
     
@@ -360,10 +413,12 @@ window.applyFilters = function() {
             if (dateFilter === 'today') {
                 return created.toDateString() === now.toDateString();
             } else if (dateFilter === 'week') {
-                const weekAgo = new Date(now.setDate(now.getDate() - 7));
+                const weekAgo = new Date(now);
+                weekAgo.setDate(now.getDate() - 7);
                 return created >= weekAgo;
             } else if (dateFilter === 'month') {
-                const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(now.getMonth() - 1);
                 return created >= monthAgo;
             }
             return true;
@@ -388,6 +443,9 @@ window.applyFilters = function() {
     document.getElementById('filteredBalance').textContent = totalBalance;
 };
 
+/**
+ * Сбрасывает все фильтры
+ */
 window.resetFilters = function() {
     document.getElementById('searchInput').value = '';
     document.getElementById('balanceFilter').value = '';
@@ -396,6 +454,10 @@ window.resetFilters = function() {
     applyFilters();
 };
 
+/**
+ * Сортирует таблицу по выбранному полю
+ * @param {string} field - Поле для сортировки
+ */
 window.sortTable = function(field) {
     const sortMap = {
         'email': 'email',
@@ -415,6 +477,10 @@ window.sortTable = function(field) {
     applyFilters();
 };
 
+/**
+ * Отображает таблицу пользователей
+ * @param {Array} users - Массив пользователей для отображения
+ */
 function renderUsersTable(users) {
     const tbody = document.getElementById('usersTableBody');
     tbody.innerHTML = '';
@@ -442,6 +508,9 @@ function renderUsersTable(users) {
     });
 }
 
+/**
+ * Обновляет пагинацию
+ */
 function updatePagination() {
     const pagination = document.getElementById('pagination');
     if (!pagination) return;
@@ -456,9 +525,14 @@ function updatePagination() {
     pagination.innerHTML = html;
 }
 
-// Редактирование пользователя
+// ========== РЕДАКТИРОВАНИЕ ПОЛЬЗОВАТЕЛЯ ==========
+
 let currentEditUserId = null;
 
+/**
+ * Открывает модальное окно для редактирования пользователя
+ * @param {string} userId - ID пользователя
+ */
 window.editUser = async function(userId) {
     currentEditUserId = userId;
     try {
@@ -475,8 +549,13 @@ window.editUser = async function(userId) {
         document.getElementById('editPhone').value = user.phoneNumber || '';
         document.getElementById('editBalance').value = user.balance || 0;
         
-        const adminDoc = await getDoc(doc(db, 'admins', userId));
-        document.getElementById('editIsAdmin').checked = adminDoc.exists();
+        // Проверяем, является ли пользователь админом
+        try {
+            const adminDoc = await getDoc(doc(db, 'admins', userId));
+            document.getElementById('editIsAdmin').checked = adminDoc.exists();
+        } catch (e) {
+            document.getElementById('editIsAdmin').checked = false;
+        }
         
         document.getElementById('userModal').classList.add('show');
         
@@ -486,11 +565,17 @@ window.editUser = async function(userId) {
     }
 };
 
+/**
+ * Закрывает модальное окно редактирования
+ */
 window.closeUserModal = function() {
     document.getElementById('userModal').classList.remove('show');
     currentEditUserId = null;
 };
 
+/**
+ * Сохраняет изменения пользователя
+ */
 window.saveUserChanges = async function() {
     if (!currentEditUserId) return;
     
@@ -515,28 +600,38 @@ window.saveUserChanges = async function() {
         } else {
             try {
                 await deleteDoc(adminRef);
-            } catch (e) {}
+            } catch (e) {
+                // Игнорируем, если документа не было
+            }
         }
         
-        await addDoc(collection(db, 'adminLogs'), {
-            action: 'edit_user',
-            targetUser: document.getElementById('editEmail').value,
-            targetUserId: currentEditUserId,
-            performedBy: currentAdmin?.uid || 'unknown',
-            changes: updates,
-            timestamp: new Date().toISOString()
-        });
+        // Пытаемся записать лог, но не падаем при ошибке
+        try {
+            await addDoc(collection(db, 'adminLogs'), {
+                action: 'edit_user',
+                targetUser: document.getElementById('editEmail').value,
+                targetUserId: currentEditUserId,
+                performedBy: currentAdmin?.uid || 'unknown',
+                changes: updates,
+                timestamp: new Date().toISOString()
+            });
+        } catch (logError) {
+            console.warn('Не удалось записать лог:', logError);
+        }
         
-        alert('Изменения сохранены');
+        showNotification('Изменения сохранены', 'success');
         closeUserModal();
         loadUsers(currentPage);
         
     } catch (error) {
         console.error('Ошибка сохранения:', error);
-        alert('Ошибка сохранения: ' + error.message);
+        showNotification('Ошибка сохранения: ' + error.message, 'error');
     }
 };
 
+/**
+ * Удаляет пользователя
+ */
 window.deleteUser = async function() {
     if (!currentEditUserId) return;
     
@@ -550,23 +645,32 @@ window.deleteUser = async function() {
             await deleteDoc(doc(db, 'admins', currentEditUserId));
         } catch (e) {}
         
-        await addDoc(collection(db, 'adminLogs'), {
-            action: 'delete_user',
-            targetUserId: currentEditUserId,
-            performedBy: currentAdmin?.uid || 'unknown',
-            timestamp: new Date().toISOString()
-        });
+        // Логируем удаление
+        try {
+            await addDoc(collection(db, 'adminLogs'), {
+                action: 'delete_user',
+                targetUserId: currentEditUserId,
+                performedBy: currentAdmin?.uid || 'unknown',
+                timestamp: new Date().toISOString()
+            });
+        } catch (logError) {
+            console.warn('Не удалось записать лог:', logError);
+        }
         
-        alert('Пользователь удалён');
+        showNotification('Пользователь удалён', 'success');
         closeUserModal();
         loadUsers(currentPage);
         
     } catch (error) {
         console.error('Ошибка удаления:', error);
-        alert('Ошибка удаления: ' + error.message);
+        showNotification('Ошибка удаления: ' + error.message, 'error');
     }
 };
 
+/**
+ * Начисляет средства пользователю
+ * @param {string} userId - ID пользователя
+ */
 window.addFunds = async function(userId) {
     const amount = prompt('Введите сумму для начисления (₽):');
     if (!amount) return;
@@ -586,23 +690,31 @@ window.addFunds = async function(userId) {
             balance: currentBalance + rubles
         });
         
-        await addDoc(collection(db, 'adminLogs'), {
-            action: 'add_funds',
-            targetUserId: userId,
-            amount: rubles,
-            performedBy: currentAdmin?.uid || 'unknown',
-            timestamp: new Date().toISOString()
-        });
+        try {
+            await addDoc(collection(db, 'adminLogs'), {
+                action: 'add_funds',
+                targetUserId: userId,
+                amount: rubles,
+                performedBy: currentAdmin?.uid || 'unknown',
+                timestamp: new Date().toISOString()
+            });
+        } catch (logError) {
+            console.warn('Не удалось записать лог:', logError);
+        }
         
-        alert(`Начислено ${rubles} ₽`);
+        showNotification(`Начислено ${rubles} ₽`, 'success');
         loadUsers(currentPage);
         
     } catch (error) {
         console.error('Ошибка начисления:', error);
-        alert('Ошибка: ' + error.message);
+        showNotification('Ошибка: ' + error.message, 'error');
     }
 };
 
+/**
+ * Показывает историю генераций пользователя
+ * @param {string} userId - ID пользователя
+ */
 window.viewUserHistory = async function(userId) {
     try {
         const userDoc = await getDoc(doc(db, 'users', userId));
@@ -613,11 +725,15 @@ window.viewUserHistory = async function(userId) {
         let html = `<h3>Пользователь: ${user.email || '—'}</h3>`;
         html += '<h4>Генерации:</h4><ul>';
         
-        gensSnapshot.forEach(doc => {
-            const gen = doc.data();
-            const date = gen.timestamp ? new Date(gen.timestamp).toLocaleString('ru-RU') : '—';
-            html += `<li>${date} — ${gen.productName || 'Без названия'} (${gen.type || 'карточка'})</li>`;
-        });
+        if (gensSnapshot.empty) {
+            html += '<li>Нет генераций</li>';
+        } else {
+            gensSnapshot.forEach(doc => {
+                const gen = doc.data();
+                const date = gen.timestamp ? new Date(gen.timestamp).toLocaleString('ru-RU') : '—';
+                html += `<li>${date} — ${gen.productName || 'Без названия'} (${gen.type || 'карточка'})</li>`;
+            });
+        }
         
         html += '</ul>';
         
@@ -630,11 +746,18 @@ window.viewUserHistory = async function(userId) {
     }
 };
 
+/**
+ * Закрывает модальное окно истории
+ */
 window.closeHistoryModal = function() {
     document.getElementById('historyModal').classList.remove('show');
 };
 
 // ========== ЭКСПОРТ В CSV ==========
+
+/**
+ * Экспортирует список пользователей в CSV
+ */
 window.exportUsersCSV = function() {
     let csv = "Email,Имя,Телефон,Баланс,Потрачено,Дата регистрации,Последняя активность\n";
     
@@ -661,6 +784,9 @@ window.exportUsersCSV = function() {
     showNotification('Экспорт завершён', 'success');
 };
 
+/**
+ * Экспортирует общую статистику в CSV
+ */
 window.exportStats = function() {
     // Собираем общую статистику
     const totalUsers = usersList.length;
@@ -687,6 +813,10 @@ window.exportStats = function() {
 };
 
 // ========== ГЕНЕРАЦИИ ==========
+
+/**
+ * Загружает все генерации пользователей
+ */
 window.loadAllGenerations = async function(page = 1) {
     try {
         const tbody = document.getElementById('generationsTableBody');
@@ -724,6 +854,9 @@ window.loadAllGenerations = async function(page = 1) {
     }
 };
 
+/**
+ * Применяет фильтры к списку генераций
+ */
 window.applyGenFilters = function() {
     let filtered = [...generationsList];
     
@@ -748,10 +881,12 @@ window.applyGenFilters = function() {
             if (dateFilter === 'today') {
                 return date.toDateString() === now.toDateString();
             } else if (dateFilter === 'week') {
-                const weekAgo = new Date(now.setDate(now.getDate() - 7));
+                const weekAgo = new Date(now);
+                weekAgo.setDate(now.getDate() - 7);
                 return date >= weekAgo;
             } else if (dateFilter === 'month') {
-                const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(now.getMonth() - 1);
                 return date >= monthAgo;
             }
             return true;
@@ -761,6 +896,10 @@ window.applyGenFilters = function() {
     renderGenerations(filtered);
 };
 
+/**
+ * Отображает таблицу генераций
+ * @param {Array} gens - Массив генераций
+ */
 function renderGenerations(gens) {
     const tbody = document.getElementById('generationsTableBody');
     tbody.innerHTML = '';
@@ -786,6 +925,11 @@ function renderGenerations(gens) {
     });
 }
 
+/**
+ * Показывает превью сгенерированной карточки
+ * @param {string} imageUrl - URL изображения
+ * @param {string} descriptions - Описания
+ */
 window.showPreview = function(imageUrl, descriptions) {
     document.getElementById('previewImage').src = imageUrl;
     const descDiv = document.getElementById('previewDescriptions');
@@ -796,11 +940,19 @@ window.showPreview = function(imageUrl, descriptions) {
     document.getElementById('previewModal').classList.add('show');
 };
 
+/**
+ * Закрывает модальное окно превью
+ */
 window.closePreviewModal = function() {
     document.getElementById('previewModal').classList.remove('show');
 };
 
 // ========== ЛОГИ ==========
+
+/**
+ * Переключает вкладки логов
+ * @param {string} tab - Название вкладки
+ */
 window.showLogTab = function(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -809,16 +961,34 @@ window.showLogTab = function(tab) {
     document.getElementById(`${tab}-tab`).classList.add('active');
 };
 
+/**
+ * Загружает логи админов
+ */
 async function loadAdminLogs() {
     try {
         const tbody = document.getElementById('adminLogsTableBody');
         if (!tbody) return;
         
-        const logsQuery = query(collection(db, 'adminLogs'), orderBy('timestamp', 'desc'), limit(100));
-        const snapshot = await getDocs(logsQuery);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>';
+        
+        // Проверяем, существует ли коллекция
+        let logsSnapshot;
+        try {
+            const logsQuery = query(collection(db, 'adminLogs'), orderBy('timestamp', 'desc'), limit(100));
+            logsSnapshot = await getDocs(logsQuery);
+        } catch (e) {
+            console.warn('Коллекция adminLogs не найдена');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет логов</td></tr>';
+            return;
+        }
+        
+        if (logsSnapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет логов</td></tr>';
+            return;
+        }
         
         tbody.innerHTML = '';
-        snapshot.forEach(doc => {
+        logsSnapshot.forEach(doc => {
             const log = doc.data();
             const date = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('ru-RU') : '—';
             
@@ -835,13 +1005,17 @@ async function loadAdminLogs() {
         
     } catch (error) {
         console.error('Ошибка загрузки логов:', error);
+        const tbody = document.getElementById('adminLogsTableBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>';
     }
 }
 
+/**
+ * Загружает системные логи (заглушка)
+ */
 async function loadSystemLogs() {
     const tbody = document.getElementById('systemLogsTableBody');
     if (tbody) {
-        // Здесь можно интегрировать реальные системные логи
         tbody.innerHTML = `
             <tr>
                 <td colspan="3">Системные логи будут доступны в следующей версии</td>
@@ -850,16 +1024,34 @@ async function loadSystemLogs() {
     }
 }
 
+/**
+ * Загружает историю платежей
+ */
 async function loadPayments() {
     try {
         const tbody = document.getElementById('paymentsTableBody');
         if (!tbody) return;
         
-        const paymentsQuery = query(collection(db, 'payments'), orderBy('createdAt', 'desc'), limit(50));
-        const snapshot = await getDocs(paymentsQuery);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>';
+        
+        // Проверяем, существует ли коллекция
+        let paymentsSnapshot;
+        try {
+            const paymentsQuery = query(collection(db, 'payments'), orderBy('createdAt', 'desc'), limit(50));
+            paymentsSnapshot = await getDocs(paymentsQuery);
+        } catch (e) {
+            console.warn('Коллекция payments не найдена');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет платежей</td></tr>';
+            return;
+        }
+        
+        if (paymentsSnapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет платежей</td></tr>';
+            return;
+        }
         
         tbody.innerHTML = '';
-        snapshot.forEach(doc => {
+        paymentsSnapshot.forEach(doc => {
             const pay = doc.data();
             const date = pay.createdAt?.toDate ? pay.createdAt.toDate().toLocaleString('ru-RU') : '—';
             
@@ -879,50 +1071,97 @@ async function loadPayments() {
     }
 }
 
-// ========== НАСТРОЙКИ ==========
-function loadSettings() {
-    document.getElementById('siteName').value = 'Prodiger';
-    document.getElementById('welcomeBonus').value = '500';
-    document.getElementById('genPrice').value = '100';
-    document.getElementById('apiStatus').innerHTML = '<span class="badge badge-success">Работает</span>';
-    
-    const deployDate = new Date().toLocaleString('ru-RU');
-    document.getElementById('lastDeploy').innerHTML = deployDate;
+// ========== НАСТРОЙКИ САЙТА ==========
+
+/**
+ * Загружает настройки сайта из Firestore
+ */
+async function loadSettings() {
+    try {
+        const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+        if (settingsDoc.exists()) {
+            const settings = settingsDoc.data();
+            document.getElementById('siteName').value = settings.siteName || 'Prodiger';
+            document.getElementById('welcomeBonus').value = settings.welcomeBonus || 500;
+            document.getElementById('genPrice').value = settings.genPrice || 100;
+            document.getElementById('maxLoginAttempts').value = settings.maxLoginAttempts || 5;
+        } else {
+            // Если документа нет, используем значения по умолчанию
+            document.getElementById('siteName').value = 'Prodiger';
+            document.getElementById('welcomeBonus').value = '500';
+            document.getElementById('genPrice').value = '100';
+            document.getElementById('maxLoginAttempts').value = '5';
+        }
+        
+        document.getElementById('apiStatus').innerHTML = '<span class="badge badge-success">Работает</span>';
+        
+        const deployDate = new Date().toLocaleString('ru-RU');
+        document.getElementById('lastDeploy').innerHTML = deployDate;
+        
+    } catch (error) {
+        console.error('Ошибка загрузки настроек:', error);
+        // Используем значения по умолчанию при ошибке
+        document.getElementById('siteName').value = 'Prodiger';
+        document.getElementById('welcomeBonus').value = '500';
+        document.getElementById('genPrice').value = '100';
+        document.getElementById('maxLoginAttempts').value = '5';
+        document.getElementById('apiStatus').innerHTML = '<span class="badge badge-warning">Проверка...</span>';
+    }
 }
 
+/**
+ * Сохраняет настройки сайта
+ */
 window.saveSettings = async function() {
     const siteName = document.getElementById('siteName').value;
     const bonus = parseInt(document.getElementById('welcomeBonus').value);
     const maxAttempts = parseInt(document.getElementById('maxLoginAttempts').value);
     
-    // Сохраняем в Firestore (можно создать коллекцию settings)
+    if (isNaN(bonus) || isNaN(maxAttempts)) {
+        showNotification('Проверьте введённые данные', 'error');
+        return;
+    }
+    
     try {
         await setDoc(doc(db, 'settings', 'general'), {
             siteName: siteName,
             welcomeBonus: bonus,
+            genPrice: 100, // фиксированная цена
             maxLoginAttempts: maxAttempts,
             updatedAt: new Date().toISOString(),
             updatedBy: currentAdmin?.uid
         }, { merge: true });
         
-        await addDoc(collection(db, 'adminLogs'), {
-            action: 'update_settings',
-            performedBy: currentAdmin?.uid,
-            changes: { siteName, bonus, maxAttempts },
-            timestamp: new Date().toISOString()
-        });
+        // Пытаемся записать лог
+        try {
+            await addDoc(collection(db, 'adminLogs'), {
+                action: 'update_settings',
+                performedBy: currentAdmin?.uid,
+                changes: { siteName, bonus, maxAttempts },
+                timestamp: new Date().toISOString()
+            });
+        } catch (logError) {
+            console.warn('Не удалось записать лог:', logError);
+        }
         
         showNotification('Настройки сохранены', 'success');
+        
     } catch (error) {
         console.error('Ошибка сохранения настроек:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     }
 };
 
+/**
+ * Тест API Gemini (заглушка)
+ */
 window.testGemini = function() {
     showNotification('Тест API Gemini: OK (имитация)', 'success');
 };
 
+/**
+ * Очищает кэш в localStorage
+ */
 window.clearCache = function() {
     localStorage.clear();
     sessionStorage.clear();
@@ -930,16 +1169,26 @@ window.clearCache = function() {
 };
 
 // ========== МАССОВЫЕ ДЕЙСТВИЯ ==========
+
+/**
+ * Показывает модальное окно массового начисления
+ */
 window.showAddFundsModal = function() {
     document.getElementById('addFundsModal').classList.add('show');
 };
 
+/**
+ * Закрывает модальное окно массового начисления
+ */
 window.closeAddFundsModal = function() {
     document.getElementById('addFundsModal').classList.remove('show');
     document.getElementById('bulkAmount').value = '100';
     document.getElementById('bulkMessage').value = '';
 };
 
+/**
+ * Подтверждает массовое начисление средств
+ */
 window.confirmBulkAdd = async function() {
     const amount = parseInt(document.getElementById('bulkAmount').value);
     const message = document.getElementById('bulkMessage').value;
@@ -969,14 +1218,19 @@ window.confirmBulkAdd = async function() {
         
         await batch.commit();
         
-        await addDoc(collection(db, 'adminLogs'), {
-            action: 'bulk_add_funds',
-            amount: amount,
-            message: message,
-            userCount: count,
-            performedBy: currentAdmin?.uid,
-            timestamp: new Date().toISOString()
-        });
+        // Пытаемся записать лог
+        try {
+            await addDoc(collection(db, 'adminLogs'), {
+                action: 'bulk_add_funds',
+                amount: amount,
+                message: message,
+                userCount: count,
+                performedBy: currentAdmin?.uid,
+                timestamp: new Date().toISOString()
+            });
+        } catch (logError) {
+            console.warn('Не удалось записать лог, но операция выполнена:', logError);
+        }
         
         showNotification(`Начислено ${amount} ₽ всем ${count} пользователям`, 'success');
         closeAddFundsModal();
