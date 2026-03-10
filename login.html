@@ -19,7 +19,6 @@
 
             <!-- Вкладка входа -->
             <div id="login-tab" class="auth-form active">
-                <!-- Вход по телефону (упрощённый) -->
                 <div class="form-group">
                     <label>Номер телефона</label>
                     <input type="tel" id="loginPhone" placeholder="+7 999 123-45-67">
@@ -30,12 +29,10 @@
                 </div>
                 <button class="btn btn-primary btn-block" onclick="handlePhoneLogin()">Войти</button>
                 
-                <!-- Разделитель -->
                 <div class="auth-divider">
                     <span>или</span>
                 </div>
                 
-                <!-- Кнопка Google -->
                 <div class="social-buttons">
                     <button class="btn btn-google btn-block" onclick="handleGoogleLogin()">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="social-icon">
@@ -48,7 +45,7 @@
                 </div>
             </div>
 
-            <!-- Вкладка регистрации (НОВАЯ) -->
+            <!-- Вкладка регистрации -->
             <div id="register-tab" class="auth-form">
                 <div class="form-group">
                     <label>Номер телефона</label>
@@ -67,10 +64,10 @@
                     <input type="password" id="registerConfirm" placeholder="••••••••">
                 </div>
                 
-                <!-- Контейнер для reCAPTCHA -->
+                <!-- Контейнер для reCAPTCHA (скрыт, но нужен) -->
                 <div id="recaptcha-container"></div>
                 
-                <button class="btn btn-primary btn-block" onclick="sendPhoneCode()">Отправить код</button>
+                <button class="btn btn-primary btn-block" onclick="handlePhoneRegistration()">Зарегистрироваться</button>
                 
                 <div class="auth-divider">
                     <span>или</span>
