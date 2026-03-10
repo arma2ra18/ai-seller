@@ -6,7 +6,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { 
     collection, getDocs, query, orderBy, limit, doc, getDoc, 
-    updateDoc, deleteDoc, where, writeBatch
+    updateDoc, deleteDoc, setDoc, addDoc, where
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 let currentAdmin = null;
@@ -63,27 +63,42 @@ onAuthStateChanged(auth, async (user) => {
     }
     
     currentAdmin = user;
-    document.getElementById('adminEmail').textContent = user.email;
+    const emailEl = document.getElementById('adminEmail');
+    if (emailEl) emailEl.textContent = user.email;
     
     const token = await user.getIdTokenResult();
     if (!token.claims || !token.claims.admin) {
         alert('У вас нет прав доступа');
         await signOut(auth);
         window.location.href = '/admin/index.html';
+        return;
     }
     
     // Загружаем данные в зависимости от страницы
-    if (path.includes('dashboard.html')) {
-        loadDashboardStats();
-        loadRecentActivity();
-    } else if (path.includes('users.html')) {
-        loadUsers();
-    } else if (path.includes('logs.html')) {
-        loadPayments();
-        loadGenerations();
-        loadAdminLogs();
+    try {
+        if (path.includes('dashboard.html')) {
+            await loadDashboardStats();
+            await loadRecentActivity();
+        } else if (path.includes('users.html')) {
+            await loadUsers();
+        } else if (path.includes('logs.html')) {
+            await loadPayments();
+            await loadGenerations();
+            await loadAdminLogs();
+        }
+    } catch (error) {
+        console.error('Error loading page data:', error);
+        showError('Ошибка загрузки данных: ' + error.message);
     }
 });
+
+function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'notification error';
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 5000);
+}
 
 // ========== ВЫХОД ==========
 window.logout = async function() {
@@ -94,25 +109,23 @@ window.logout = async function() {
 // ========== ДАШБОРД ==========
 async function loadDashboardStats() {
     try {
-        // Собираем статистику
+        console.log('Loading dashboard stats...');
+        
         const usersSnapshot = await getDocs(collection(db, 'users'));
         const usersCount = usersSnapshot.size;
         
-        // Подсчёт выручки (из коллекции payments)
         let totalRevenue = 0;
         const paymentsSnapshot = await getDocs(collection(db, 'payments'));
         paymentsSnapshot.forEach(doc => {
             totalRevenue += doc.data().amount || 0;
         });
         
-        // Подсчёт генераций
         let totalGenerations = 0;
         for (const userDoc of usersSnapshot.docs) {
             const gensSnapshot = await getDocs(collection(db, 'users', userDoc.id, 'generations'));
             totalGenerations += gensSnapshot.size;
         }
         
-        // Подсчёт админов
         const adminSnapshot = await getDocs(collection(db, 'admins'));
         const adminCount = adminSnapshot.size;
         
@@ -121,30 +134,41 @@ async function loadDashboardStats() {
         document.getElementById('totalGenerations').textContent = totalGenerations;
         document.getElementById('adminCount').textContent = adminCount;
         
+        console.log('Stats loaded:', { usersCount, totalRevenue, totalGenerations, adminCount });
+        
     } catch (error) {
         console.error('Error loading stats:', error);
+        throw error;
     }
 }
 
 async function loadRecentActivity() {
     try {
-        // Смесь последних действий (платежи, генерации, логи админов)
+        console.log('Loading recent activity...');
         const list = document.getElementById('activityList');
-        list.innerHTML = '';
+        if (!list) return;
         
-        // Берём последние 10 записей из adminLogs
+        list.innerHTML = '<li class="activity-item"><span>Загрузка...</span></li>';
+        
         const logsQuery = query(collection(db, 'adminLogs'), orderBy('timestamp', 'desc'), limit(10));
         const logsSnapshot = await getDocs(logsQuery);
         
+        if (logsSnapshot.empty) {
+            list.innerHTML = '<li class="activity-item"><span>Нет действий</span></li>';
+            return;
+        }
+        
+        list.innerHTML = '';
         logsSnapshot.forEach(doc => {
             const log = doc.data();
-            const time = log.timestamp?.toDate().toLocaleString('ru-RU', {
-                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
-            }) || 'недавно';
+            const time = log.timestamp?.toDate ? 
+                log.timestamp.toDate().toLocaleString('ru-RU', {
+                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                }) : 'недавно';
             
             list.innerHTML += `
                 <li class="activity-item">
-                    <span>${log.action}: ${log.targetUser || log.targetEmail || 'система'}</span>
+                    <span>${log.action || 'Действие'}: ${log.targetUser || log.targetEmail || log.targetUserId || 'система'}</span>
                     <span>${time}</span>
                 </li>
             `;
@@ -152,6 +176,8 @@ async function loadRecentActivity() {
         
     } catch (error) {
         console.error('Error loading activity:', error);
+        const list = document.getElementById('activityList');
+        if (list) list.innerHTML = '<li class="activity-item"><span>Ошибка загрузки</span></li>';
     }
 }
 
@@ -159,17 +185,25 @@ async function loadRecentActivity() {
 window.loadUsers = async function(page = 1) {
     currentPage = page;
     try {
+        console.log('Loading users page', page);
+        const tbody = document.getElementById('usersTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Загрузка...</td></tr>';
+        
         const usersRef = collection(db, 'users');
         const q = query(usersRef, orderBy('createdAt', 'desc'), limit(pageSize));
         const snapshot = await getDocs(q);
         
-        const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = '';
+        if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Нет пользователей</td></tr>';
+            return;
+        }
         
-        // Загружаем список админов для проверки
         const adminSnapshot = await getDocs(collection(db, 'admins'));
         const adminIds = new Set(adminSnapshot.docs.map(doc => doc.id));
         
+        tbody.innerHTML = '';
         snapshot.forEach(doc => {
             const user = doc.data();
             const date = user.createdAt ? new Date(user.createdAt).toLocaleDateString('ru-RU') : 'неизвестно';
@@ -192,23 +226,23 @@ window.loadUsers = async function(page = 1) {
             `;
         });
         
-        // Простая пагинация (можно доработать)
+        console.log('Users loaded:', snapshot.size);
         updatePagination();
         
     } catch (error) {
         console.error('Error loading users:', error);
-        document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="8">Ошибка загрузки</td></tr>';
+        const tbody = document.getElementById('usersTableBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8">Ошибка загрузки: ' + error.message + '</td></tr>';
     }
 };
 
 function updatePagination() {
-    // Здесь можно добавить сложную логику пагинации, пока просто заглушка
     const pagination = document.getElementById('pagination');
     if (pagination) {
         pagination.innerHTML = `
-            <button onclick="loadUsers(${currentPage-1})" ${currentPage <= 1 ? 'disabled' : ''}>←</button>
-            <span>Страница ${currentPage}</span>
-            <button onclick="loadUsers(${currentPage+1})">→</button>
+            <button onclick="loadUsers(${currentPage-1})" ${currentPage <= 1 ? 'disabled' : ''}>← Назад</button>
+            <span> Страница ${currentPage} </span>
+            <button onclick="loadUsers(${currentPage+1})">Вперёд →</button>
         `;
     }
 }
@@ -220,6 +254,11 @@ window.editUser = async function(userId) {
     currentEditUserId = userId;
     try {
         const userDoc = await getDoc(doc(db, 'users', userId));
+        if (!userDoc.exists()) {
+            alert('Пользователь не найден');
+            return;
+        }
+        
         const user = userDoc.data();
         
         document.getElementById('editEmail').value = user.email || '';
@@ -228,7 +267,6 @@ window.editUser = async function(userId) {
         document.getElementById('editPlan').value = user.plan || 'start';
         document.getElementById('editBalance').value = user.balance || 0;
         
-        // Проверяем, является ли пользователь админом
         const adminDoc = await getDoc(doc(db, 'admins', userId));
         document.getElementById('editIsAdmin').checked = adminDoc.exists();
         
@@ -236,7 +274,7 @@ window.editUser = async function(userId) {
         
     } catch (error) {
         console.error('Error loading user for edit:', error);
-        alert('Ошибка загрузки данных');
+        alert('Ошибка загрузки данных: ' + error.message);
     }
 };
 
@@ -258,26 +296,24 @@ window.saveUserChanges = async function() {
         
         await updateDoc(doc(db, 'users', currentEditUserId), updates);
         
-        // Управление правами админа
         const isAdmin = document.getElementById('editIsAdmin').checked;
         const adminRef = doc(db, 'admins', currentEditUserId);
         
         if (isAdmin) {
             await setDoc(adminRef, { 
                 email: document.getElementById('editEmail').value,
-                grantedBy: currentAdmin.uid,
+                grantedBy: currentAdmin?.uid || 'unknown',
                 grantedAt: new Date().toISOString()
             });
         } else {
             await deleteDoc(adminRef);
         }
         
-        // Логируем действие
         await addDoc(collection(db, 'adminLogs'), {
             action: 'edit_user',
             targetUser: document.getElementById('editEmail').value,
             targetUserId: currentEditUserId,
-            performedBy: currentAdmin.uid,
+            performedBy: currentAdmin?.uid || 'unknown',
             changes: updates,
             timestamp: new Date().toISOString()
         });
@@ -300,16 +336,13 @@ window.deleteUser = async function() {
     }
     
     try {
-        // Удаляем из Firestore
         await deleteDoc(doc(db, 'users', currentEditUserId));
-        // Удаляем из списка админов, если был
         await deleteDoc(doc(db, 'admins', currentEditUserId));
         
-        // Логируем
         await addDoc(collection(db, 'adminLogs'), {
             action: 'delete_user',
             targetUserId: currentEditUserId,
-            performedBy: currentAdmin.uid,
+            performedBy: currentAdmin?.uid || 'unknown',
             timestamp: new Date().toISOString()
         });
         
@@ -342,12 +375,11 @@ window.addTokens = async function(userId) {
             balance: currentBalance + tokens
         });
         
-        // Логируем
         await addDoc(collection(db, 'adminLogs'), {
             action: 'add_tokens',
             targetUserId: userId,
             amount: tokens,
-            performedBy: currentAdmin.uid,
+            performedBy: currentAdmin?.uid || 'unknown',
             timestamp: new Date().toISOString()
         });
         
@@ -381,6 +413,11 @@ window.searchUsers = async function() {
         const tbody = document.getElementById('usersTableBody');
         tbody.innerHTML = '';
         
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8">Ничего не найдено</td></tr>';
+            return;
+        }
+        
         filtered.forEach(doc => {
             const user = doc.data();
             const date = user.createdAt ? new Date(user.createdAt).toLocaleDateString('ru-RU') : 'неизвестно';
@@ -404,6 +441,7 @@ window.searchUsers = async function() {
         
     } catch (error) {
         console.error('Error searching users:', error);
+        alert('Ошибка поиска: ' + error.message);
     }
 };
 
@@ -419,34 +457,40 @@ window.showLogTab = function(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     
-    document.querySelector(`[onclick="showLogTab('${tab}')"]`).classList.add('active');
-    document.getElementById(`${tab}-tab`).classList.add('active');
+    const tabButton = document.querySelector(`[onclick="showLogTab('${tab}')"]`);
+    if (tabButton) tabButton.classList.add('active');
+    
+    const tabContent = document.getElementById(`${tab}-tab`);
+    if (tabContent) tabContent.classList.add('active');
 };
 
 async function loadPayments() {
     try {
+        const tbody = document.getElementById('paymentsTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>';
+        
         const paymentsRef = collection(db, 'payments');
         const q = query(paymentsRef, orderBy('createdAt', 'desc'), limit(50));
         const snapshot = await getDocs(q);
         
-        const tbody = document.getElementById('paymentsTableBody');
-        tbody.innerHTML = '';
+        if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет платежей</td></tr>';
+            return;
+        }
         
+        tbody.innerHTML = '';
         snapshot.forEach(doc => {
             const payment = doc.data();
-            const date = payment.createdAt ? new Date(payment.createdAt).toLocaleString('ru-RU') : 'неизвестно';
-            
-            // Получаем email пользователя
-            let userEmail = 'Неизвестно';
-            if (payment.userId) {
-                // Можно добавить асинхронную загрузку, но для скорости оставим так
-                userEmail = payment.userId;
-            }
+            const date = payment.createdAt ? 
+                (payment.createdAt.toDate ? payment.createdAt.toDate().toLocaleString('ru-RU') : payment.createdAt) 
+                : 'неизвестно';
             
             tbody.innerHTML += `
                 <tr>
                     <td>${date}</td>
-                    <td>${userEmail}</td>
+                    <td>${payment.userId || '—'}</td>
                     <td>${payment.amount || 0} ₽</td>
                     <td>${payment.tokens || 0}</td>
                     <td><span class="badge badge-success">Успешно</span></td>
@@ -456,54 +500,87 @@ async function loadPayments() {
         
     } catch (error) {
         console.error('Error loading payments:', error);
+        const tbody = document.getElementById('paymentsTableBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5">Ошибка загрузки: ' + error.message + '</td></tr>';
     }
 }
 
 async function loadGenerations() {
     try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
         const tbody = document.getElementById('generationsTableBody');
-        tbody.innerHTML = '';
+        if (!tbody) return;
         
-        let count = 0;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>';
+        
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        let generations = [];
+        
         for (const userDoc of usersSnapshot.docs) {
-            if (count >= 50) break;
-            
             const gensRef = collection(db, 'users', userDoc.id, 'generations');
-            const gensSnapshot = await getDocs(query(gensRef, orderBy('timestamp', 'desc'), limit(10)));
+            const gensSnapshot = await getDocs(query(gensRef, orderBy('timestamp', 'desc'), limit(5)));
             
             gensSnapshot.forEach(genDoc => {
-                if (count >= 50) return;
-                const gen = genDoc.data();
-                const date = gen.timestamp ? new Date(gen.timestamp).toLocaleString('ru-RU') : 'неизвестно';
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${date}</td>
-                        <td>${userDoc.data().email || 'Неизвестно'}</td>
-                        <td>${gen.productName || '—'}</td>
-                        <td>${gen.type || 'генерация'}</td>
-                        <td>3</td>
-                    </tr>
-                `;
-                count++;
+                generations.push({
+                    ...genDoc.data(),
+                    userId: userDoc.id,
+                    userEmail: userDoc.data().email
+                });
             });
         }
         
+        // Сортируем по дате
+        generations.sort((a, b) => {
+            const dateA = a.timestamp ? new Date(a.timestamp) : 0;
+            const dateB = b.timestamp ? new Date(b.timestamp) : 0;
+            return dateB - dateA;
+        });
+        
+        generations = generations.slice(0, 50);
+        
+        if (generations.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет генераций</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        generations.forEach(gen => {
+            const date = gen.timestamp ? new Date(gen.timestamp).toLocaleString('ru-RU') : 'неизвестно';
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td>${date}</td>
+                    <td>${gen.userEmail || gen.userId || '—'}</td>
+                    <td>${gen.productName || '—'}</td>
+                    <td>${gen.type || 'генерация'}</td>
+                    <td>3</td>
+                </tr>
+            `;
+        });
+        
     } catch (error) {
         console.error('Error loading generations:', error);
+        const tbody = document.getElementById('generationsTableBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5">Ошибка загрузки: ' + error.message + '</td></tr>';
     }
 }
 
 async function loadAdminLogs() {
     try {
+        const tbody = document.getElementById('adminLogsTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Загрузка...</td></tr>';
+        
         const logsRef = collection(db, 'adminLogs');
         const q = query(logsRef, orderBy('timestamp', 'desc'), limit(50));
         const snapshot = await getDocs(q);
         
-        const tbody = document.getElementById('adminLogsTableBody');
-        tbody.innerHTML = '';
+        if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">Нет логов</td></tr>';
+            return;
+        }
         
+        tbody.innerHTML = '';
         snapshot.forEach(doc => {
             const log = doc.data();
             const date = log.timestamp ? new Date(log.timestamp).toLocaleString('ru-RU') : 'неизвестно';
@@ -520,5 +597,7 @@ async function loadAdminLogs() {
         
     } catch (error) {
         console.error('Error loading admin logs:', error);
+        const tbody = document.getElementById('adminLogsTableBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4">Ошибка загрузки: ' + error.message + '</td></tr>';
     }
 }
