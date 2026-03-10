@@ -22,30 +22,30 @@
 
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
-        <aside class="sidebar glass">
-            <div class="sidebar-logo">AI Seller</div>
-            <nav class="sidebar-nav">
-                <ul>
-                    <li class="menu-item active" data-section="tokens">💰 Токены</li>
-                    <li class="menu-item" data-section="wb">📦 Wildberries</li>
-                    <li class="menu-item" data-section="ozon">🛒 Ozon</li>
-                    <li class="menu-item" data-section="history">📜 История</li>
-                    <li class="menu-item" data-section="settings">⚙️ Настройки</li>
-                </ul>
-            </nav>
-           <div class="sidebar-footer">
-    <div class="user-balance">
-        <span>Баланс: <span id="sidebarBalance">30</span> / <span id="sidebarMaxGen">30</span></span>
-        <button class="btn btn-small btn-primary" onclick="showPaymentModal()">Пополнить</button>
+      <aside class="sidebar glass">
+    <div class="sidebar-logo">AI Seller</div>
+    <nav class="sidebar-nav">
+        <ul>
+            <li class="menu-item active" data-section="tokens">💰 Токены</li>
+            <li class="menu-item" data-section="wb">📦 Wildberries</li>
+            <li class="menu-item" data-section="ozon">🛒 Ozon</li>
+            <li class="menu-item" data-section="history">📜 История</li>
+            <li class="menu-item" data-section="settings">⚙️ Настройки</li>
+        </ul>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-balance">
+            <span>Баланс: <span id="sidebarBalance">0</span> / <span id="sidebarMaxGen">30</span></span>
+            <button class="btn btn-small btn-primary" onclick="showPaymentModal()">Пополнить</button>
+        </div>
+        <div class="user-info">
+            <span class="user-email" id="userEmail">Загрузка...</span>
+            <span class="user-plan" id="userPlan">Старт</span>
+        </div>
+        <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
+        <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
     </div>
-    <div class="user-info">
-        <span class="user-email" id="userEmail">Загрузка...</span>
-        <span class="user-plan" id="userPlan">Старт</span>
-    </div>
-    <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
-    <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
-</div>
-        </aside>
+</aside>
 
         <!-- Основной контент -->
         <main class="main-content">
