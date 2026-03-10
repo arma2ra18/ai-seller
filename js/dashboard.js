@@ -471,7 +471,7 @@ window.viewHistoryItem = async function(docId) {
     }
 };
 
-// ----- НОВЫЕ ФУНКЦИИ ДЛЯ ПОПОЛНЕНИЯ -----
+// ----- НОВЫЕ ФУНКЦИИ ДЛЯ ПОПОЛНЕНИЯ (цена 50 ₽/токен) -----
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) {
@@ -511,17 +511,15 @@ window.selectPackage = function(tokens, price) {
 
 window.calculateCustomPrice = function() {
     const tokens = parseInt(document.getElementById('customTokens').value) || 0;
-    const pricePerToken = 33; // 33 ₽ за токен
+    const pricePerToken = 50; // новая цена 50 ₽ за токен
     const price = tokens * pricePerToken;
     document.getElementById('customPrice').value = `${price} ₽`;
     
-    // Если пользователь выбирает свой вариант, обновляем информацию
     document.getElementById('selectedPackageName').textContent = `${tokens} токенов за ${price} ₽ (своё)`;
     document.getElementById('modalAmount').textContent = `${price} ₽`;
     selectedTokens = tokens;
     selectedPrice = price;
     
-    // Снимаем выделение с карточек
     document.querySelectorAll('.package-card').forEach(card => {
         card.classList.remove('selected');
     });

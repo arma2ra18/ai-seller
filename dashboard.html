@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <!-- Видеофон (без изменений) -->
+    <!-- Видеофон -->
     <div class="video-background" style="opacity: 0.2;">
         <video autoplay muted loop playsinline>
             <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
@@ -21,7 +21,7 @@
     </div>
 
     <div class="dashboard-wrapper">
-        <!-- Сайдбар (без Фото, Видео, Тарифы) -->
+        <!-- Сайдбар -->
         <aside class="sidebar glass">
             <div class="sidebar-logo">AI Seller</div>
             <nav class="sidebar-nav">
@@ -53,7 +53,7 @@
                 <p>AI-сервис для создания карточек Wildberries и Ozon</p>
             </div>
 
-            <!-- Статистика (без изменений) -->
+            <!-- Статистика -->
             <div class="stats-grid">
                 <div class="stat-card glass card-hover">
                     <div class="stat-icon">👤</div>
@@ -259,64 +259,64 @@
         </main>
     </div>
 
-    <!-- Модальное окно оплаты (новое) -->
+    <!-- Модальное окно оплаты (новые цены) -->
     <div id="paymentModal" class="modal">
-        <div class="modal-content glass">
+        <div class="modal-content glass payment-modal">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <h2 class="gradient-text">Пополнение баланса</h2>
             
             <div class="payment-options">
-                <!-- Предустановленные пакеты -->
+                <!-- Пакеты (цена 1 токена = 50 ₽) -->
                 <div class="package-grid">
-                    <div class="package-card" onclick="selectPackage(30, 990)">
+                    <div class="package-card" onclick="selectPackage(30, 1500)">
                         <div class="package-tokens">30 токенов</div>
-                        <div class="package-price">990 ₽</div>
+                        <div class="package-price">1 500 ₽</div>
                         <div class="package-bonus">+0 бонусов</div>
                     </div>
-                    <div class="package-card" onclick="selectPackage(100, 2990)">
+                    <div class="package-card" onclick="selectPackage(100, 5000)">
                         <div class="package-tokens">100 токенов</div>
-                        <div class="package-price">2 990 ₽</div>
+                        <div class="package-price">5 000 ₽</div>
                         <div class="package-bonus">+10 бонусов</div>
                     </div>
-                    <div class="package-card" onclick="selectPackage(300, 7990)">
+                    <div class="package-card" onclick="selectPackage(300, 15000)">
                         <div class="package-tokens">300 токенов</div>
-                        <div class="package-price">7 990 ₽</div>
+                        <div class="package-price">15 000 ₽</div>
                         <div class="package-bonus">+30 бонусов</div>
                     </div>
                 </div>
 
-                <!-- Свой вариант -->
+                <!-- Своё количество -->
                 <div class="custom-package">
                     <h3>Своё количество</h3>
                     <div class="form-row">
-                        <div class="form-group half">
+                        <div class="form-group">
                             <label>Токенов</label>
                             <input type="number" id="customTokens" min="1" value="50" step="1" oninput="calculateCustomPrice()">
                         </div>
-                        <div class="form-group half">
-                            <label>Цена (33 ₽/токен)</label>
-                            <input type="text" id="customPrice" value="1650 ₽" readonly>
+                        <div class="form-group">
+                            <label>Цена (50 ₽/токен)</label>
+                            <input type="text" id="customPrice" value="2500 ₽" readonly>
                         </div>
                     </div>
                 </div>
 
-                <!-- Выбранный пакет -->
+                <!-- Выбранный вариант -->
                 <div class="selected-info">
                     <p>Вы выбрали: <span id="selectedPackageName">—</span></p>
-                    <p>Сумма к оплате: <strong id="modalAmount">0 ₽</strong></p>
+                    <strong id="modalAmount">0 ₽</strong>
                 </div>
             </div>
 
-            <p class="text-muted" style="margin: 10px 0 20px;">После оплаты токены поступят на ваш баланс автоматически.</p>
+            <p class="text-muted" style="margin: 0 0 20px; text-align: center;">После оплаты токены поступят на ваш баланс автоматически.</p>
             
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-primary glow" onclick="confirmPayment()">Оплатить</button>
-                <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-primary glow" onclick="confirmPayment()" style="flex: 1;">Оплатить</button>
+                <button class="btn btn-outline" onclick="closeModal()" style="flex: 1;">Отмена</button>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно загрузки (генерация) – без изменений -->
+    <!-- Модальное окно загрузки (генерация) -->
     <div id="generationModal" class="modal">
         <div class="modal-content glass loading-content">
             <h2 class="gradient-text">✨ Генерация карточек ✨</h2>
@@ -332,7 +332,7 @@
         </div>
     </div>
 
-    <!-- Лайтбокс для изображений (без изменений) -->
+    <!-- Лайтбокс для изображений -->
     <div id="lightbox" class="lightbox" onclick="closeLightbox()">
         <span class="lightbox-close">&times;</span>
         <img class="lightbox-content" id="lightbox-img" alt="">
