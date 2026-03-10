@@ -601,3 +601,15 @@ async function loadAdminLogs() {
         if (tbody) tbody.innerHTML = '<tr><td colspan="4">Ошибка загрузки: ' + error.message + '</td></tr>';
     }
 }
+// Добавьте это временно в конец файла для теста
+window.testCollection = async function() {
+    try {
+        const snapshot = await getDocs(collection(db, 'users'));
+        console.log('Всего документов:', snapshot.size);
+        snapshot.forEach(doc => console.log('Документ:', doc.id, doc.data()));
+    } catch (error) {
+        console.error('Ошибка:', error);
+    }
+};
+
+// Вызовите в консоли браузера: testCollection()
