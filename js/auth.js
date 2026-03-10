@@ -1,20 +1,19 @@
 import { auth, db } from './firebase.js';
 import { 
-    createUserWithEmailAndPassword, 
     signInWithEmailAndPassword,
     signOut,
     sendPasswordResetEmail,
     GoogleAuthProvider,
     signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
     RecaptchaVerifier,
-    signInWithPhoneNumber
+    signInWithPhoneNumber,
+    updateProfile
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-// Переменные для хранения confirmationResult (телефон)
+// Переменные для хранения данных регистрации и подтверждения
 let confirmationResult = null;
+let pendingUserData = null;
 
 // Переключение вкладок
 window.showTab = function(tab) {
@@ -31,14 +30,16 @@ window.showTab = function(tab) {
     document.getElementById('authMessage').textContent = '';
 };
 
-// ========== EMAIL/ПАРОЛЬ (существующий код) ==========
-window.handleRegister = async function() {
+// ========== РЕГИСТРАЦИЯ (НОВАЯ ЛОГИКА) ==========
+window.handlePhoneRegistration = async function() {
+    const phone = document.getElementById('registerPhone').value.trim();
     const email = document.getElementById('registerEmail').value.trim();
     const password = document.getElementById('registerPassword').value;
     const confirm = document.getElementById('registerConfirm').value;
     const messageEl = document.getElementById('authMessage');
 
-    if (!email || !password || !confirm) {
+    // Валидация
+    if (!phone || !email || !password || !confirm) {
         messageEl.textContent = '❌ Заполните все поля';
         messageEl.className = 'auth-message error';
         return;
@@ -55,55 +56,121 @@ window.handleRegister = async function() {
     }
 
     try {
-        messageEl.textContent = '⏳ Создаем аккаунт...';
-        messageEl.className = 'auth-message info';
-        
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+        // Инициализируем reCAPTCHA (если ещё не создана)
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible', // делаем невидимой для лучшего UX
+                'callback': () => {}
+            });
+        }
 
+        // Отправляем код на телефон
+        const appVerifier = window.recaptchaVerifier;
+        confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
+        
+        // Сохраняем данные для последующего создания аккаунта
+        pendingUserData = {
+            phone,
+            email,
+            password
+        };
+        
+        // Показываем модальное окно для ввода кода
+        const codeModal = document.getElementById('codeModal');
+        if (codeModal) codeModal.classList.add('show');
+        
+        messageEl.textContent = '✅ Код отправлен! Проверьте SMS';
+        messageEl.className = 'auth-message success';
+    } catch (error) {
+        console.error('Phone registration error:', error);
+        messageEl.textContent = '❌ Ошибка: ' + error.message;
+        messageEl.className = 'auth-message error';
+    }
+};
+
+// ========== ПОДТВЕРЖДЕНИЕ КОДА ==========
+window.verifyPhoneCode = async function() {
+    const code = document.getElementById('verificationCode').value.trim();
+    const messageEl = document.getElementById('authMessage');
+    
+    if (!code) {
+        alert('Введите код подтверждения');
+        return;
+    }
+    
+    try {
+        // Подтверждаем код и получаем пользователя
+        const result = await confirmationResult.confirm(code);
+        const user = result.user;
+        
+        // Обновляем профиль пользователя: добавляем email и пароль
+        // Важно: телефон уже привязан к аккаунту
+        await updateProfile(user, {
+            phoneNumber: pendingUserData.phone
+        });
+        
+        // Обновляем email (если нужно)
+        if (pendingUserData.email && user.email !== pendingUserData.email) {
+            await updateEmail(user, pendingUserData.email);
+        }
+        
+        // Меняем пароль (если нужно)
+        if (pendingUserData.password) {
+            await updatePassword(user, pendingUserData.password);
+        }
+        
+        // Создаём запись в Firestore
         await setDoc(doc(db, 'users', user.uid), {
-            email: email,
+            email: pendingUserData.email || user.email || '',
+            phoneNumber: pendingUserData.phone || user.phoneNumber || '',
+            displayName: user.displayName || '',
             plan: 'start',
             balance: 30,
             usedGenerations: 0,
             createdAt: new Date().toISOString()
         });
-
+        
         messageEl.textContent = '✅ Регистрация успешна! Перенаправляем...';
         messageEl.className = 'auth-message success';
+        closeCodeModal();
         setTimeout(() => window.location.href = '/dashboard.html', 1500);
     } catch (error) {
-        let errorMessage = 'Ошибка регистрации';
-        if (error.code === 'auth/email-already-in-use') errorMessage = 'Этот email уже зарегистрирован';
-        else if (error.code === 'auth/invalid-email') errorMessage = 'Некорректный email';
-        messageEl.textContent = '❌ ' + errorMessage;
+        console.error('Verification error:', error);
+        messageEl.textContent = '❌ Неверный код: ' + error.message;
         messageEl.className = 'auth-message error';
     }
 };
 
-window.handleLogin = async function() {
-    const email = document.getElementById('loginEmail').value.trim();
+// ========== ВХОД ПО ТЕЛЕФОНУ ==========
+window.handlePhoneLogin = async function() {
+    const phoneNumber = document.getElementById('loginPhone').value.trim();
     const password = document.getElementById('loginPassword').value;
     const messageEl = document.getElementById('authMessage');
 
-    if (!email || !password) {
+    if (!phoneNumber || !password) {
         messageEl.textContent = '❌ Заполните все поля';
         messageEl.className = 'auth-message error';
         return;
     }
 
     try {
-        messageEl.textContent = '⏳ Вход...';
+        // Для входа по телефону с паролем нужно использовать email/password,
+        // но телефон может быть связан с email. Упростим: сначала находим пользователя по телефону?
+        // Firebase не поддерживает прямой вход по телефону + пароль.
+        // Поэтому пока оставим вход только через Google или email/password.
+        // В будущем можно реализовать вход по SMS.
+        
+        // Временное решение: просто показываем, что функция в разработке
+        messageEl.textContent = '⏳ Вход по телефону с паролем временно недоступен. Используйте Google.';
         messageEl.className = 'auth-message info';
-        await signInWithEmailAndPassword(auth, email, password);
-        messageEl.textContent = '✅ Вход выполнен! Перенаправляем...';
-        messageEl.className = 'auth-message success';
-        setTimeout(() => window.location.href = '/dashboard.html', 1000);
+        
+        // Если у вас есть возможность связать телефон с email, можно сделать так:
+        // const email = phoneNumber + '@phone.local'; // или искать в БД
+        // await signInWithEmailAndPassword(auth, email, password);
+        
     } catch (error) {
-        let errorMessage = 'Ошибка входа';
-        if (error.code === 'auth/user-not-found') errorMessage = 'Пользователь не найден';
-        else if (error.code === 'auth/wrong-password') errorMessage = 'Неверный пароль';
-        messageEl.textContent = '❌ ' + errorMessage;
+        console.error('Phone login error:', error);
+        messageEl.textContent = '❌ Ошибка: ' + error.message;
         messageEl.className = 'auth-message error';
     }
 };
@@ -117,14 +184,11 @@ window.handleGoogleLogin = async function() {
         messageEl.textContent = '⏳ Вход через Google...';
         messageEl.className = 'auth-message info';
         
-        // Используем popup для простоты (работает и на мобильных)
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
         
-        // Проверяем, есть ли пользователь в Firestore
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (!userDoc.exists()) {
-            // Создаём запись для нового пользователя
             await setDoc(doc(db, 'users', user.uid), {
                 email: user.email,
                 displayName: user.displayName,
@@ -146,126 +210,13 @@ window.handleGoogleLogin = async function() {
     }
 };
 
-// ========== ВХОД ПО ТЕЛЕФОНУ ==========
-window.handlePhoneLogin = function() {
-    // Показываем модальное окно для ввода номера
-    const modal = document.getElementById('phoneModal');
-    if (modal) modal.classList.add('show');
-    
-    // Инициализируем reCAPTCHA
-    if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'normal',
-            'callback': () => {
-                console.log('reCAPTCHA solved');
-            }
-        });
-    }
-};
-
-window.closePhoneModal = function() {
-    const modal = document.getElementById('phoneModal');
-    if (modal) modal.classList.remove('show');
-};
-
-window.closeCodeModal = function() {
-    const modal = document.getElementById('codeModal');
-    if (modal) modal.classList.remove('show');
-};
-
-// Отправка кода на номер телефона
-window.sendPhoneCode = async function() {
-    const phoneNumber = document.getElementById('phoneNumber').value.trim();
-    const messageEl = document.getElementById('authMessage');
-    
-    if (!phoneNumber) {
-        alert('Введите номер телефона');
-        return;
-    }
-    
-    try {
-        const appVerifier = window.recaptchaVerifier;
-        confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-        
-        // Закрываем модальное окно с номером и открываем окно для кода
-        closePhoneModal();
-        const codeModal = document.getElementById('codeModal');
-        if (codeModal) codeModal.classList.add('show');
-        
-        messageEl.textContent = '✅ Код отправлен! Проверьте SMS';
-        messageEl.className = 'auth-message success';
-    } catch (error) {
-        console.error('Phone sign-in error:', error);
-        messageEl.textContent = '❌ Ошибка: ' + error.message;
-        messageEl.className = 'auth-message error';
-        
-        // Сбрасываем reCAPTCHA
-        if (window.recaptchaVerifier) {
-            window.recaptchaVerifier.clear();
-            window.recaptchaVerifier = null;
-        }
-    }
-};
-
-// Подтверждение кода из SMS
-window.verifyPhoneCode = async function() {
-    const code = document.getElementById('verificationCode').value.trim();
-    const messageEl = document.getElementById('authMessage');
-    
-    if (!code) {
-        alert('Введите код подтверждения');
-        return;
-    }
-    
-    try {
-        const result = await confirmationResult.confirm(code);
-        const user = result.user;
-        
-        // Проверяем, есть ли пользователь в Firestore
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (!userDoc.exists()) {
-            // Создаём запись для нового пользователя
-            await setDoc(doc(db, 'users', user.uid), {
-                phoneNumber: user.phoneNumber,
-                plan: 'start',
-                balance: 30,
-                usedGenerations: 0,
-                createdAt: new Date().toISOString()
-            });
-        }
-        
-        messageEl.textContent = '✅ Вход выполнен! Перенаправляем...';
-        messageEl.className = 'auth-message success';
-        closeCodeModal();
-        setTimeout(() => window.location.href = '/dashboard.html', 1500);
-    } catch (error) {
-        console.error('Verification error:', error);
-        messageEl.textContent = '❌ Неверный код: ' + error.message;
-        messageEl.className = 'auth-message error';
-    }
-};
-
-// Повторная отправка кода
-window.resendPhoneCode = async function() {
-    if (!confirmationResult) {
-        alert('Сначала запросите код');
-        return;
-    }
-    
-    try {
-        // Повторно отправляем код (используем тот же verificationId)
-        await confirmationResult.confirm('');
-    } catch (error) {
-        console.error('Resend error:', error);
-    }
-};
-
-// ========== ОБЩИЕ ФУНКЦИИ ==========
+// ========== ВЫХОД ==========
 window.logout = async function() {
     await signOut(auth);
     window.location.href = '/login.html';
 };
 
+// ========== СБРОС ПАРОЛЯ ==========
 window.resetPassword = async function() {
     const email = prompt('Введите ваш email для сброса пароля:');
     if (!email) return;
@@ -275,4 +226,29 @@ window.resetPassword = async function() {
     } catch (error) {
         alert('Ошибка: ' + error.message);
     }
+};
+
+// ========== УПРАВЛЕНИЕ МОДАЛЬНЫМИ ОКНАМИ ==========
+window.closeCodeModal = function() {
+    const modal = document.getElementById('codeModal');
+    if (modal) modal.classList.remove('show');
+};
+
+window.resendPhoneCode = async function() {
+    if (!confirmationResult) {
+        alert('Сначала запросите код');
+        return;
+    }
+    try {
+        // Повторно отправляем код (используем тот же verificationId)
+        await confirmationResult.confirm('');
+    } catch (error) {
+        console.error('Resend error:', error);
+    }
+};
+
+// Закрытие модального окна по клику вне его
+window.onclick = function(event) {
+    const codeModal = document.getElementById('codeModal');
+    if (event.target === codeModal) closeCodeModal();
 };
