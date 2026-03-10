@@ -63,11 +63,11 @@ async function loadUserData() {
     }
 }
 
-// Обновление интерфейса (только баланс, без дроби)
+// Обновление интерфейса (баланс в рублях)
 function updateUI() {
     if (!userData) return;
     
-    // Баланс из Firestore (поле balance)
+    // Баланс в рублях из Firestore (поле balance)
     const currentBalance = userData.balance || 0;
 
     // Обновляем баланс везде
@@ -83,14 +83,12 @@ function updateUI() {
         });
     });
 
-    // Можно оставить максимум для других целей, но не отображать
-    const maxGen = { 'start': 5, 'business': 200, 'pro': 999999 }[userData.plan] || 5;
-
     // Email в шапке и сайдбаре
     const userEmailEl = document.getElementById('userEmail');
     if (userEmailEl) {
         userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
     }
+}
 
     // Тариф
     const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };

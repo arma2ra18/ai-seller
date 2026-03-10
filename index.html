@@ -37,7 +37,6 @@
                 <a href="#features">Возможности</a>
                 <a href="#how-it-works">Как работает</a>
                 <a href="#examples">Примеры</a>
-                <a href="#pricing">Тарифы</a>
                 <a href="#reviews">Отзывы</a>
                 <a href="/dashboard.html" class="btn btn-gold">Личный кабинет</a>
             </nav>
@@ -171,7 +170,7 @@
             </div>
         </section>
 
-        <!-- Примеры работ: улучшенная карусель -->
+        <!-- Примеры работ -->
         <section id="examples" class="examples">
             <div class="container">
                 <h2 class="gradient-text">Примеры готовых карточек</h2>
@@ -189,62 +188,6 @@
                 </div>
                 
                 <div class="carousel-dots" id="carouselDots"></div>
-            </div>
-        </section>
-
-        <!-- Тарифы с переключателем месяц/год -->
-        <section id="pricing" class="pricing">
-            <div class="container">
-                <h2 class="gradient-text">Выберите свой тариф</h2>
-                <div class="pricing-toggle">
-                    <span class="toggle-label">Месяц</span>
-                    <label class="switch">
-                        <input type="checkbox" id="pricingSwitch">
-                        <span class="slider round"></span>
-                    </label>
-                    <span class="toggle-label">Год <span class="save-badge">-20%</span></span>
-                </div>
-                <div class="pricing-grid" id="pricingGrid">
-                    <div class="pricing-card glass card-hover">
-                        <h3>Старт</h3>
-                        <div class="price monthly">990 ₽<span>/мес</span></div>
-                        <div class="price yearly" style="display: none;">9 500 ₽<span>/год</span></div>
-                        <ul class="features-list">
-                            <li>30 генераций</li>
-                            <li>Все типы контента</li>
-                            <li>История в облаке</li>
-                            <li>Поддержка по email</li>
-                        </ul>
-                        <button class="btn btn-primary btn-block" onclick="window.location.href='/dashboard.html'">Выбрать</button>
-                    </div>
-                    <div class="pricing-card popular glass card-hover">
-                        <div class="popular-tag">🔥 Хит продаж</div>
-                        <h3>Бизнес</h3>
-                        <div class="price monthly">2 990 ₽<span>/мес</span></div>
-                        <div class="price yearly" style="display: none;">28 700 ₽<span>/год</span></div>
-                        <ul class="features-list">
-                            <li>200 генераций</li>
-                            <li>Все типы контента</li>
-                            <li>Массовая генерация</li>
-                            <li>Приоритетная поддержка</li>
-                            <li>Экспорт в Excel</li>
-                        </ul>
-                        <button class="btn btn-primary btn-block" onclick="window.location.href='/dashboard.html'">Выбрать</button>
-                    </div>
-                    <div class="pricing-card glass card-hover">
-                        <h3>Профи</h3>
-                        <div class="price monthly">9 900 ₽<span>/мес</span></div>
-                        <div class="price yearly" style="display: none;">95 000 ₽<span>/год</span></div>
-                        <ul class="features-list">
-                            <li>Безлимит генераций</li>
-                            <li>Все типы контента</li>
-                            <li>VIP-поддержка</li>
-                            <li>Индивидуальные промпты</li>
-                            <li>API доступ</li>
-                        </ul>
-                        <button class="btn btn-primary btn-block" onclick="window.location.href='/dashboard.html'">Выбрать</button>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -336,8 +279,8 @@
                     </div>
                 </div>
                 <div class="footer-newsletter">
-                    <p>Подпишитесь на новости и получите 10 токенов в подарок</p>
-                    <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Спасибо за подписку! 10 токенов начислены.');">
+                    <p>Подпишитесь на новости и получите 10 ₽ в подарок</p>
+                    <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Спасибо за подписку! 10 ₽ начислены.');">
                         <input type="email" placeholder="Ваш email" required>
                         <button type="submit" class="btn btn-gold">Подписаться</button>
                     </form>
@@ -355,13 +298,6 @@
 
     <script src="js/main.js"></script>
     <script>
-        // Переключение тарифов месяц/год
-        document.getElementById('pricingSwitch').addEventListener('change', function(e) {
-            const isYearly = e.target.checked;
-            document.querySelectorAll('.price.monthly').forEach(el => el.style.display = isYearly ? 'none' : 'block');
-            document.querySelectorAll('.price.yearly').forEach(el => el.style.display = isYearly ? 'block' : 'none');
-        });
-
         // ===== УЛУЧШЕННАЯ КАРУСЕЛЬ =====
         const images = [
             "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
@@ -398,36 +334,30 @@
         const slides = document.querySelectorAll('.carousel-slide');
         const totalSlides = slides.length;
 
-        // Функция обновления активной точки
         function updateDots() {
             document.querySelectorAll('.dot').forEach((dot, index) => {
                 dot.classList.toggle('active', index === currentIndex);
             });
         }
 
-        // Функция перехода к слайду
         function goToSlide(index) {
             if (index < 0 || index >= totalSlides) return;
             currentIndex = index;
             
-            // Вычисляем ширину одного слайда с учётом gap
-            const slideWidth = slides[0].offsetWidth + 20; // 20px - это gap
+            const slideWidth = slides[0].offsetWidth + 20;
             track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
             
             updateDots();
         }
 
-        // Функция перемещения (вызывается из кнопок)
         window.moveCarousel = function(direction) {
             goToSlide(currentIndex + direction);
         };
 
-        // Обработка ресайза окна
         window.addEventListener('resize', () => {
-            goToSlide(currentIndex); // пересчитываем позицию
+            goToSlide(currentIndex);
         });
 
-        // Инициализация
         goToSlide(0);
     </script>
 </body>

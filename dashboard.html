@@ -25,30 +25,29 @@
 
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
-      <aside class="sidebar glass">
-    <div class="sidebar-logo">Prodiger</div>
-    <nav class="sidebar-nav">
-        <ul>
-            <li class="menu-item active" data-section="tokens">💰 Токены</li>
-            <li class="menu-item" data-section="wb">📦 Wildberries</li>
-            <li class="menu-item" data-section="ozon">🛒 Ozon</li>
-            <li class="menu-item" data-section="history">📜 История</li>
-            <li class="menu-item" data-section="settings">⚙️ Настройки</li>
-        </ul>
-    </nav>
-    <div class="sidebar-footer">
-        <div class="user-balance">
-            <span>Баланс: <span id="sidebarBalance">0</span><span id="sidebarMaxGen"></span></span>
-            <button class="btn btn-small btn-primary" onclick="showPaymentModal()">Пополнить</button>
-        </div>
-        <div class="user-info">
-            <span class="user-email" id="userEmail">Загрузка...</span>
-            <span class="user-plan" id="userPlan">Старт</span>
-        </div>
-        <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
-        <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
-    </div>
-</aside>
+        <aside class="sidebar glass">
+            <div class="sidebar-logo">Prodiger</div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="menu-item active" data-section="balance">💰 Баланс</li>
+                    <li class="menu-item" data-section="wb">📦 Wildberries</li>
+                    <li class="menu-item" data-section="ozon">🛒 Ozon</li>
+                    <li class="menu-item" data-section="history">📜 История</li>
+                    <li class="menu-item" data-section="settings">⚙️ Настройки</li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-balance">
+                    <span>Баланс: <span id="sidebarBalance">0</span> ₽</span>
+                    <button class="btn btn-small btn-primary" onclick="showPaymentModal()">Пополнить</button>
+                </div>
+                <div class="user-info">
+                    <span class="user-email" id="userEmail">Загрузка...</span>
+                </div>
+                <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
+                <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
+            </div>
+        </aside>
 
         <!-- Основной контент -->
         <main class="main-content">
@@ -119,19 +118,19 @@
 
             <!-- Динамические секции -->
             <div class="content-area glass" id="contentArea">
-                <!-- Токены -->
-                <div class="content-section active" id="tokens-section">
-                    <h2>Токены и статистика</h2>
+                <!-- Баланс (бывшие Токены) -->
+                <div class="content-section active" id="balance-section">
+                    <h2>Баланс и статистика</h2>
                     <div class="info-cards">
                         <div class="info-card glass card-hover">
                             <h3>Текущий баланс</h3>
-                            <p class="big-number"><span id="remainingGenerationsDetail">30</span><span id="maxGenerationsDetail"></span></p>
-                            <p>Использовано: <span id="usedGenerationsDetail">0</span></p>
+                            <p class="big-number"><span id="remainingGenerationsDetail">0</span> ₽</p>
+                            <p>Потрачено: <span id="usedGenerationsDetail">0</span> ₽</p>
                             <button class="btn btn-primary" onclick="showPaymentModal()">Пополнить</button>
                         </div>
                         <div class="info-card glass card-hover">
                             <h3>Бонусы</h3>
-                            <p>Приглашайте друзей и получайте бонусные токены</p>
+                            <p>Приглашайте друзей и получайте бонусы</p>
                             <button class="btn btn-outline">Пригласить</button>
                         </div>
                     </div>
@@ -161,7 +160,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group half">
-                                <label>Цена (₽)</label>
+                                <label>Цена товара (₽)</label>
                                 <input type="number" id="wbPrice" placeholder="1990" min="0" step="1">
                             </div>
                             <div class="form-group half"></div>
@@ -178,7 +177,7 @@
                                 <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
                             </div>
                         </div>
-                        <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку для WB</button>
+                        <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать карточку (100 ₽)</button>
                     </div>
                 </div>
 
@@ -206,7 +205,7 @@
                         </div>
                         <div class="form-row">
                             <div class="form-group half">
-                                <label>Цена (₽)</label>
+                                <label>Цена товара (₽)</label>
                                 <input type="number" id="ozonPrice" placeholder="4990" min="0" step="1">
                             </div>
                             <div class="form-group half"></div>
@@ -223,7 +222,7 @@
                                 <span class="file-upload-info" id="ozonFileInfo">Файлы не выбраны</span>
                             </div>
                         </div>
-                        <button class="btn btn-primary btn-large glow" id="generateOzonBtn" onclick="generateOzonCard()">✨ Создать карточку для Ozon</button>
+                        <button class="btn btn-primary btn-large glow" id="generateOzonBtn" onclick="generateOzonCard()">✨ Создать карточку (100 ₽)</button>
                     </div>
                 </div>
 
@@ -233,10 +232,9 @@
                     <div class="history-list" id="historyListDetail"></div>
                 </div>
 
-                <!-- Настройки (ПОЛНАЯ ВЕРСИЯ) -->
+                <!-- Настройки -->
                 <div class="content-section" id="settings-section">
                     <h2>Настройки профиля</h2>
-                    
                     <div class="settings-grid">
                         <!-- Левая колонка: основная информация -->
                         <div class="settings-card glass">
@@ -288,12 +286,8 @@
                                 <span class="stat-value" id="accountCreated">—</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-label">Всего генераций:</span>
-                                <span class="stat-value" id="totalGenerations">0</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Текущий тариф:</span>
-                                <span class="stat-value" id="currentPlan">Старт</span>
+                                <span class="stat-label">Всего потрачено:</span>
+                                <span class="stat-value" id="totalGenerations">0 ₽</span>
                             </div>
                             <div class="stat-item">
                                 <span class="stat-label">Последний вход:</span>
@@ -333,55 +327,33 @@
         </main>
     </div>
 
-    <!-- Модальное окно оплаты -->
+    <!-- Модальное окно пополнения (упрощённое, без пакетов) -->
     <div id="paymentModal" class="modal">
         <div class="modal-content glass payment-modal">
             <button class="modal-close" onclick="closeModal()">&times;</button>
             <h2 class="gradient-text">Пополнение баланса</h2>
             
             <div class="payment-options">
-                <div class="package-grid">
-                    <div class="package-card" onclick="selectPackage(30, 1500)">
-                        <div class="package-tokens">30 токенов</div>
-                        <div class="package-price">1 500 ₽</div>
-                        <div class="package-bonus">+0 бонусов</div>
-                    </div>
-                    <div class="package-card" onclick="selectPackage(100, 5000)">
-                        <div class="package-tokens">100 токенов</div>
-                        <div class="package-price">5 000 ₽</div>
-                        <div class="package-bonus">+10 бонусов</div>
-                    </div>
-                    <div class="package-card" onclick="selectPackage(300, 15000)">
-                        <div class="package-tokens">300 токенов</div>
-                        <div class="package-price">15 000 ₽</div>
-                        <div class="package-bonus">+30 бонусов</div>
-                    </div>
-                </div>
-
                 <div class="custom-package">
-                    <h3>Своё количество</h3>
+                    <h3>Введите сумму</h3>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Токенов</label>
-                            <input type="number" id="customTokens" min="1" value="50" step="1" oninput="calculateCustomPrice()">
-                        </div>
-                        <div class="form-group">
-                            <label>Цена (50 ₽/токен)</label>
-                            <input type="text" id="customPrice" value="2500 ₽" readonly>
+                            <label>Сумма (₽)</label>
+                            <input type="number" id="customRubles" min="100" value="500" step="100" oninput="calculatePrice()">
                         </div>
                     </div>
                 </div>
 
                 <div class="selected-info">
-                    <p>Вы выбрали: <span id="selectedPackageName">—</span></p>
-                    <strong id="modalAmount">0 ₽</strong>
+                    <p>Вы выбрали: <span id="selectedPackageName">500 ₽</span></p>
+                    <strong id="modalAmount">500 ₽</strong>
                 </div>
             </div>
 
-            <p class="text-muted" style="margin: 0 0 20px; text-align: center;">После оплаты токены поступят на ваш баланс автоматически.</p>
+            <p class="text-muted" style="margin: 0 0 20px; text-align: center;">После оплаты средства поступят на ваш баланс автоматически.</p>
             
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-primary glow" onclick="confirmPayment()" style="flex: 1;">Оплатить</button>
+                <button class="btn btn-primary glow" onclick="confirmPayment()" style="flex: 1;">Пополнить</button>
                 <button class="btn btn-outline" onclick="closeModal()" style="flex: 1;">Отмена</button>
             </div>
         </div>
