@@ -11,8 +11,7 @@ import {
     updatePassword, 
     deleteUser,
     reauthenticateWithCredential,
-    EmailAuthProvider,
-    updatePhoneNumber
+    EmailAuthProvider
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 let currentUser = null;
@@ -48,7 +47,7 @@ async function loadUserData() {
             updateStats();
         } else {
             await setDoc(doc(db, 'users', currentUser.uid), {
-                email: currentUser.email,
+                email: currentUser.email || '',
                 displayName: currentUser.displayName || '',
                 phoneNumber: currentUser.phoneNumber || '',
                 plan: 'start',
@@ -80,28 +79,44 @@ function updateUI() {
     const usedDetail = document.getElementById('usedGenerationsDetail');
     if (usedDetail) usedDetail.textContent = used;
     const userEmailEl = document.getElementById('userEmail');
-    if (userEmailEl) userEmailEl.textContent = currentUser.email;
+    if (userEmailEl) userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
     const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
     const userPlanEl = document.getElementById('userPlan');
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
 }
 
-// Обновление плиток статистики
+// Обновление плиток статистики (ИСПРАВЛЕННАЯ ВЕРСИЯ)
 function updateStats() {
     const statUser = document.getElementById('statUser');
-    if (statUser) statUser.textContent = currentUser.email.split('@')[0];
+    if (statUser) {
+        if (currentUser.email) {
+            statUser.textContent = currentUser.email.split('@')[0];
+        } else if (currentUser.phoneNumber) {
+            const phone = currentUser.phoneNumber;
+            statUser.textContent = phone ? 'Пользователь ' + phone.slice(-4) : 'Пользователь';
+        } else {
+            statUser.textContent = 'Пользователь';
+        }
+    }
+    
     const statCards = document.getElementById('statCards');
     if (statCards) statCards.textContent = userData?.usedGenerations || 0;
+    
     const statVideos = document.getElementById('statVideos');
     if (statVideos) statVideos.textContent = 0;
+    
     const statDescriptions = document.getElementById('statDescriptions');
     if (statDescriptions) statDescriptions.textContent = userData?.usedGenerations || 0;
+    
     const statHistory = document.getElementById('statHistory');
     if (statHistory) statHistory.textContent = 0;
+    
     const statBalance = document.getElementById('statBalance');
     if (statBalance) statBalance.textContent = userData?.balance || 30;
+    
     const statNews = document.getElementById('statNews');
     if (statNews) statNews.textContent = 29;
+    
     const statBonus = document.getElementById('statBonus');
     if (statBonus) statBonus.textContent = 0;
 }
@@ -126,7 +141,6 @@ document.querySelectorAll('.menu-item').forEach(item => {
         const target = document.getElementById(section + '-section');
         if (target) {
             target.classList.add('active');
-            // Если открыта секция настроек, загружаем данные
             if (section === 'settings') {
                 loadSettingsData();
             }
@@ -252,7 +266,6 @@ window.generateWBCard = async function() {
 
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         
-        // Перезагружаем данные пользователя
         const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (updatedDoc.exists()) {
             userData = updatedDoc.data();
@@ -573,30 +586,25 @@ window.closeModal = function() {
     selectedPrice = 0;
 };
 
-// ========== НАСТРОЙКИ ПРОФИЛЯ (С СОХРАНЕНИЕМ В БД) ==========
-
+// ========== НАСТРОЙКИ ПРОФИЛЯ ==========
 function loadSettingsData() {
     if (!currentUser || !userData) return;
     
-    // Имя
     const displayNameInput = document.getElementById('displayName');
     if (displayNameInput) {
         displayNameInput.value = currentUser.displayName || '';
     }
     
-    // Email
     const emailInput = document.getElementById('userEmailSettings');
     if (emailInput) {
         emailInput.value = currentUser.email || '';
     }
     
-    // Телефон
     const phoneInput = document.getElementById('phoneNumber');
     if (phoneInput) {
         phoneInput.value = currentUser.phoneNumber || '';
     }
     
-    // Статистика
     const createdEl = document.getElementById('accountCreated');
     if (createdEl && userData.createdAt) {
         const date = new Date(userData.createdAt);
@@ -631,15 +639,11 @@ window.updateDisplayName = async function() {
     }
     
     try {
-        // Обновляем в Firebase Auth
         await updateProfile(auth.currentUser, { displayName: newName });
-        
-        // Обновляем в Firestore
         await updateDoc(doc(db, 'users', currentUser.uid), {
             displayName: newName
         });
         
-        // Обновляем локальные данные
         currentUser.displayName = newName;
         userData.displayName = newName;
         
@@ -674,14 +678,9 @@ window.confirmEmailChange = async function() {
     }
     
     try {
-        // Требуется повторная аутентификация
         const credential = EmailAuthProvider.credential(currentUser.email, password);
         await reauthenticateWithCredential(currentUser, credential);
-        
-        // Меняем email в Auth
         await updateEmail(currentUser, newEmail);
-        
-        // Обновляем email в Firestore
         await updateDoc(doc(db, 'users', currentUser.uid), {
             email: newEmail
         });
@@ -703,14 +702,10 @@ window.updatePhoneNumber = async function() {
     }
     
     try {
-        // Обновляем телефон в Auth
-        // Внимание: updatePhoneNumber требует рекапчу и верификацию!
-        // Для упрощения сохраняем только в Firestore
         await updateDoc(doc(db, 'users', currentUser.uid), {
             phoneNumber: newPhone
         });
         
-        // Также пытаемся обновить в Auth (если не выйдет, просто проигнорируем)
         try {
             await updateProfile(auth.currentUser, { phoneNumber: newPhone });
         } catch (e) {
@@ -758,12 +753,8 @@ window.deleteAccount = async function() {
     }
     
     try {
-        // Сначала удаляем данные из Firestore
         await deleteDoc(doc(db, 'users', currentUser.uid));
-        
-        // Затем удаляем сам аккаунт из Auth
         await deleteUser(currentUser);
-        
         showNotification('Аккаунт удалён. Перенаправление...', 'info');
         setTimeout(() => window.location.href = '/', 2000);
     } catch (error) {
