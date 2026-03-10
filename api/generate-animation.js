@@ -25,12 +25,12 @@ const bucket = admin.storage().bucket();
 export const config = {
     api: {
         bodyParser: false,
-        maxDuration: 300, // 5 минут на генерацию видео
+        maxDuration: 300,
     },
 };
 
 /**
- * Генерация видео через WaveSpeed API с моделью WAN 2.6 Flash
+ * Генерация видео через WaveSpeed API
  */
 async function generateVideo(imageBuffer, prompt, duration = 5) {
     const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
@@ -39,25 +39,24 @@ async function generateVideo(imageBuffer, prompt, duration = 5) {
         throw new Error('WAVESPEED_API_KEY not set');
     }
 
-    // Создаем FormData для отправки файла
-    const formData = new FormData();
-    const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
-    formData.append('image', blob, 'product.jpg');
-    formData.append('model', 'alibaba/wan-2.6/image-to-video-flash');
-    formData.append('prompt', prompt);
-    formData.append('duration', duration.toString());
-    formData.append('resolution', '720p');
-    formData.append('shot_type', 'single');
-    formData.append('enable_audio', 'false');
-    formData.append('enable_prompt_expansion', 'true');
+    // Конвертируем изображение в base64
+    const imageBase64 = imageBuffer.toString('base64');
 
-    // Правильный эндпоинт: /api/v1/predictions
-    const response = await fetch('https://api.wavespeed.ai/api/v1/predictions', {
+    // Отправляем JSON запрос
+    const response = await fetch('https://api.wavespeed.ai/v1/image-to-video', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
+            'Content-Type': 'application/json',
         },
-        body: formData,
+        body: JSON.stringify({
+            model: 'wan-2.6-flash',
+            image: imageBase64,
+            prompt: prompt,
+            duration: duration,
+            resolution: '720p',
+            audio: false
+        }),
     });
 
     if (!response.ok) {
@@ -69,13 +68,19 @@ async function generateVideo(imageBuffer, prompt, duration = 5) {
     const result = await response.json();
     console.log('Generation started:', result);
     
+    // Получаем ID задачи
+    const taskId = result.task_id || result.id;
+    
+    if (!taskId) {
+        throw new Error('No task ID returned');
+    }
+    
     // Polling для получения результата
     let videoUrl = null;
-    const predictionId = result.id;
-    const maxAttempts = 90; // максимум 90 попыток (примерно 3 минуты)
+    const maxAttempts = 90;
     
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const statusResponse = await fetch(`https://api.wavespeed.ai/api/v1/predictions/${predictionId}`, {
+        const statusResponse = await fetch(`https://api.wavespeed.ai/v1/image-to-video/${taskId}`, {
             headers: {
                 'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
             },
@@ -89,13 +94,12 @@ async function generateVideo(imageBuffer, prompt, duration = 5) {
         console.log(`Status check ${attempt + 1}:`, status.status);
         
         if (status.status === 'completed') {
-            videoUrl = status.output?.video || status.output?.url || status.output;
+            videoUrl = status.output?.video || status.video_url || status.output;
             break;
         } else if (status.status === 'failed') {
             throw new Error(`Generation failed: ${status.error || 'Unknown error'}`);
         }
         
-        // Ждем 2 секунды перед следующей проверкой
         await new Promise(resolve => setTimeout(resolve, 2000));
     }
     
@@ -135,35 +139,30 @@ export default async function handler(req, res) {
             imageBuffer = fs.readFileSync(photoFile.filepath);
             console.log(`Loaded reference image: ${photoFile.originalFilename}`);
             
-            // Удаляем временный файл
             fs.unlinkSync(photoFile.filepath);
         } else {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
         // Промпт для анимации
-        const prompt = `Create a 5-second cinematic product animation for Wildberries. 
+        const prompt = `Create a 5-second cinematic product animation. 
 The product is "${productName}" by brand ${brand}. Price: ${price} ₽. Features: ${userFeatures.join(', ')}.
 
 The animation should:
-- Start with the product appearing with a soft glow
-- Smoothly rotate the product 360 degrees to showcase all angles
-- Have floating 3D text elements that fade in and out: product name, price, and feature badges
-- Include gentle camera movement (slow dolly or orbit)
-- Use premium lighting with subtle lens flares
-- End with the product in a "hero shot" position with all text elements visible
-- Style: luxurious, modern, photorealistic, like a high-end TV commercial
+- Smoothly rotate the product 360 degrees
+- Have floating text elements: product name, price, and feature badges
+- Include gentle camera movement
+- End with the product in a "hero shot" position
+- Style: luxurious, modern, photorealistic
 
-Animation type: ${animationType === 'cinematic' ? 'cinematic with smooth motion' : 'dynamic with more energy'}`;
+Animation type: ${animationType}`;
 
         console.log('Starting video generation with WaveSpeed...');
         
-        // Генерируем видео (5 секунд, 720p, без аудио)
         const waveSpeedVideoUrl = await generateVideo(imageBuffer, prompt, 5);
         
         console.log('Video generated, downloading...');
         
-        // Скачиваем видео и загружаем в Firebase Storage
         const videoResponse = await fetch(waveSpeedVideoUrl);
         if (!videoResponse.ok) {
             throw new Error(`Failed to download video: ${videoResponse.status}`);
