@@ -36,8 +36,7 @@
                 <a href="#examples">Примеры</a>
                 <a href="#pricing">Тарифы</a>
                 <a href="#reviews">Отзывы</a>
-                <a href="/login.html" class="btn btn-outline">Войти</a>
-                <a href="/login.html" class="btn btn-gold">Регистрация</a>
+                <a href="/dashboard.html" class="btn btn-gold">Личный кабинет</a>
             </nav>
         </div>
     </header>
@@ -50,7 +49,7 @@
                     <h1 class="gradient-text animate-text">Карточки, которые <br>продают за 5 секунд</h1>
                     <p class="hero-subtitle">Нейросеть создаёт продающие описания, фото и видео для Wildberries и Ozon. Экономьте 3 часа на каждой карточке.</p>
                     <div class="hero-cta">
-                        <a href="/login.html" class="btn btn-large btn-gold">Регистрация</a>
+                        <a href="/dashboard.html" class="btn btn-large btn-gold">Личный кабинет</a>
                         <a href="#features" class="btn btn-large btn-outline">Узнать больше</a>
                     </div>
                 </div>
@@ -246,7 +245,7 @@
                             <li>История в облаке</li>
                             <li>Поддержка по email</li>
                         </ul>
-                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/dashboard.html'">Выбрать</button>
                     </div>
                     <div class="pricing-card popular glass card-hover">
                         <div class="popular-tag">🔥 Хит продаж</div>
@@ -260,7 +259,7 @@
                             <li>Приоритетная поддержка</li>
                             <li>Экспорт в Excel</li>
                         </ul>
-                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/dashboard.html'">Выбрать</button>
                     </div>
                     <div class="pricing-card glass card-hover">
                         <h3>Профи</h3>
@@ -273,7 +272,7 @@
                             <li>Индивидуальные промпты</li>
                             <li>API доступ</li>
                         </ul>
-                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/dashboard.html'">Выбрать</button>
                     </div>
                 </div>
             </div>
@@ -400,7 +399,6 @@
         const track = document.getElementById('carouselTrack');
         const dotsContainer = document.getElementById('carouselDots');
 
-        // Создаём точки
         for (let i = 0; i < totalSlides; i++) {
             const dot = document.createElement('span');
             dot.className = 'dot' + (i === 0 ? ' active' : '');
