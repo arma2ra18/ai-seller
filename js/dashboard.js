@@ -558,9 +558,8 @@ window.confirmPayment = function() {
         return;
     }
 
-    showNotification('Оплата обрабатывается...', 'info');
-
-    setTimeout(async () => {
+    // Мгновенное начисление (без имитации оплаты)
+    (async () => {
         try {
             const newBalance = (userData.balance || 0) + selectedTokens;
             await updateDoc(doc(db, 'users', currentUser.uid), {
@@ -576,7 +575,7 @@ window.confirmPayment = function() {
             console.error('Ошибка при пополнении:', error);
             showNotification('Ошибка при пополнении', 'error');
         }
-    }, 2000);
+    })();
 };
 
 window.closeModal = function() {
