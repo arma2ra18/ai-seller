@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs — AI Seller Admin</title>
+    <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Боковое меню -->
+        <div class="admin-sidebar">
+            <div class="admin-sidebar-logo">AI Seller Admin</div>
+            <ul class="admin-sidebar-menu">
+                <li><a href="dashboard.html"><i>📊</i> Дашборд</a></li>
+                <li><a href="users.html"><i>👥</i> Пользователи</a></li>
+                <li><a href="logs.html" class="active"><i>📝</i> Логи</a></li>
+                <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
+            </ul>
+        </div>
+        
+        <!-- Основной контент -->
+        <div class="admin-content">
+            <div class="admin-header">
+                <h1>Логи</h1>
+            </div>
+            
+            <!-- Вкладки логов -->
+            <div class="tabs">
+                <button class="tab active" onclick="showLogTab('payments')">💰 Платежи</button>
+                <button class="tab" onclick="showLogTab('generations')">🖼️ Генерации</button>
+                <button class="tab" onclick="showLogTab('admin')">🔐 Действия админов</button>
+            </div>
+            
+            <!-- Таблица платежей -->
+            <div id="payments-tab" class="tab-content active">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Пользователь</th>
+                            <th>Сумма</th>
+                            <th>Токенов</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Таблица генераций -->
+            <div id="generations-tab" class="tab-content">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Пользователь</th>
+                            <th>Товар</th>
+                            <th>Тип</th>
+                            <th>Токенов</th>
+                        </tr>
+                    </thead>
+                    <tbody id="generationsTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Таблица действий админов -->
+            <div id="admin-tab" class="tab-content">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Админ</th>
+                            <th>Действие</th>
+                            <th>Цель</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminLogsTableBody">
+                        <tr><td colspan="4" style="text-align: center;">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/admin.js"></script>
+</body>
+</html>

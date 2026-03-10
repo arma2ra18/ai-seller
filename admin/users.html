@@ -3,84 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Users — AI Seller Admin</title>
+    <title>Admin Dashboard — AI Seller</title>
     <link rel="stylesheet" href="../styles/main.css">
-    <style>
-        .admin-wrapper { display: flex; }
-        .admin-sidebar { width: 280px; background: #1a1d24; position: fixed; height: 100vh; }
-        .admin-content { margin-left: 280px; padding: 30px; flex: 1; }
-        
-        .users-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #1a1d24;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .users-table th {
-            text-align: left;
-            padding: 15px;
-            background: rgba(255,255,255,0.05);
-            color: #a0a8c0;
-        }
-        .users-table td {
-            padding: 15px;
-            border-bottom: 1px solid #2a2e36;
-        }
-        .search-bar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .search-bar input {
-            flex: 1;
-            padding: 12px;
-            background: #2a2e36;
-            border: 1px solid #2a2e36;
-            border-radius: 8px;
-            color: white;
-        }
-    </style>
 </head>
 <body>
     <div class="admin-wrapper">
+        <!-- Боковое меню -->
         <div class="admin-sidebar">
             <div class="admin-sidebar-logo">AI Seller Admin</div>
             <ul class="admin-sidebar-menu">
-                <li><a href="dashboard.html">📊 Дашборд</a></li>
-                <li><a href="users.html" class="active">👥 Пользователи</a></li>
-                <li><a href="#" onclick="alert('В разработке')">💰 Платежи</a></li>
-                <li><a href="#" onclick="alert('В разработке')">📝 Логи</a></li>
-                <li style="margin-top: 30px;"><a href="#" onclick="logout()">🚪 Выйти</a></li>
+                <li><a href="dashboard.html" class="active"><i>📊</i> Дашборд</a></li>
+                <li><a href="users.html"><i>👥</i> Пользователи</a></li>
+                <li><a href="logs.html"><i>📝</i> Логи</a></li>
+                <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
             </ul>
         </div>
         
+        <!-- Основной контент -->
         <div class="admin-content">
             <div class="admin-header">
-                <h1>Управление пользователями</h1>
+                <h1>Дашборд</h1>
+                <div class="admin-user">
+                    <span id="adminEmail">Загрузка...</span>
+                    <span class="badge badge-success">Admin</span>
+                </div>
             </div>
             
-            <div class="search-bar">
-                <input type="text" id="userSearch" placeholder="Поиск по email...">
-                <button class="btn btn-primary" onclick="searchUsers()">Найти</button>
-                <button class="btn btn-outline" onclick="exportUsers()">Экспорт CSV</button>
+            <!-- Карточки статистики -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Пользователи</div>
+                    <div class="stat-value" id="totalUsers">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Выручка</div>
+                    <div class="stat-value" id="totalRevenue">0 ₽</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Генераций</div>
+                    <div class="stat-value" id="totalGenerations">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-title">Админы</div>
+                    <div class="stat-value" id="adminCount">0</div>
+                </div>
             </div>
             
-            <table class="users-table">
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Тариф</th>
-                        <th>Баланс</th>
-                        <th>Генераций</th>
-                        <th>Регистрация</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody id="usersTableBody">
-                    <tr><td colspan="6" style="text-align: center;">Загрузка...</td></tr>
-                </tbody>
-            </table>
+            <!-- Последние действия -->
+            <div class="recent-activity">
+                <h2>Последние действия</h2>
+                <ul class="activity-list" id="activityList">
+                    <li class="activity-item"><span>Загрузка...</span></li>
+                </ul>
+            </div>
         </div>
     </div>
 
