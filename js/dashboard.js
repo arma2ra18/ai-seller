@@ -63,29 +63,33 @@ async function loadUserData() {
     }
 }
 
-// Обновление интерфейса (баланс, тариф)
+// Обновление интерфейса (баланс, тариф) – ИСПРАВЛЕНО!
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
     const used = userData.usedGenerations || 0;
     const remaining = Math.max(0, maxGen - used);
 
-    document.querySelectorAll('#remainingGenerations, #remainingGenerationsDetail').forEach(el => {
+    // Обновляем все элементы с балансом (и вверху, и в сайдбаре, и в деталях)
+    document.querySelectorAll('#remainingGenerations, #remainingGenerationsDetail, #sidebarBalance').forEach(el => {
         if (el) el.textContent = remaining;
     });
-    document.querySelectorAll('#maxGenerations, #maxGenerationsDetail').forEach(el => {
+    document.querySelectorAll('#maxGenerations, #maxGenerationsDetail, #sidebarMaxGen').forEach(el => {
         if (el) el.textContent = maxGen;
     });
+    
     const usedDetail = document.getElementById('usedGenerationsDetail');
     if (usedDetail) usedDetail.textContent = used;
+    
     const userEmailEl = document.getElementById('userEmail');
     if (userEmailEl) userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
+    
     const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
     const userPlanEl = document.getElementById('userPlan');
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
 }
 
-// Обновление плиток статистики (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+// Обновление плиток статистики
 function updateStats() {
     const statUser = document.getElementById('statUser');
     if (statUser) {
@@ -266,6 +270,7 @@ window.generateWBCard = async function() {
 
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         
+        // Перезагружаем данные пользователя
         const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (updatedDoc.exists()) {
             userData = updatedDoc.data();
@@ -502,7 +507,7 @@ window.viewHistoryItem = async function(docId) {
     }
 };
 
-// ----- ПОПОЛНЕНИЕ БАЛАНСА -----
+// ----- ПОПОЛНЕНИЕ БАЛАНСА (мгновенное) -----
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) {
@@ -558,7 +563,7 @@ window.confirmPayment = function() {
         return;
     }
 
-    // Мгновенное начисление (без имитации оплаты)
+    // Мгновенное начисление
     (async () => {
         try {
             const newBalance = (userData.balance || 0) + selectedTokens;
@@ -567,7 +572,7 @@ window.confirmPayment = function() {
             });
             
             userData.balance = newBalance;
-            updateUI();
+            updateUI(); // теперь обновит все элементы!
             
             showNotification(`Баланс пополнен на ${selectedTokens} токенов!`, 'success');
             closeModal();
