@@ -168,59 +168,64 @@
             </div>
         </section>
 
-        <!-- Примеры работ (карусель) -->
-        <section id="examples" class="examples">
-            <div class="container">
-                <h2 class="gradient-text">Примеры готовых карточек</h2>
-                <div class="carousel-container">
-                    <button class="carousel-btn prev" onclick="moveSlide(-1)">←</button>
-                    <div class="carousel-track" id="carouselTrack">
-                        <div class="carousel-slide">
-                            <img src="https://via.placeholder.com/600x600/0071e3/ffffff?text=iPhone+15+Pro" alt="Пример 1">
-                            <div class="slide-caption">
-                                <h4>iPhone 15 Pro</h4>
-                                <p>Титан, чип A17 Pro, 48 МП камера</p>
-                                <span class="slide-price">89 990 ₽</span>
-                            </div>
-                        </div>
-                        <div class="carousel-slide">
-                            <img src="https://via.placeholder.com/600x600/5e5ce0/ffffff?text=AirPods+Pro" alt="Пример 2">
-                            <div class="slide-caption">
-                                <h4>AirPods Pro</h4>
-                                <p>Активное шумоподавление, чип H2</p>
-                                <span class="slide-price">24 990 ₽</span>
-                            </div>
-                        </div>
-                        <div class="carousel-slide">
-                            <img src="https://via.placeholder.com/600x600/f5b041/000000?text=MacBook+Pro" alt="Пример 3">
-                            <div class="slide-caption">
-                                <h4>MacBook Pro 14"</h4>
-                                <p>Чип M3 Pro, 18 ГБ памяти</p>
-                                <span class="slide-price">199 990 ₽</span>
-                            </div>
-                        </div>
-                        <div class="carousel-slide">
-                            <img src="https://via.placeholder.com/600x600/30d158/ffffff?text=Watch+Ultra" alt="Пример 4">
-                            <div class="slide-caption">
-                                <h4>Watch Ultra 2</h4>
-                                <p>Титан, 100 ч работы, дайвинг</p>
-                                <span class="slide-price">79 990 ₽</span>
-                            </div>
-                        </div>
-                        <div class="carousel-slide">
-                            <img src="https://via.placeholder.com/600x600/ff453a/ffffff?text=iPad+Pro" alt="Пример 5">
-                            <div class="slide-caption">
-                                <h4>iPad Pro 13"</h4>
-                                <p>M4, Ultra Retina XDR, 5G</p>
-                                <span class="slide-price">149 990 ₽</span>
-                            </div>
-                        </div>
+        <!-- Примеры работ (карусель с реальными карточками) -->
+<section id="examples" class="examples">
+    <div class="container">
+        <h2 class="gradient-text">Примеры готовых карточек</h2>
+        <div class="carousel-container">
+            <button class="carousel-btn prev" onclick="moveSlide(-1)">←</button>
+            <div class="carousel-track" id="carouselTrack">
+                <!-- Lamborghini Urus -->
+                <div class="carousel-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg" alt="Lamborghini Urus">
+                    <div class="slide-caption">
+                        <h4>Lamborghini Urus</h4>
+                        <p>Премиум SUV. 650 л.с., 3.6с до 100 км/ч</p>
+                        <span class="slide-price">от 25 000 000 ₽</span>
                     </div>
-                    <button class="carousel-btn next" onclick="moveSlide(1)">→</button>
                 </div>
-                <div class="carousel-dots" id="carouselDots"></div>
+                <!-- AirPods Max -->
+                <div class="carousel-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
+                    <div class="slide-caption">
+                        <h4>AirPods Max</h4>
+                        <p>Активное шумоподавление, 20ч работы, чип H1</p>
+                        <span class="slide-price">69 990 ₽</span>
+                    </div>
+                </div>
+                <!-- Waka Blast 38000 -->
+                <div class="carousel-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg" alt="Waka Blast 38000">
+                    <div class="slide-caption">
+                        <h4>Waka Blast 38000</h4>
+                        <p>38000 затяжек, Power Boost, LED дисплей</p>
+                        <span class="slide-price">2 490 ₽</span>
+                    </div>
+                </div>
+                <!-- ASUS ROG Strix G16 -->
+                <div class="carousel-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg" alt="ASUS ROG Strix G16">
+                    <div class="slide-caption">
+                        <h4>ASUS ROG Strix G16 (2025)</h4>
+                        <p>i9-14900HX, RTX 4080, 32GB RAM, 240Hz</p>
+                        <span class="slide-price">179 990 ₽</span>
+                    </div>
+                </div>
+                <!-- iPhone 17 Pro -->
+                <div class="carousel-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg" alt="iPhone 17 Pro">
+                    <div class="slide-caption">
+                        <h4>iPhone 17 Pro</h4>
+                        <p>A19 Bionic, 200 МП камера, 30ч видео, IP68</p>
+                        <span class="slide-price">от 119 990 ₽</span>
+                    </div>
+                </div>
             </div>
-        </section>
+            <button class="carousel-btn next" onclick="moveSlide(1)">→</button>
+        </div>
+        <div class="carousel-dots" id="carouselDots"></div>
+    </div>
+</section>
 
         <!-- Тарифы с переключателем месяц/год -->
         <section id="pricing" class="pricing">
