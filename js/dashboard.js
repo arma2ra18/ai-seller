@@ -1,3 +1,23 @@
+// Очистка полей ввода при загрузке страницы
+function clearInputFields() {
+    const wbFeatures = document.getElementById('wbFeatures');
+    const ozonFeatures = document.getElementById('ozonFeatures');
+    
+    if (wbFeatures) wbFeatures.value = '';
+    if (ozonFeatures) ozonFeatures.value = '';
+    
+    // Также очистить другие поля при необходимости
+    const wbProductName = document.getElementById('wbProductName');
+    const ozonProductName = document.getElementById('ozonProductName');
+    
+    if (wbProductName) wbProductName.value = '';
+    if (ozonProductName) ozonProductName.value = '';
+}
+
+// Вызвать после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    clearInputFields();
+});
 import { auth, db } from './firebase.js';
 import {
     doc, getDoc, collection, addDoc, query, orderBy,
