@@ -168,30 +168,33 @@
             </div>
         </section>
 
-<!-- Примеры работ: авто-карусель -->
+<!-- Примеры работ: премиум-карусель -->
 <section id="examples" class="examples">
     <div class="container">
         <h2 class="gradient-text">Примеры готовых карточек</h2>
-        <div class="auto-carousel" id="autoCarousel">
-            <div class="auto-slides">
-                <div class="auto-slide">
+        
+        <div class="premium-carousel">
+            <button class="carousel-arrow prev" onclick="premiumMove(-1)">←</button>
+            
+            <div class="premium-track" id="premiumTrack">
+                <div class="premium-slide">
                     <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg" alt="Lamborghini Urus">
                 </div>
-                <div class="auto-slide">
+                <div class="premium-slide">
                     <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
                 </div>
-                <div class="auto-slide">
+                <div class="premium-slide">
                     <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg" alt="Waka Blast">
                 </div>
-                <div class="auto-slide">
+                <div class="premium-slide">
                     <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg" alt="ASUS ROG Strix">
                 </div>
-                <div class="auto-slide">
+                <div class="premium-slide">
                     <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg" alt="iPhone 17 Pro">
                 </div>
             </div>
-            <button class="auto-arrow prev" onclick="autoMove(-1)">←</button>
-            <button class="auto-arrow next" onclick="autoMove(1)">→</button>
+            
+            <button class="carousel-arrow next" onclick="premiumMove(1)">→</button>
         </div>
     </div>
 </section>
