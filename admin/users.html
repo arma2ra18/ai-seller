@@ -117,14 +117,6 @@
                 <input type="checkbox" id="editIsAdmin"> Дать права администратора
             </div>
             
-            <div class="form-group">
-                <label>Статус</label>
-                <select id="editStatus">
-                    <option value="active">Активен</option>
-                    <option value="blocked">Заблокирован</option>
-                </select>
-            </div>
-            
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveUserChanges()">Сохранить</button>
                 <button class="btn btn-danger" onclick="deleteUser()">Удалить</button>
@@ -138,7 +130,7 @@
         <div class="modal-content glass">
             <button class="modal-close" onclick="closeHistoryModal()">&times;</button>
             <h2>История пользователя</h2>
-            <div id="historyModalContent"></div>
+            <div id="historyModalContent" style="max-height: 400px; overflow-y: auto;"></div>
         </div>
     </div>
 

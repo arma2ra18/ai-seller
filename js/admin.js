@@ -6,7 +6,8 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { 
     collection, getDocs, query, orderBy, limit, doc, getDoc, 
-    updateDoc, deleteDoc, setDoc, addDoc, where, Timestamp
+    updateDoc, deleteDoc, setDoc, addDoc, where, Timestamp,
+    writeBatch, increment
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
 let currentAdmin = null;
@@ -15,6 +16,7 @@ let usersList = [];
 let generationsList = [];
 let logsList = [];
 const pageSize = 20;
+const ONLINE_TIMEOUT = 15 * 60 * 1000; // 15 минут
 
 // ========== АВТОРИЗАЦИЯ ==========
 window.adminLogin = async function() {
@@ -126,11 +128,19 @@ async function loadDashboardStats() {
         let totalRevenue = 0;
         let totalSpent = 0;
         let generationsCount = 0;
+        let activeNow = 0;
+        const now = Date.now();
         
+        // Собираем данные по пользователям
         for (const userDoc of usersSnapshot.docs) {
             const user = userDoc.data();
-            totalRevenue += user.balance || 0;
             totalSpent += user.usedSpent || 0;
+            
+            // Проверяем, был ли пользователь активен в последние 15 минут
+            const lastActivity = user.lastActivity ? user.lastActivity.toDate?.().getTime() : 0;
+            if (lastActivity && (now - lastActivity) < ONLINE_TIMEOUT) {
+                activeNow++;
+            }
             
             const gensSnapshot = await getDocs(collection(db, 'users', userDoc.id, 'generations'));
             generationsCount += gensSnapshot.size;
@@ -139,21 +149,31 @@ async function loadDashboardStats() {
         // Выручка = потрачено пользователями
         const revenue = totalSpent;
         
-        // Онлайн (имитация)
-        const online = Math.floor(Math.random() * 30) + 10;
-        
         document.getElementById('totalUsers').textContent = usersCount;
         document.getElementById('totalRevenue').textContent = revenue.toLocaleString() + ' ₽';
         document.getElementById('totalGenerations').textContent = generationsCount;
-        document.getElementById('onlineUsers').textContent = online;
+        document.getElementById('onlineUsers').textContent = activeNow;
         
-        // Тренды (имитация)
-        document.getElementById('usersTrend').textContent = '+12%';
-        document.getElementById('revenueTrend').textContent = '+8%';
-        document.getElementById('generationsTrend').textContent = '+15%';
+        // Рассчитываем тренды (сравнение с предыдущим периодом)
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        let newUsersWeek = 0;
+        usersSnapshot.forEach(doc => {
+            const created = doc.data().createdAt ? new Date(doc.data().createdAt) : null;
+            if (created && created > weekAgo) newUsersWeek++;
+        });
+        
+        const usersTrend = usersCount > 0 ? Math.round((newUsersWeek / usersCount) * 100) : 0;
+        document.getElementById('usersTrend').textContent = `+${usersTrend}%`;
+        
+        // Тренд выручки (имитация, можно сделать реальный)
+        document.getElementById('revenueTrend').textContent = '+12%';
+        document.getElementById('generationsTrend').textContent = '+8%';
         
     } catch (error) {
         console.error('Ошибка загрузки статистики:', error);
+        showNotification('Ошибка загрузки статистики', 'error');
     }
 }
 
@@ -181,9 +201,20 @@ async function loadRecentActivity() {
                     hour: '2-digit', minute: '2-digit'
                 }) : 'недавно';
             
+            let actionText = log.action || 'Действие';
+            if (log.action === 'bulk_add_funds') {
+                actionText = `💰 Массовое начисление: +${log.amount} ₽`;
+            } else if (log.action === 'add_funds') {
+                actionText = `💰 Начислено ${log.amount} ₽`;
+            } else if (log.action === 'edit_user') {
+                actionText = `✏️ Редактирование пользователя`;
+            } else if (log.action === 'delete_user') {
+                actionText = `🗑️ Удаление пользователя`;
+            }
+            
             list.innerHTML += `
                 <li class="activity-item">
-                    <span>${log.action || 'Действие'}: ${log.targetUser || log.targetEmail || 'система'}</span>
+                    <span>${actionText}: ${log.targetUser || log.targetUserId || 'система'}</span>
                     <span>${time}</span>
                 </li>
             `;
@@ -194,17 +225,42 @@ async function loadRecentActivity() {
     }
 }
 
-function initCharts() {
+async function initCharts() {
+    // Получаем реальные данные регистраций за последние 7 дней
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const days = [];
+    const counts = [];
+    
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        
+        const dayStr = date.toLocaleDateString('ru-RU', { weekday: 'short' }).slice(0, 2);
+        days.push(dayStr);
+        
+        let count = 0;
+        usersSnapshot.forEach(doc => {
+            const created = doc.data().createdAt ? new Date(doc.data().createdAt) : null;
+            if (created && created >= date && created < nextDate) {
+                count++;
+            }
+        });
+        counts.push(count);
+    }
+    
     // График регистраций
     const ctx1 = document.getElementById('regChart')?.getContext('2d');
     if (ctx1) {
         new Chart(ctx1, {
             type: 'line',
             data: {
-                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                labels: days,
                 datasets: [{
                     label: 'Новые пользователи',
-                    data: [12, 19, 15, 17, 24, 30, 22],
+                    data: counts,
                     borderColor: '#0071e3',
                     backgroundColor: 'rgba(0,113,227,0.1)',
                     tension: 0.4,
@@ -215,21 +271,27 @@ function initCharts() {
                 responsive: true,
                 plugins: {
                     legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
                 }
             }
         });
     }
     
-    // График выручки
+    // График выручки (можно тоже сделать реальный)
     const ctx2 = document.getElementById('revenueChart')?.getContext('2d');
     if (ctx2) {
         new Chart(ctx2, {
             type: 'bar',
             data: {
-                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                labels: days,
                 datasets: [{
                     label: 'Выручка (₽)',
-                    data: [5000, 7500, 8200, 6900, 12000, 15000, 9300],
+                    data: counts.map(c => c * 500), // имитация
                     backgroundColor: 'rgba(0,113,227,0.7)',
                     borderRadius: 6
                 }]
@@ -572,20 +634,56 @@ window.closeHistoryModal = function() {
     document.getElementById('historyModal').classList.remove('show');
 };
 
-// ========== ЭКСПОРТ ==========
+// ========== ЭКСПОРТ В CSV ==========
 window.exportUsersCSV = function() {
-    let csv = "Email,Имя,Телефон,Баланс,Потрачено,Дата регистрации\n";
+    let csv = "Email,Имя,Телефон,Баланс,Потрачено,Дата регистрации,Последняя активность\n";
+    
     usersList.forEach(u => {
-        const date = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ru-RU') : '';
-        csv += `"${u.email || ''}","${u.displayName || ''}","${u.phoneNumber || ''}",${u.balance || 0},${u.usedSpent || 0},"${date}"\n`;
+        const regDate = u.createdAt ? new Date(u.createdAt).toLocaleDateString('ru-RU') : '';
+        const lastActive = u.lastActivity ? new Date(u.lastActivity).toLocaleDateString('ru-RU') : '';
+        
+        // Экранируем поля, чтобы не сломать CSV
+        const email = u.email ? u.email.replace(/"/g, '""') : '';
+        const name = u.displayName ? u.displayName.replace(/"/g, '""') : '';
+        const phone = u.phoneNumber ? u.phoneNumber.replace(/"/g, '""') : '';
+        
+        csv += `"${email}","${name}","${phone}",${u.balance || 0},${u.usedSpent || 0},"${regDate}","${lastActive}"\n`;
     });
     
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); // Добавляем BOM для русского
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `users_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
+    window.URL.revokeObjectURL(url);
+    
+    showNotification('Экспорт завершён', 'success');
+};
+
+window.exportStats = function() {
+    // Собираем общую статистику
+    const totalUsers = usersList.length;
+    const totalBalance = usersList.reduce((s, u) => s + (u.balance || 0), 0);
+    const totalSpent = usersList.reduce((s, u) => s + (u.usedSpent || 0), 0);
+    const avgBalance = totalUsers > 0 ? Math.round(totalBalance / totalUsers) : 0;
+    
+    let csv = "Показатель,Значение\n";
+    csv += `Всего пользователей,${totalUsers}\n`;
+    csv += `Суммарный баланс,${totalBalance} ₽\n`;
+    csv += `Всего потрачено,${totalSpent} ₽\n`;
+    csv += `Средний баланс,${avgBalance} ₽\n`;
+    csv += `Дата экспорта,${new Date().toLocaleString('ru-RU')}\n`;
+    
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stats_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    showNotification('Статистика экспортирована', 'success');
 };
 
 // ========== ГЕНЕРАЦИИ ==========
@@ -621,6 +719,8 @@ window.loadAllGenerations = async function(page = 1) {
         
     } catch (error) {
         console.error('Ошибка загрузки генераций:', error);
+        const tbody = document.getElementById('generationsTableBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6">Ошибка загрузки</td></tr>';
     }
 };
 
@@ -739,11 +839,13 @@ async function loadAdminLogs() {
 }
 
 async function loadSystemLogs() {
-    // Здесь можно добавить реальные системные логи
     const tbody = document.getElementById('systemLogsTableBody');
     if (tbody) {
+        // Здесь можно интегрировать реальные системные логи
         tbody.innerHTML = `
-            <tr><td colspan="3">Системные логи в разработке</td></tr>
+            <tr>
+                <td colspan="3">Системные логи будут доступны в следующей версии</td>
+            </tr>
         `;
     }
 }
@@ -779,7 +881,6 @@ async function loadPayments() {
 
 // ========== НАСТРОЙКИ ==========
 function loadSettings() {
-    // Загружаем настройки из Firestore или localStorage
     document.getElementById('siteName').value = 'Prodiger';
     document.getElementById('welcomeBonus').value = '500';
     document.getElementById('genPrice').value = '100';
@@ -789,42 +890,81 @@ function loadSettings() {
     document.getElementById('lastDeploy').innerHTML = deployDate;
 }
 
-window.saveSettings = function() {
-    alert('Настройки сохранены (демо-режим)');
+window.saveSettings = async function() {
+    const siteName = document.getElementById('siteName').value;
+    const bonus = parseInt(document.getElementById('welcomeBonus').value);
+    const maxAttempts = parseInt(document.getElementById('maxLoginAttempts').value);
+    
+    // Сохраняем в Firestore (можно создать коллекцию settings)
+    try {
+        await setDoc(doc(db, 'settings', 'general'), {
+            siteName: siteName,
+            welcomeBonus: bonus,
+            maxLoginAttempts: maxAttempts,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentAdmin?.uid
+        }, { merge: true });
+        
+        await addDoc(collection(db, 'adminLogs'), {
+            action: 'update_settings',
+            performedBy: currentAdmin?.uid,
+            changes: { siteName, bonus, maxAttempts },
+            timestamp: new Date().toISOString()
+        });
+        
+        showNotification('Настройки сохранены', 'success');
+    } catch (error) {
+        console.error('Ошибка сохранения настроек:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
 };
 
 window.testGemini = function() {
-    alert('Тест API Gemini: OK');
+    showNotification('Тест API Gemini: OK (имитация)', 'success');
 };
 
 window.clearCache = function() {
-    alert('Кэш очищен');
+    localStorage.clear();
+    sessionStorage.clear();
+    showNotification('Кэш очищен', 'success');
 };
 
-// ========== БЫСТРЫЕ ДЕЙСТВИЯ ==========
+// ========== МАССОВЫЕ ДЕЙСТВИЯ ==========
 window.showAddFundsModal = function() {
     document.getElementById('addFundsModal').classList.add('show');
 };
 
 window.closeAddFundsModal = function() {
     document.getElementById('addFundsModal').classList.remove('show');
+    document.getElementById('bulkAmount').value = '100';
+    document.getElementById('bulkMessage').value = '';
 };
 
 window.confirmBulkAdd = async function() {
     const amount = parseInt(document.getElementById('bulkAmount').value);
     const message = document.getElementById('bulkMessage').value;
     
-    if (amount <= 0) return;
+    if (isNaN(amount) || amount <= 0) {
+        alert('Введите корректную сумму');
+        return;
+    }
     
-    if (!confirm(`Начислить всем пользователям по ${amount} ₽?`)) return;
+    if (!confirm(`Начислить ВСЕМ пользователям по ${amount} ₽? Это действие нельзя отменить.`)) {
+        return;
+    }
     
     try {
         const usersSnapshot = await getDocs(collection(db, 'users'));
         const batch = writeBatch(db);
+        let count = 0;
         
         usersSnapshot.forEach(doc => {
             const current = doc.data().balance || 0;
-            batch.update(doc.ref, { balance: current + amount });
+            batch.update(doc.ref, { 
+                balance: current + amount,
+                lastActivity: new Date()
+            });
+            count++;
         });
         
         await batch.commit();
@@ -833,19 +973,23 @@ window.confirmBulkAdd = async function() {
             action: 'bulk_add_funds',
             amount: amount,
             message: message,
+            userCount: count,
             performedBy: currentAdmin?.uid,
             timestamp: new Date().toISOString()
         });
         
-        alert(`Начислено всем по ${amount} ₽`);
+        showNotification(`Начислено ${amount} ₽ всем ${count} пользователям`, 'success');
         closeAddFundsModal();
+        
+        // Обновляем статистику на текущей странице
+        if (window.location.pathname.includes('users.html')) {
+            await loadUsers();
+        } else if (window.location.pathname.includes('dashboard.html')) {
+            await loadDashboardStats();
+        }
         
     } catch (error) {
         console.error('Ошибка массового начисления:', error);
-        alert('Ошибка: ' + error.message);
+        showNotification('Ошибка: ' + error.message, 'error');
     }
-};
-
-window.exportStats = function() {
-    alert('Экспорт статистики будет доступен позже');
 };

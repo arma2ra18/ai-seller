@@ -52,18 +52,18 @@
                 <div class="stat-card">
                     <div class="stat-title">Сейчас онлайн</div>
                     <div class="stat-value" id="onlineUsers">0</div>
-                    <div class="stat-trend online-badge">🟢 активно</div>
+                    <div class="stat-trend online-badge">🟢 активны</div>
                 </div>
             </div>
             
             <!-- Графики -->
             <div class="charts-grid">
                 <div class="chart-card glass">
-                    <h3>Регистрации</h3>
+                    <h3>Регистрации (последние 7 дней)</h3>
                     <canvas id="regChart"></canvas>
                 </div>
                 <div class="chart-card glass">
-                    <h3>Выручка</h3>
+                    <h3>Выручка (по дням)</h3>
                     <canvas id="revenueChart"></canvas>
                 </div>
             </div>
@@ -102,7 +102,7 @@
                 <input type="text" id="bulkMessage" placeholder="Подарок от администрации">
             </div>
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-primary" onclick="confirmBulkAdd()">Начислить</button>
+                <button class="btn btn-primary" onclick="confirmBulkAdd()">✅ Начислить</button>
                 <button class="btn btn-outline" onclick="closeAddFundsModal()">Отмена</button>
             </div>
         </div>
