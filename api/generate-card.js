@@ -1,6 +1,27 @@
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
+import admin from 'firebase-admin';
+
+// Инициализация Firebase Admin SDK (только один раз)
+if (!admin.apps.length) {
+  try {
+    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountEnv) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
+    }
+    const serviceAccount = JSON.parse(serviceAccountEnv);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    });
+    console.log('Firebase Admin initialized successfully');
+  } catch (error) {
+    console.error('Firebase Admin initialization error:', error);
+    throw new Error(`Firebase init failed: ${error.message}`);
+  }
+}
+const bucket = admin.storage().bucket();
 
 export const config = {
     api: {
@@ -11,7 +32,7 @@ export const config = {
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Генерация изображения через Gemini с ультра-промптом
+ * Генерация одного изображения через Gemini
  */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
@@ -45,6 +66,28 @@ async function generateGeminiImage(prompt, referenceImage) {
         console.error('Gemini generation error:', error);
         throw error;
     }
+}
+
+/**
+ * Загружает изображение в Firebase Storage и возвращает публичный URL.
+ */
+async function uploadToStorage(base64Data, fileName) {
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+        throw new Error('Invalid base64 data');
+    }
+    const mimeType = matches[1];
+    const base64 = matches[2];
+    const buffer = Buffer.from(base64, 'base64');
+
+    const file = bucket.file(`generated/${fileName}`);
+    await file.save(buffer, {
+        metadata: { contentType: mimeType },
+        public: true,
+    });
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+    console.log(`Uploaded to Storage: ${publicUrl}`);
+    return publicUrl;
 }
 
 export default async function handler(req, res) {
@@ -87,7 +130,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
-        // ========== УЛЬТРА-ПРОМПТ ==========
+        // УЛЬТРА-ПРОМПТ (без изменений)
         const prompt = `Ты — ведущий дизайнер инфографики для Wildberries. Твоя задача создать фото-карточку товара, которая привлечет максимум внимания и увеличит продажи.
 
 **Товар:** "${productName}"
@@ -123,15 +166,20 @@ export default async function handler(req, res) {
 Создай фото-карточку, от которой невозможно оторвать взгляд.`;
 
         const images = [];
-        // Генерируем 3 разных варианта с небольшими вариациями композиции
+        // Генерируем 3 разных варианта
         for (let i = 0; i < 3; i++) {
             const variation = ` (Вариант ${i+1}: попробуй другое расположение текста или цветовую гамму, но сохрани все ключевые элементы)`;
             try {
                 console.log(`Generating image ${i+1}...`);
                 const imageDataUrl = await generateGeminiImage(prompt + variation, referenceBuffer);
-                images.push(imageDataUrl);
-                console.log(`Image ${i+1} generated successfully`);
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Увеличил задержку
+                
+                // Загружаем в Storage и получаем публичный URL
+                const fileName = `card_${Date.now()}_${i}.jpg`;
+                const publicUrl = await uploadToStorage(imageDataUrl, fileName);
+                images.push(publicUrl);
+                
+                console.log(`Image ${i+1} generated and uploaded`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (err) {
                 console.error(`❌ Ошибка при генерации изображения ${i+1}:`, err);
             }
@@ -141,7 +189,7 @@ export default async function handler(req, res) {
             throw new Error('Не удалось сгенерировать ни одного изображения');
         }
 
-        // Описания (тоже сделаем более "продающими")
+        // Описания (продающие)
         const descriptions = [
             `✨ ${productName} от ${brand}. ${userFeatures.slice(0,3).join(', ')}. Премиальное качество по цене ${price} ₽.`,
             `💎 Ваш идеальный выбор: ${productName}. Всего ${price} ₽. Особенности: ${userFeatures.join(', ')}. Закажи сейчас!`,
