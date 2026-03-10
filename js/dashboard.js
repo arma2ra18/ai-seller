@@ -1,9 +1,18 @@
 import { auth, db } from './firebase.js';
 import {
     doc, getDoc, collection, addDoc, query, orderBy,
-    getDocs, updateDoc, increment, limit, setDoc
+    getDocs, updateDoc, increment, limit, setDoc, deleteDoc
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { 
+    onAuthStateChanged, 
+    signOut,
+    updateProfile, 
+    updateEmail, 
+    updatePassword, 
+    deleteUser,
+    reauthenticateWithCredential,
+    EmailAuthProvider 
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 let currentUser = null;
 let userData = null;
@@ -112,7 +121,13 @@ document.querySelectorAll('.menu-item').forEach(item => {
         this.classList.add('active');
         document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
         const target = document.getElementById(section + '-section');
-        if (target) target.classList.add('active');
+        if (target) {
+            target.classList.add('active');
+            // Если открыта секция настроек, загружаем данные
+            if (section === 'settings') {
+                loadSettingsData();
+            }
+        }
     });
 });
 
@@ -471,12 +486,11 @@ window.viewHistoryItem = async function(docId) {
     }
 };
 
-// ----- НОВЫЕ ФУНКЦИИ ДЛЯ ПОПОЛНЕНИЯ (цена 50 ₽/токен) -----
+// ----- ПОПОЛНЕНИЕ БАЛАНСА -----
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) {
         modal.classList.add('show');
-        // Сбрасываем выбранный пакет
         selectedTokens = 0;
         selectedPrice = 0;
         document.getElementById('selectedPackageName').textContent = '—';
@@ -486,7 +500,6 @@ window.showPaymentModal = function() {
             customInput.value = 50;
             calculateCustomPrice();
         }
-        // Снимаем выделение с карточек
         document.querySelectorAll('.package-card').forEach(card => {
             card.classList.remove('selected');
         });
@@ -499,11 +512,9 @@ window.selectPackage = function(tokens, price) {
     document.getElementById('selectedPackageName').textContent = `${tokens} токенов за ${price} ₽`;
     document.getElementById('modalAmount').textContent = `${price} ₽`;
     
-    // Визуально выделяем выбранный пакет
     document.querySelectorAll('.package-card').forEach(card => {
         card.classList.remove('selected');
     });
-    // Добавляем класс selected текущему элементу
     if (event && event.currentTarget) {
         event.currentTarget.classList.add('selected');
     }
@@ -511,7 +522,7 @@ window.selectPackage = function(tokens, price) {
 
 window.calculateCustomPrice = function() {
     const tokens = parseInt(document.getElementById('customTokens').value) || 0;
-    const pricePerToken = 50; // новая цена 50 ₽ за токен
+    const pricePerToken = 50;
     const price = tokens * pricePerToken;
     document.getElementById('customPrice').value = `${price} ₽`;
     
@@ -533,16 +544,13 @@ window.confirmPayment = function() {
 
     showNotification('Оплата обрабатывается...', 'info');
 
-    // Имитация оплаты через 2 секунды
     setTimeout(async () => {
         try {
-            // Добавляем токены к текущему балансу
             const newBalance = (userData.balance || 0) + selectedTokens;
             await updateDoc(doc(db, 'users', currentUser.uid), {
                 balance: newBalance,
             });
             
-            // Обновляем локальные данные
             userData.balance = newBalance;
             updateUI();
             
@@ -562,6 +570,168 @@ window.closeModal = function() {
     selectedPrice = 0;
 };
 
+// ========== НАСТРОЙКИ ПРОФИЛЯ ==========
+
+function loadSettingsData() {
+    if (!currentUser || !userData) return;
+    
+    // Имя
+    const displayNameInput = document.getElementById('displayName');
+    if (displayNameInput) {
+        displayNameInput.value = currentUser.displayName || '';
+    }
+    
+    // Email
+    const emailInput = document.getElementById('userEmailSettings');
+    if (emailInput) {
+        emailInput.value = currentUser.email || '';
+    }
+    
+    // Телефон
+    const phoneInput = document.getElementById('phoneNumber');
+    if (phoneInput) {
+        phoneInput.value = currentUser.phoneNumber || '';
+    }
+    
+    // Статистика
+    const createdEl = document.getElementById('accountCreated');
+    if (createdEl && userData.createdAt) {
+        const date = new Date(userData.createdAt);
+        createdEl.textContent = date.toLocaleDateString('ru-RU');
+    }
+    
+    const totalGenEl = document.getElementById('totalGenerations');
+    if (totalGenEl) {
+        totalGenEl.textContent = userData.usedGenerations || 0;
+    }
+    
+    const planEl = document.getElementById('currentPlan');
+    if (planEl) {
+        const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
+        planEl.textContent = planNames[userData.plan] || 'Старт';
+    }
+    
+    if (currentUser.metadata && currentUser.metadata.lastSignInTime) {
+        const lastLoginEl = document.getElementById('lastLogin');
+        if (lastLoginEl) {
+            const date = new Date(currentUser.metadata.lastSignInTime);
+            lastLoginEl.textContent = date.toLocaleString('ru-RU');
+        }
+    }
+}
+
+window.updateDisplayName = async function() {
+    const newName = document.getElementById('displayName').value.trim();
+    if (!newName) {
+        showNotification('Введите имя', 'warning');
+        return;
+    }
+    
+    try {
+        await updateProfile(auth.currentUser, { displayName: newName });
+        showNotification('Имя обновлено!', 'success');
+    } catch (error) {
+        console.error('Error updating name:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+};
+
+window.changeEmail = function() {
+    const modal = document.getElementById('emailModal');
+    if (modal) modal.classList.add('show');
+};
+
+window.closeEmailModal = function() {
+    const modal = document.getElementById('emailModal');
+    if (modal) {
+        modal.classList.remove('show');
+        document.getElementById('newEmail').value = '';
+        document.getElementById('emailConfirmPassword').value = '';
+    }
+};
+
+window.confirmEmailChange = async function() {
+    const newEmail = document.getElementById('newEmail').value.trim();
+    const password = document.getElementById('emailConfirmPassword').value;
+    
+    if (!newEmail || !password) {
+        showNotification('Заполните все поля', 'warning');
+        return;
+    }
+    
+    try {
+        const credential = EmailAuthProvider.credential(currentUser.email, password);
+        await reauthenticateWithCredential(currentUser, credential);
+        await updateEmail(currentUser, newEmail);
+        
+        showNotification('Email успешно изменён!', 'success');
+        closeEmailModal();
+        document.getElementById('userEmailSettings').value = newEmail;
+    } catch (error) {
+        console.error('Error changing email:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+};
+
+window.updatePhoneNumber = async function() {
+    const newPhone = document.getElementById('phoneNumber').value.trim();
+    if (!newPhone) {
+        showNotification('Введите номер телефона', 'warning');
+        return;
+    }
+    
+    try {
+        await updateProfile(auth.currentUser, { phoneNumber: newPhone });
+        showNotification('Номер телефона обновлён!', 'success');
+    } catch (error) {
+        console.error('Error updating phone:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+};
+
+window.changePassword = async function() {
+    const newPassword = document.getElementById('newPassword').value;
+    
+    if (!newPassword) {
+        showNotification('Введите новый пароль', 'warning');
+        return;
+    }
+    
+    if (newPassword.length < 6) {
+        showNotification('Пароль должен быть не менее 6 символов', 'warning');
+        return;
+    }
+    
+    try {
+        await updatePassword(currentUser, newPassword);
+        showNotification('Пароль успешно изменён!', 'success');
+        document.getElementById('newPassword').value = '';
+    } catch (error) {
+        console.error('Error changing password:', error);
+        if (error.code === 'auth/requires-recent-login') {
+            showNotification('Требуется повторный вход. Выйдите и зайдите снова.', 'error');
+        } else {
+            showNotification('Ошибка: ' + error.message, 'error');
+        }
+    }
+};
+
+window.deleteAccount = async function() {
+    if (!confirm('Вы уверены, что хотите удалить аккаунт? Это действие необратимо.')) {
+        return;
+    }
+    
+    try {
+        await deleteDoc(doc(db, 'users', currentUser.uid));
+        await deleteUser(currentUser);
+        showNotification('Аккаунт удалён. Перенаправление...', 'info');
+        setTimeout(() => window.location.href = '/', 2000);
+    } catch (error) {
+        console.error('Error deleting account:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+};
+
 // ----- Уведомления -----
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
@@ -575,4 +745,7 @@ function showNotification(message, type = 'info') {
 window.onclick = function(event) {
     const modal = document.getElementById('paymentModal');
     if (event.target === modal) closeModal();
+    
+    const emailModal = document.getElementById('emailModal');
+    if (event.target === emailModal) closeEmailModal();
 };
