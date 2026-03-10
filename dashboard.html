@@ -45,8 +45,7 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item active" data-section="balance">💰 Баланс</li>
-                    <li class="menu-item" data-section="wb">📦 Wildberries</li>
-                    <li class="menu-item" data-section="ozon">🛒 Ozon</li>
+                    <li class="menu-item" data-section="wb">📦 Карточки товара</li>
                     <li class="menu-item" data-section="history">📜 История</li>
                     <li class="menu-item" data-section="settings">⚙️ Настройки</li>
                 </ul>
@@ -151,9 +150,9 @@
                     </div>
                 </div>
 
-                <!-- Wildberries -->
+                <!-- Карточки товара (бывший Wildberries) -->
 <div class="content-section" id="wb-section">
-    <h2>Создание карточки для Wildberries</h2>
+    <h2>Создание карточек товара</h2>
     
     <!-- Блок описания процесса -->
     <div class="info-block glass" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid var(--accent);">
@@ -185,12 +184,12 @@
     <div class="generation-form">
         <div class="form-group">
             <label>Название товара</label>
-            <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4">
+            <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4" autocomplete="off">
         </div>
         <div class="form-row">
             <div class="form-group half">
                 <label>Бренд</label>
-                <input type="text" id="wbBrand" placeholder="Xiaomi">
+                <input type="text" id="wbBrand" placeholder="Xiaomi" autocomplete="off">
             </div>
             <div class="form-group half">
                 <label>Категория</label>
@@ -198,24 +197,22 @@
                     <option value="electronics">Электроника</option>
                     <option value="clothing">Одежда</option>
                     <option value="home">Товары для дома</option>
+                    <option value="beauty">Красота и здоровье</option>
+                    <option value="food">Продукты</option>
                 </select>
             </div>
         </div>
         <div class="form-row">
             <div class="form-group half">
                 <label>Цена товара (₽)</label>
-                <input type="number" id="wbPrice" placeholder="1990" min="0" step="1" value="1990">
+                <input type="number" id="wbPrice" placeholder="1990" min="0" step="1" value="1990" autocomplete="off">
             </div>
             <div class="form-group half"></div>
         </div>
-     <div class="form-group">
-    <label>Ключевые особенности (через запятую)</label>
-    <input type="text" 
-           id="wbFeatures" 
-           placeholder="шумоподавление, влагозащита, 20 часов работы"
-           autocomplete="off"
-           value="">
-</div>
+        <div class="form-group">
+            <label>Ключевые особенности (через запятую)</label>
+            <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы" autocomplete="off">
+        </div>
         <div class="form-group">
             <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
             <div class="file-upload-wrapper">
@@ -228,78 +225,7 @@
     </div>
 </div>
 
-                <!-- Ozon -->
-<div class="content-section" id="ozon-section">
-    <h2>Создание карточки для Ozon</h2>
-    
-    <!-- Блок описания процесса (аналогично WB) -->
-    <div class="info-block glass" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid var(--accent);">
-        <h3 style="color: var(--accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-            <span>🎯</span> Как это работает
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                <div style="font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 5px;">100 ₽</div>
-                <div style="color: var(--text-secondary);">Первая генерация</div>
-                <small style="color: var(--text-muted);">1 фото + 3 описания</small>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                <div style="font-size: 24px; font-weight: 700; color: #f5b041; margin-bottom: 5px;">15 ₽</div>
-                <div style="color: var(--text-secondary);">Повторные генерации</div>
-                <small style="color: var(--text-muted);">до 4 раз, новые варианты фото</small>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 5px;">5 фото</div>
-                <div style="color: var(--text-secondary);">Максимум за сессию</div>
-                <small style="color: var(--text-muted);">100 + 15×4 = 160 ₽</small>
-            </div>
-        </div>
-        <p style="margin-top: 15px; color: var(--text-secondary); font-size: 14px;">
-            ✨ После первой генерации вы сможете нажимать "Сделать ещё" и получать новые варианты фото на основе того же товара.
-        </p>
-    </div>
-    
-    <div class="generation-form">
-        <div class="form-group">
-            <label>Название товара</label>
-            <input type="text" id="ozonProductName" placeholder="Например: Кроссовки Nike Air Max">
-        </div>
-        <div class="form-row">
-            <div class="form-group half">
-                <label>Бренд</label>
-                <input type="text" id="ozonBrand" placeholder="Nike">
-            </div>
-            <div class="form-group half">
-                <label>Категория</label>
-                <select id="ozonCategory">
-                    <option value="clothing">Одежда и обувь</option>
-                    <option value="electronics">Электроника</option>
-                    <option value="home">Дом и сад</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group half">
-                <label>Цена товара (₽)</label>
-                <input type="number" id="ozonPrice" placeholder="4990" min="0" step="1" value="4990">
-            </div>
-            <div class="form-group half"></div>
-        </div>
-        <div class="form-group">
-            <label>Ключевые характеристики (через запятую)</label>
-            <input type="text" id="ozonFeatures" placeholder="размер 42-45, материал: кожа, цвет: черный">
-        </div>
-        <div class="form-group">
-            <label>Загрузите фото товара</label>
-            <div class="file-upload-wrapper">
-                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('ozonPhotos').click()">Выбрать файлы</button>
-                <input type="file" id="ozonPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('ozonPhotos', 'ozonFileInfo')">
-                <span class="file-upload-info" id="ozonFileInfo">Файлы не выбраны</span>
-            </div>
-        </div>
-        <button class="btn btn-primary btn-large glow" id="generateOzonBtn" onclick="generateOzonCard()">✨ Создать первое фото (100 ₽)</button>
-    </div>
-</div>
+                
 
                 <!-- История -->
                 <div class="content-section" id="history-section">
