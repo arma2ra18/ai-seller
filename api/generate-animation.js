@@ -25,7 +25,7 @@ const bucket = admin.storage().bucket();
 export const config = {
     api: {
         bodyParser: false,
-        maxDuration: 180, // 3 минуты на генерацию видео
+        maxDuration: 300, // 5 минут на генерацию видео
     },
 };
 
@@ -43,15 +43,16 @@ async function generateVideo(imageBuffer, prompt, duration = 5) {
     const formData = new FormData();
     const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
     formData.append('image', blob, 'product.jpg');
-    formData.append('model', 'alibaba/wan-2.6/image-to-video-flash'); // Правильная модель
+    formData.append('model', 'alibaba/wan-2.6/image-to-video-flash');
     formData.append('prompt', prompt);
     formData.append('duration', duration.toString());
-    formData.append('resolution', '720p'); // Можно сделать выбор в будущем
-    formData.append('shot_type', 'single'); // Один непрерывный кадр
-    formData.append('enable_audio', 'false'); // Аудио не нужно
-    formData.append('enable_prompt_expansion', 'true'); // Авто-улучшение промпта
+    formData.append('resolution', '720p');
+    formData.append('shot_type', 'single');
+    formData.append('enable_audio', 'false');
+    formData.append('enable_prompt_expansion', 'true');
 
-    const response = await fetch('https://api.wavespeed.ai/v1/predictions', {
+    // Правильный эндпоинт: /api/v1/predictions
+    const response = await fetch('https://api.wavespeed.ai/api/v1/predictions', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
@@ -71,10 +72,10 @@ async function generateVideo(imageBuffer, prompt, duration = 5) {
     // Polling для получения результата
     let videoUrl = null;
     const predictionId = result.id;
-    const maxAttempts = 60; // максимум 60 попыток (примерно 2 минуты)
+    const maxAttempts = 90; // максимум 90 попыток (примерно 3 минуты)
     
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const statusResponse = await fetch(`https://api.wavespeed.ai/v1/predictions/${predictionId}`, {
+        const statusResponse = await fetch(`https://api.wavespeed.ai/api/v1/predictions/${predictionId}`, {
             headers: {
                 'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
             },
@@ -88,7 +89,6 @@ async function generateVideo(imageBuffer, prompt, duration = 5) {
         console.log(`Status check ${attempt + 1}:`, status.status);
         
         if (status.status === 'completed') {
-            // URL может быть в разных полях
             videoUrl = status.output?.video || status.output?.url || status.output;
             break;
         } else if (status.status === 'failed') {
