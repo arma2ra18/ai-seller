@@ -26,25 +26,18 @@ const bucket = admin.storage().bucket();
 export const config = {
     api: {
         bodyParser: false,
-        maxDuration: 300, // Увеличиваем до 5 минут для Vercel Pro
+        maxDuration: 300, // 5 минут для Vercel Pro
     },
 };
 
-const client = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Конвертирует base64 в Buffer и загружает в Storage
+ * Загружает видео в Firebase Storage и возвращает публичный URL
  */
-async function uploadToStorage(base64Data, fileName, mimeType = 'video/mp4') {
-    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-        throw new Error('Invalid base64 data');
-    }
-    const base64 = matches[2];
-    const buffer = Buffer.from(base64, 'base64');
-
+async function uploadToStorage(videoBuffer, fileName, mimeType = 'video/mp4') {
     const file = bucket.file(`videos/${fileName}`);
-    await file.save(buffer, {
+    await file.save(videoBuffer, {
         metadata: { contentType: mimeType },
         public: true,
     });
@@ -87,9 +80,8 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
-        // Конвертируем изображение в base64 для отправки в API
+        // Конвертируем изображение в base64
         const base64Image = referenceBuffer.toString('base64');
-        const mimeType = 'image/jpeg';
 
         // Промпты для разных типов видео
         const prompts = {
@@ -102,41 +94,61 @@ export default async function handler(req, res) {
 
         console.log('🎬 Starting video generation with Veo 3.1...');
 
-        // ИСПОЛЬЗУЕМ ПРАВИЛЬНУЮ МОДЕЛЬ Veo 3.1 [citation:3][citation:7]
-        const operation = await client.models.generate_videos(
-            model: 'veo-3.1-generate-preview', // Новая модель для видео
+        // ===== ИСПРАВЛЕННЫЙ КОД =====
+        // Правильный синтаксис согласно документации Google [citation:4][citation:8]
+        const operation = await ai.models.generateVideos({
+            model: "veo-3.1-generate-preview",
             prompt: finalPrompt,
-            image: base64Image,
-            mime_type: mimeType,
             config: {
-                aspect_ratio: '9:16', // Вертикальный формат для соцсетей
-                duration_seconds: 8,   // Максимум 8 секунд [citation:2]
-                resolution: '1080p',
-                generate_audio: true,   // Включаем звук [citation:3]
+                // Передаём изображение как reference_images
+                referenceImages: [{
+                    bytes: base64Image,
+                    mimeType: 'image/jpeg'
+                }],
+                aspectRatio: "9:16", // Вертикальный формат для соцсетей
+                durationSeconds: 8,
+                resolution: "1080p",
+                generateAudio: true,
             }
-        );
+        });
 
-        console.log('⏳ Waiting for video generation...');
-        
-        // Polling для проверки статуса (может занять 1-5 минут) [citation:1][citation:7]
+        console.log('⏳ Waiting for video generation to complete...');
+
+        // Polling для проверки статуса [citation:4]
         let attempts = 0;
-        const maxAttempts = 60; // 5 минут с интервалом 5 секунд
+        const maxAttempts = 30; // 5 минут с интервалом 10 секунд
         let videoData = null;
 
-        while (attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 5000)); // Ждём 5 секунд
-            const status = await client.operations.get(operation.name);
+        while (!operation.done && attempts < maxAttempts) {
+            console.log(`Waiting for video generation... (${attempts + 1}/${maxAttempts})`);
+            await new Promise(resolve => setTimeout(resolve, 10000)); // Ждём 10 секунд [citation:4]
             
-            console.log(`Status: ${status.done ? 'completed' : 'in progress'} (attempt ${attempts + 1})`);
+            // Обновляем статус операции
+            const updatedOperation = await ai.operations.getVideosOperation({
+                operation: operation,
+            });
+            operation.done = updatedOperation.done;
             
-            if (status.done) {
-                if (status.error) {
-                    throw new Error(`Video generation failed: ${status.error.message}`);
+            if (updatedOperation.done) {
+                if (updatedOperation.error) {
+                    throw new Error(`Video generation failed: ${updatedOperation.error.message}`);
                 }
                 // Получаем сгенерированное видео
-                const response = status.response;
-                if (response.generated_videos && response.generated_videos.length > 0) {
-                    videoData = response.generated_videos[0].video;
+                if (updatedOperation.response?.generatedVideos?.length > 0) {
+                    const videoFile = updatedOperation.response.generatedVideos[0].video;
+                    
+                    // Скачиваем видео [citation:4]
+                    const downloadPath = `/tmp/video_${Date.now()}.mp4`;
+                    await ai.files.download({
+                        file: videoFile,
+                        downloadPath: downloadPath,
+                    });
+                    
+                    // Читаем скачанный файл
+                    videoData = fs.readFileSync(downloadPath);
+                    
+                    // Удаляем временный файл
+                    fs.unlinkSync(downloadPath);
                     break;
                 }
             }
@@ -147,20 +159,11 @@ export default async function handler(req, res) {
             throw new Error('Video generation timeout after 5 minutes');
         }
 
-        // Сохраняем видео на диск (временный файл)
-        const tempVideoPath = `/tmp/video_${Date.now()}.mp4`;
-        fs.writeFileSync(tempVideoPath, videoData);
-
-        // Читаем как base64 для загрузки в Storage
-        const videoBuffer = fs.readFileSync(tempVideoPath);
-        const videoBase64 = `data:video/mp4;base64,${videoBuffer.toString('base64')}`;
-
         // Загружаем в Firebase Storage
         const fileName = `video_${Date.now()}.mp4`;
-        const publicUrl = await uploadToStorage(videoBase64, fileName, 'video/mp4');
+        const publicUrl = await uploadToStorage(videoData, fileName, 'video/mp4');
 
         // Удаляем временные файлы
-        fs.unlinkSync(tempVideoPath);
         if (files.videoPhoto) {
             const photoArray = Array.isArray(files.videoPhoto) ? files.videoPhoto : [files.videoPhoto];
             photoArray.forEach(file => {
