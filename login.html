@@ -19,31 +19,27 @@
 
             <!-- Вкладка входа -->
             <div id="login-tab" class="auth-form active">
+                <!-- Вход по телефону (упрощённый) -->
                 <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                    <label>Номер телефона</label>
+                    <input type="tel" id="loginPhone" placeholder="+7 999 123-45-67">
                 </div>
                 <div class="form-group">
                     <label>Пароль</label>
                     <input type="password" id="loginPassword" placeholder="••••••••">
                 </div>
-                <button class="btn btn-primary btn-block" onclick="handleLogin()">Войти</button>
+                <button class="btn btn-primary btn-block" onclick="handlePhoneLogin()">Войти</button>
                 
                 <!-- Разделитель -->
                 <div class="auth-divider">
-                    <span>или войдите с помощью</span>
+                    <span>или</span>
                 </div>
                 
-                <!-- Кнопки соцсетей -->
+                <!-- Кнопка Google -->
                 <div class="social-buttons">
                     <button class="btn btn-google btn-block" onclick="handleGoogleLogin()">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="social-icon">
-                        Google
-                    </button>
-                    
-                    <button class="btn btn-phone btn-block" onclick="handlePhoneLogin()">
-                        <span class="social-icon">📱</span>
-                        По номеру телефона
+                        Войти через Google
                     </button>
                 </div>
                 
@@ -52,8 +48,12 @@
                 </div>
             </div>
 
-            <!-- Вкладка регистрации (остаётся без изменений) -->
+            <!-- Вкладка регистрации (НОВАЯ) -->
             <div id="register-tab" class="auth-form">
+                <div class="form-group">
+                    <label>Номер телефона</label>
+                    <input type="tel" id="registerPhone" placeholder="+7 999 123-45-67">
+                </div>
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" id="registerEmail" placeholder="your@email.com">
@@ -66,21 +66,20 @@
                     <label>Повторите пароль</label>
                     <input type="password" id="registerConfirm" placeholder="••••••••">
                 </div>
-                <button class="btn btn-primary btn-block" onclick="handleRegister()">Зарегистрироваться</button>
+                
+                <!-- Контейнер для reCAPTCHA -->
+                <div id="recaptcha-container"></div>
+                
+                <button class="btn btn-primary btn-block" onclick="sendPhoneCode()">Отправить код</button>
                 
                 <div class="auth-divider">
-                    <span>или зарегистрируйтесь через</span>
+                    <span>или</span>
                 </div>
                 
                 <div class="social-buttons">
                     <button class="btn btn-google btn-block" onclick="handleGoogleLogin()">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="social-icon">
                         Google
-                    </button>
-                    
-                    <button class="btn btn-phone btn-block" onclick="handlePhoneLogin()">
-                        <span class="social-icon">📱</span>
-                        По номеру телефона
                     </button>
                 </div>
                 
@@ -93,31 +92,12 @@
         </div>
     </div>
 
-    <!-- Модальное окно для ввода номера телефона -->
-    <div id="phoneModal" class="modal">
-        <div class="modal-content glass">
-            <button class="modal-close" onclick="closePhoneModal()">&times;</button>
-            <h2>Вход по номеру телефона</h2>
-            <p>Мы отправим SMS с кодом подтверждения</p>
-            
-            <div class="form-group">
-                <label>Номер телефона</label>
-                <input type="tel" id="phoneNumber" placeholder="+7 999 123-45-67">
-            </div>
-            
-            <!-- Контейнер для reCAPTCHA -->
-            <div id="recaptcha-container"></div>
-            
-            <button class="btn btn-primary btn-block" onclick="sendPhoneCode()">Отправить код</button>
-        </div>
-    </div>
-
     <!-- Модальное окно для ввода кода из SMS -->
     <div id="codeModal" class="modal">
         <div class="modal-content glass">
             <button class="modal-close" onclick="closeCodeModal()">&times;</button>
             <h2>Подтверждение</h2>
-            <p>Введите код из SMS</p>
+            <p>Мы отправили код на ваш номер телефона</p>
             
             <div class="form-group">
                 <label>Код подтверждения</label>
