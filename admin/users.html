@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard — AI Seller</title>
+    <title>Users — AI Seller Admin</title>
     <link rel="stylesheet" href="../styles/main.css">
 </head>
 <body>
@@ -12,8 +12,8 @@
         <div class="admin-sidebar">
             <div class="admin-sidebar-logo">AI Seller Admin</div>
             <ul class="admin-sidebar-menu">
-                <li><a href="dashboard.html" class="active"><i>📊</i> Дашборд</a></li>
-                <li><a href="users.html"><i>👥</i> Пользователи</a></li>
+                <li><a href="dashboard.html"><i>📊</i> Дашборд</a></li>
+                <li><a href="users.html" class="active"><i>👥</i> Пользователи</a></li>
                 <li><a href="logs.html"><i>📝</i> Логи</a></li>
                 <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
             </ul>
@@ -22,39 +22,88 @@
         <!-- Основной контент -->
         <div class="admin-content">
             <div class="admin-header">
-                <h1>Дашборд</h1>
-                <div class="admin-user">
-                    <span id="adminEmail">Загрузка...</span>
-                    <span class="badge badge-success">Admin</span>
-                </div>
+                <h1>Управление пользователями</h1>
             </div>
             
-            <!-- Карточки статистики -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-title">Пользователи</div>
-                    <div class="stat-value" id="totalUsers">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Выручка</div>
-                    <div class="stat-value" id="totalRevenue">0 ₽</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Генераций</div>
-                    <div class="stat-value" id="totalGenerations">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-title">Админы</div>
-                    <div class="stat-value" id="adminCount">0</div>
-                </div>
+            <!-- Поиск и фильтры -->
+            <div class="search-bar">
+                <input type="text" id="userSearch" placeholder="Поиск по email, имени, телефону...">
+                <button class="btn btn-primary" onclick="searchUsers()">Найти</button>
+                <button class="btn btn-outline" onclick="exportUsersCSV()">Экспорт CSV</button>
             </div>
             
-            <!-- Последние действия -->
-            <div class="recent-activity">
-                <h2>Последние действия</h2>
-                <ul class="activity-list" id="activityList">
-                    <li class="activity-item"><span>Загрузка...</span></li>
-                </ul>
+            <!-- Таблица пользователей -->
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Имя</th>
+                        <th>Телефон</th>
+                        <th>Тариф</th>
+                        <th>Баланс</th>
+                        <th>Генераций</th>
+                        <th>Дата рег.</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- Данные будут загружены через JavaScript -->
+                </tbody>
+            </table>
+            
+            <!-- Пагинация -->
+            <div class="pagination" id="pagination">
+                <button onclick="loadUsers(1)">1</button>
+                <button onclick="loadUsers(2)">2</button>
+                <button onclick="loadUsers(3)">3</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно редактирования пользователя -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeUserModal()">&times;</button>
+            <h2>Редактирование пользователя</h2>
+            
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="editEmail" readonly disabled>
+            </div>
+            
+            <div class="form-group">
+                <label>Имя</label>
+                <input type="text" id="editDisplayName">
+            </div>
+            
+            <div class="form-group">
+                <label>Телефон</label>
+                <input type="tel" id="editPhone">
+            </div>
+            
+            <div class="form-group">
+                <label>Тариф</label>
+                <select id="editPlan">
+                    <option value="start">Старт</option>
+                    <option value="business">Бизнес</option>
+                    <option value="pro">Профи</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Баланс (токены)</label>
+                <input type="number" id="editBalance" min="0">
+            </div>
+            
+            <div class="form-group">
+                <label>Администратор</label>
+                <input type="checkbox" id="editIsAdmin"> Дать права администратора
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveUserChanges()">Сохранить</button>
+                <button class="btn btn-danger" onclick="deleteUser()">Удалить</button>
+                <button class="btn btn-outline" onclick="closeUserModal()">Отмена</button>
             </div>
         </div>
     </div>
