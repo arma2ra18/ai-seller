@@ -1091,3 +1091,210 @@ section {
     display: flex;
     justify-content: center;
 }
+/* ===== МОДАЛЬНОЕ ОКНО ПОПОЛНЕНИЯ (ПРЕМИУМ) ===== */
+.payment-modal {
+    max-width: 600px;
+    width: 95%;
+}
+
+.payment-options {
+    margin: 20px 0;
+}
+
+/* Сетка пакетов */
+.package-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0 30px;
+}
+
+.package-card {
+    background: linear-gradient(145deg, #2a2a2e, #1e1e22);
+    border: 2px solid transparent;
+    border-radius: 20px;
+    padding: 24px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.package-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent), #9b5ef0);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.package-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent);
+    box-shadow: 0 20px 30px rgba(0, 113, 227, 0.3);
+}
+
+.package-card:hover::before {
+    opacity: 1;
+}
+
+.package-card.selected {
+    border-color: var(--accent);
+    background: linear-gradient(145deg, #2a2a40, #1e1e30);
+    box-shadow: 0 0 30px rgba(0, 113, 227, 0.5);
+}
+
+.package-card.selected::before {
+    opacity: 1;
+}
+
+.package-tokens {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(0, 113, 227, 0.3);
+}
+
+.package-price {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #fff, #ffd700);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.package-bonus {
+    font-size: 14px;
+    color: var(--success);
+    background: rgba(40, 205, 65, 0.1);
+    padding: 4px 8px;
+    border-radius: 30px;
+    display: inline-block;
+}
+
+/* Свой вариант */
+.custom-package {
+    background: linear-gradient(145deg, #2a2a2e, #1e1e22);
+    border-radius: 20px;
+    padding: 24px;
+    margin: 20px 0 30px;
+    border: 1px solid var(--border);
+}
+
+.custom-package h3 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.custom-package .form-row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+}
+
+.custom-package .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.custom-package label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    display: block;
+}
+
+.custom-package input {
+    width: 100%;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: white;
+    font-size: 16px;
+    transition: all 0.2s;
+}
+
+.custom-package input:focus {
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2);
+}
+
+.custom-package input[readonly] {
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--accent);
+    font-weight: 600;
+    border-color: var(--border);
+}
+
+/* Информация о выбранном */
+.selected-info {
+    background: rgba(0, 113, 227, 0.1);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 20px 0 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.selected-info p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 16px;
+}
+
+.selected-info strong {
+    color: var(--accent);
+    font-size: 24px;
+    font-weight: 700;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .package-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .custom-package .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .selected-info {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .selected-info strong {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .payment-options {
+        padding: 10px;
+    }
+    
+    .package-card {
+        padding: 20px 12px;
+    }
+    
+    .package-price {
+        font-size: 24px;
+    }
+}
