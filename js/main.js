@@ -1,17 +1,42 @@
-// Проверка авторизации и перенаправление на dashboard
 import { auth } from './firebase.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
-// Если пользователь уже вошёл, перенаправляем на dashboard
-onAuthStateChanged(auth, (user) => {
+// Функция для обновления кнопок в зависимости от статуса авторизации
+function updateAuthButtons(user) {
+    const authButtonsContainer = document.getElementById('authButtons');
+    const heroCta = document.getElementById('heroCta');
+    
+    if (!authButtonsContainer) return;
+
     if (user) {
-        // Меняем текст кнопок с "Регистрация" на "Личный кабинет"
-        const registerBtns = document.querySelectorAll('#registerBtn, #heroRegisterBtn');
-        registerBtns.forEach(btn => {
-            btn.textContent = 'Личный кабинет';
-            btn.href = '/dashboard.html';
-        });
+        // Пользователь авторизован
+        authButtonsContainer.innerHTML = `
+            <a href="/dashboard.html" class="btn btn-outline">Личный кабинет</a>
+        `;
+        if (heroCta) {
+            heroCta.innerHTML = `
+                <a href="/dashboard.html" class="btn btn-large btn-gold">Личный кабинет</a>
+                <a href="#features" class="btn btn-large btn-outline">Узнать больше</a>
+            `;
+        }
+    } else {
+        // Пользователь не авторизован
+        authButtonsContainer.innerHTML = `
+            <a href="/login.html" class="btn btn-outline">Войти</a>
+            <a href="/login.html" class="btn btn-gold">Регистрация</a>
+        `;
+        if (heroCta) {
+            heroCta.innerHTML = `
+                <a href="/login.html" class="btn btn-large btn-gold">Регистрация</a>
+                <a href="#features" class="btn btn-large btn-outline">Узнать больше</a>
+            `;
+        }
     }
+}
+
+// Следим за состоянием авторизации
+onAuthStateChanged(auth, (user) => {
+    updateAuthButtons(user);
 });
 
 // Плавный скролл к якорям
