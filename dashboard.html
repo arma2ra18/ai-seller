@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <!-- Видеофон -->
+    <!-- Видеофон заменён на рабочий источник (можно заменить на своё видео) -->
     <div class="video-background" style="opacity: 0.2;">
         <video autoplay muted loop playsinline>
             <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
@@ -30,7 +30,7 @@
                     <li class="menu-item" data-section="wb">📦 Wildberries</li>
                     <li class="menu-item" data-section="ozon">🛒 Ozon</li>
                     <li class="menu-item" data-section="photo">🖼️ Фото</li>
-                    <li class="menu-item" data-section="animation">🎬 Анимация</li>
+                    <li class="menu-item" data-section="video">🎬 Видео</li>
                     <li class="menu-item" data-section="history">📜 История</li>
                     <li class="menu-item" data-section="tariffs">💎 Тарифы</li>
                     <li class="menu-item" data-section="settings">⚙️ Настройки</li>
@@ -75,7 +75,7 @@
                 <div class="stat-card glass card-hover">
                     <div class="stat-icon">🎬</div>
                     <div class="stat-info">
-                        <span class="stat-label">Анимации</span>
+                        <span class="stat-label">Видеообложки</span>
                         <span class="stat-value" id="statVideos">0</span>
                     </div>
                 </div>
@@ -246,56 +246,26 @@
                     </div>
                 </div>
 
-                <!-- Новая секция Анимация -->
-                <div class="content-section" id="animation-section">
-                    <h2>✨ 5-секундная анимация товара</h2>
+                <!-- Видео -->
+                <div class="content-section" id="video-section">
+                    <h2>Генерация видео товара</h2>
                     <div class="generation-form">
-                        <div class="form-group">
-                            <label>Название товара</label>
-                            <input type="text" id="animationProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4">
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group half">
-                                <label>Бренд</label>
-                                <input type="text" id="animationBrand" placeholder="Xiaomi">
-                            </div>
-                            <div class="form-group half">
-                                <label>Цена (₽)</label>
-                                <input type="number" id="animationPrice" placeholder="1990" min="0" step="1">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Ключевые особенности (через запятую)</label>
-                            <input type="text" id="animationFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы">
-                        </div>
-                        <div class="form-group">
-                            <label>Тип анимации</label>
-                            <select id="animationType">
-                                <option value="cinematic">Кинематографичная (плавная, премиальная)</option>
-                                <option value="dynamic">Динамичная (энергичная, яркая)</option>
-                            </select>
-                        </div>
                         <div class="form-group">
                             <label>Загрузите фото товара</label>
                             <div class="file-upload-wrapper">
-                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('animationPhoto').click()">Выбрать фото</button>
-                                <input type="file" id="animationPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileInfo('animationPhoto', 'animationFileInfo')">
-                                <span class="file-upload-info" id="animationFileInfo">Файл не выбран</span>
+                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('videoPhoto').click()">Выбрать файл</button>
+                                <input type="file" id="videoPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileInfo('videoPhoto', 'videoFileInfo')">
+                                <span class="file-upload-info" id="videoFileInfo">Файл не выбран</span>
                             </div>
                         </div>
-                        <button class="btn btn-primary btn-large glow" id="generateAnimationBtn" onclick="generateAnimation()">✨ Создать 5-сек анимацию (10 токенов)</button>
-                    </div>
-
-                    <!-- Результат анимации -->
-                    <div id="animationResult" style="display: none; margin-top: 30px;">
-                        <h3>Готовая анимация</h3>
-                        <video controls style="width: 100%; max-width: 500px; border-radius: 12px;">
-                            <source src="" id="animationVideo" type="video/mp4">
-                        </video>
-                        <div style="margin-top: 15px; display: flex; gap: 10px;">
-                            <button class="btn btn-primary" onclick="downloadAnimation()">⬇️ Скачать</button>
-                            <button class="btn btn-outline" onclick="copyAnimationUrl()">🔗 Копировать ссылку</button>
+                        <div class="form-group">
+                            <label>Тип видео</label>
+                            <select id="videoType">
+                                <option value="standard">Стандартный обзор</option>
+                                <option value="360">Обзор на 360°</option>
+                            </select>
                         </div>
+                        <button class="btn btn-primary btn-large glow" id="generateVideoBtn" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
                     </div>
                 </div>
 
@@ -350,7 +320,7 @@
                 </div>
             </div>
 
-            <!-- Результаты генерации карточек -->
+            <!-- Результаты генерации -->
             <div id="cardResults" class="results-section glass" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
@@ -391,7 +361,7 @@
     <!-- Модальное окно загрузки (генерация) -->
     <div id="generationModal" class="modal">
         <div class="modal-content glass loading-content">
-            <h2 class="gradient-text">✨ Генерация контента ✨</h2>
+            <h2 class="gradient-text">✨ Генерация карточек ✨</h2>
             <div class="loading-animation">
                 <div class="spinner"></div>
                 <div class="progress-bar">

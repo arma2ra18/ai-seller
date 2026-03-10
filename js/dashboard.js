@@ -12,9 +12,6 @@ let userData = null;
 let generationInterval;
 let generationStartTime;
 
-// Переменные для анимации
-let lastAnimationUrl = null;
-
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
@@ -219,6 +216,7 @@ window.generateWBCard = async function() {
         const result = await response.json();
         displayCardResults(result, 'wb');
 
+        // Сохраняем в историю
         await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'wb-card',
             productName,
@@ -226,8 +224,10 @@ window.generateWBCard = async function() {
             timestamp: new Date().toISOString()
         });
 
+        // Обновляем использованные генерации
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         
+        // Перезагружаем данные пользователя, чтобы баланс обновился
         const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (updatedDoc.exists()) {
             userData = updatedDoc.data();
@@ -338,110 +338,12 @@ window.generateProductPhoto = async function() {
     showNotification('Функция генерации фото находится в разработке', 'info');
 };
 
-// ----- НОВАЯ ФУНКЦИЯ: Генерация анимации -----
-window.generateAnimation = async function() {
-    if (!currentUser || !userData) return;
-
-    const fileInput = document.getElementById('animationPhoto');
-    if (!fileInput || !fileInput.files[0]) {
-        showNotification('Выберите фото товара', 'error');
-        return;
-    }
-
-    const productName = document.getElementById('animationProductName')?.value.trim();
-    const brand = document.getElementById('animationBrand')?.value.trim();
-    const price = document.getElementById('animationPrice')?.value.trim() || '1990';
-    const features = document.getElementById('animationFeatures')?.value.split(',').map(f => f.trim()).filter(Boolean);
-    const animationType = document.getElementById('animationType')?.value;
-
-    if (!productName) {
-        showNotification('Введите название товара', 'error');
-        return;
-    }
-
-    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
-    if ((userData.usedGenerations || 0) + 10 > maxGen) {
-        showNotification('Недостаточно токенов (требуется 10)', 'error');
-        return;
-    }
-
-    const btn = document.getElementById('generateAnimationBtn');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="loading"></span> Создание анимации...';
-    }
-
-    showGenerationModal();
-
-    try {
-        const formData = new FormData();
-        formData.append('photo', fileInput.files[0]);
-        formData.append('productName', productName);
-        formData.append('brand', brand);
-        formData.append('price', price);
-        formData.append('features', JSON.stringify(features));
-        formData.append('animationType', animationType);
-
-        const response = await fetch('/api/generate-animation', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) throw new Error(await response.text());
-        const result = await response.json();
-
-        const videoEl = document.getElementById('animationVideo');
-        videoEl.src = result.videoUrl;
-        document.getElementById('animationResult').style.display = 'block';
-        lastAnimationUrl = result.videoUrl;
-
-        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
-            type: 'animation',
-            productName,
-            videoUrl: result.videoUrl,
-            timestamp: new Date().toISOString()
-        });
-
-        await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(10) });
-        
-        const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (updatedDoc.exists()) {
-            userData = updatedDoc.data();
-        }
-        updateUI();
-        loadHistory();
-        
-        showNotification('Анимация создана!', 'success');
-    } catch (error) {
-        console.error('Ошибка создания анимации:', error);
-        showNotification('Ошибка: ' + error.message, 'error');
-    } finally {
-        hideGenerationModal();
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '✨ Создать 5-сек анимацию (10 токенов)';
-        }
-    }
+// ----- Генерация видео (заглушка) -----
+window.generateVideo = async function() {
+    showNotification('Функция генерации видео находится в разработке', 'info');
 };
 
-// ----- Функции для анимации -----
-window.downloadAnimation = function() {
-    if (!lastAnimationUrl) return;
-    const link = document.createElement('a');
-    link.href = lastAnimationUrl;
-    link.download = `animation-${Date.now()}.mp4`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-};
-
-window.copyAnimationUrl = function() {
-    if (!lastAnimationUrl) return;
-    navigator.clipboard.writeText(lastAnimationUrl);
-    showNotification('Ссылка скопирована', 'success');
-};
-
-// ----- Отображение результатов карточек -----
+// ----- Отображение результатов -----
 function displayCardResults(result, platform) {
     const container = document.getElementById('cardResults');
     if (!container) return;
@@ -522,12 +424,7 @@ async function loadHistory() {
         snapshot.forEach(doc => {
             const item = doc.data();
             const date = new Date(item.timestamp).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-            let typeLabel = '';
-            if (item.type === 'wb-card') typeLabel = 'WB';
-            else if (item.type === 'ozon-card') typeLabel = 'Ozon';
-            else if (item.type === 'animation') typeLabel = '🎬 Анимация';
-            else typeLabel = 'Фото';
-            
+            const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : 'Фото';
             historyList.innerHTML += `
                 <div class="history-item">
                     <div>
@@ -552,15 +449,7 @@ window.viewHistoryItem = async function(docId) {
         const docSnap = await getDoc(doc(db, 'users', currentUser.uid, 'generations', docId));
         if (docSnap.exists()) {
             const item = docSnap.data();
-            if (item.type === 'animation') {
-                // Для анимации показываем видео
-                const videoEl = document.getElementById('animationVideo');
-                videoEl.src = item.videoUrl;
-                document.getElementById('animationResult').style.display = 'block';
-                lastAnimationUrl = item.videoUrl;
-                // Переключаемся на вкладку анимации
-                document.querySelector('[data-section="animation"]').click();
-            } else if (item.result && item.result.images && item.result.descriptions) {
+            if (item.result && item.result.images && item.result.descriptions) {
                 displayCardResults(item.result, item.type || 'wb-card');
                 document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
             } else {
@@ -627,6 +516,7 @@ window.confirmPayment = function() {
                 balance: tokens,
                 usedGenerations: userData.usedGenerations || 0
             });
+            // Перезагружаем данные
             const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
             if (updatedDoc.exists()) {
                 userData = updatedDoc.data();
