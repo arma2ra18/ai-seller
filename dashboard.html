@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <!-- Видеофон заменён на рабочий источник (можно заменить на своё видео) -->
+    <!-- Видеофон -->
     <div class="video-background" style="opacity: 0.2;">
         <video autoplay muted loop playsinline>
             <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
@@ -15,6 +15,7 @@
         <div class="overlay"></div>
     </div>
 
+    <!-- Плавающие элементы -->
     <div class="floating-elements">
         <div class="floating-icon" style="top: 10%; left: 5%;">📊</div>
         <div class="floating-icon" style="top: 80%; right: 10%;">💰</div>
@@ -251,6 +252,10 @@
                     <h2>Генерация видео товара</h2>
                     <div class="generation-form">
                         <div class="form-group">
+                            <label>Название товара (для промпта)</label>
+                            <input type="text" id="videoProductName" placeholder="Например: Кроссовки Nike Air Max">
+                        </div>
+                        <div class="form-group">
                             <label>Загрузите фото товара</label>
                             <div class="file-upload-wrapper">
                                 <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('videoPhoto').click()">Выбрать файл</button>
@@ -263,7 +268,12 @@
                             <select id="videoType">
                                 <option value="standard">Стандартный обзор</option>
                                 <option value="360">Обзор на 360°</option>
+                                <option value="slowmotion">Слоу-моушн</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Дополнительные пожелания (необязательно)</label>
+                            <textarea id="videoPrompt" rows="2" placeholder="Например: продукт вращается на подиуме, неоновый свет, футуристический стиль"></textarea>
                         </div>
                         <button class="btn btn-primary btn-large glow" id="generateVideoBtn" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
                     </div>
@@ -320,11 +330,11 @@
                 </div>
             </div>
 
-            <!-- Результаты генерации -->
+            <!-- Результаты генерации (для фото и видео) -->
             <div id="cardResults" class="results-section glass" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
-                    <h3>Изображения</h3>
+                    <h3>Изображения / Видео</h3>
                     <div class="image-gallery" id="resultImages"></div>
                 </div>
                 <div class="result-block">
@@ -361,7 +371,7 @@
     <!-- Модальное окно загрузки (генерация) -->
     <div id="generationModal" class="modal">
         <div class="modal-content glass loading-content">
-            <h2 class="gradient-text">✨ Генерация карточек ✨</h2>
+            <h2 class="gradient-text">✨ Генерация ✨</h2>
             <div class="loading-animation">
                 <div class="spinner"></div>
                 <div class="progress-bar">
