@@ -63,50 +63,36 @@ async function loadUserData() {
     }
 }
 
-// Обновление интерфейса (баланс, тариф) – теперь везде!
+// Обновление интерфейса (баланс, тариф)
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
     const used = userData.usedGenerations || 0;
     const remaining = Math.max(0, maxGen - used);
 
-    // Обновляем баланс ВЕЗДЕ, где есть соответствующие ID
-    const balanceSelectors = [
-        '#remainingGenerations',        // в шапке
-        '#remainingGenerationsDetail',  // в деталях
-        '#sidebarBalance'               // в сайдбаре (новый)
-    ];
-    
+    // Обновляем баланс везде
+    const balanceSelectors = ['#remainingGenerations', '#remainingGenerationsDetail', '#sidebarBalance'];
     balanceSelectors.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => {
             if (el) el.textContent = remaining;
         });
     });
 
-    // Обновляем максимум ВЕЗДЕ
-    const maxSelectors = [
-        '#maxGenerations',
-        '#maxGenerationsDetail',
-        '#sidebarMaxGen'                 // в сайдбаре
-    ];
-    
+    const maxSelectors = ['#maxGenerations', '#maxGenerationsDetail', '#sidebarMaxGen'];
     maxSelectors.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => {
             if (el) el.textContent = maxGen;
         });
     });
 
-    // Использовано
     const usedDetail = document.getElementById('usedGenerationsDetail');
     if (usedDetail) usedDetail.textContent = used;
 
-    // Email (может быть в шапке и сайдбаре)
     const userEmailEl = document.getElementById('userEmail');
     if (userEmailEl) {
         userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
     }
 
-    // Тариф
     const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
     const userPlanEl = document.getElementById('userPlan');
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
@@ -293,7 +279,6 @@ window.generateWBCard = async function() {
 
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         
-        // Перезагружаем данные пользователя
         const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (updatedDoc.exists()) {
             userData = updatedDoc.data();
@@ -531,6 +516,55 @@ window.viewHistoryItem = async function(docId) {
 };
 
 // ----- ПОПОЛНЕНИЕ БАЛАНСА (мгновенное) -----
+window.showPaymentModal = function() {
+    const modal = document.getElementById('paymentModal');
+    if (modal) {
+        modal.classList.add('show');
+        selectedTokens = 0;
+        selectedPrice = 0;
+        document.getElementById('selectedPackageName').textContent = '—';
+        document.getElementById('modalAmount').textContent = '0 ₽';
+        const customInput = document.getElementById('customTokens');
+        if (customInput) {
+            customInput.value = 50;
+            calculateCustomPrice();
+        }
+        document.querySelectorAll('.package-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+    }
+};
+
+window.selectPackage = function(tokens, price) {
+    selectedTokens = tokens;
+    selectedPrice = price;
+    document.getElementById('selectedPackageName').textContent = `${tokens} токенов за ${price} ₽`;
+    document.getElementById('modalAmount').textContent = `${price} ₽`;
+    
+    document.querySelectorAll('.package-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('selected');
+    }
+};
+
+window.calculateCustomPrice = function() {
+    const tokens = parseInt(document.getElementById('customTokens').value) || 0;
+    const pricePerToken = 50;
+    const price = tokens * pricePerToken;
+    document.getElementById('customPrice').value = `${price} ₽`;
+    
+    document.getElementById('selectedPackageName').textContent = `${tokens} токенов за ${price} ₽ (своё)`;
+    document.getElementById('modalAmount').textContent = `${price} ₽`;
+    selectedTokens = tokens;
+    selectedPrice = price;
+    
+    document.querySelectorAll('.package-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+};
+
 window.confirmPayment = function() {
     if (selectedTokens <= 0 || selectedPrice <= 0) {
         showNotification('Выберите количество токенов', 'warning');
@@ -545,27 +579,7 @@ window.confirmPayment = function() {
             });
             
             userData.balance = newBalance;
-            updateUI(); // ЭТА СТРОКА ВАЖНА! Она обновит все элементы с балансом
-            
-            showNotification(`Баланс пополнен на ${selectedTokens} токенов!`, 'success');
-            closeModal();
-        } catch (error) {
-            console.error('Ошибка при пополнении:', error);
-            showNotification('Ошибка при пополнении', 'error');
-        }
-    })();
-};
-
-    // Мгновенное начисление
-    (async () => {
-        try {
-            const newBalance = (userData.balance || 0) + selectedTokens;
-            await updateDoc(doc(db, 'users', currentUser.uid), {
-                balance: newBalance,
-            });
-            
-            userData.balance = newBalance;
-            updateUI(); // теперь обновит все элементы!
+            updateUI();
             
             showNotification(`Баланс пополнен на ${selectedTokens} токенов!`, 'success');
             closeModal();
