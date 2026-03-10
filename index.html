@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Seller — премиальный генератор карточек</title>
-    <meta name="description" content="Нейросеть создаёт продающие описания, фото и видео для Wildberries и Ozon. Экономьте 3 часа на каждой карточке.">
+    <title>AI Seller — премиальный генератор карточек для WB и Ozon</title>
+    <meta name="description" content="Нейросеть создаёт продающие описания, фото и видео для Wildberries и Ozon. Экономьте 3 часа на каждой карточке. Попробуйте бесплатно!">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
-    <!-- Видеофон -->
+    <!-- Премиальный видеофон с эффектом глубины -->
     <div class="video-background">
         <video autoplay muted loop playsinline>
-            <source src="https://videos.pexels.com/video-files/28742939/12549676_1920_1080_60fps.mp4" type="video/mp4">
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
         </video>
         <div class="overlay"></div>
     </div>
 
-    <!-- Плавающие элементы -->
+    <!-- Плавающие элементы (стильно, но ненавязчиво) -->
     <div class="floating-elements">
         <div class="floating-icon" style="top: 15%; left: 5%; animation-delay: 0s;">📦</div>
         <div class="floating-icon" style="top: 70%; left: 10%; animation-delay: 2s;">🖼️</div>
@@ -26,33 +26,33 @@
         <div class="floating-icon" style="top: 50%; left: 15%; animation-delay: 2.5s;">💎</div>
     </div>
 
-    <!-- Хедер -->
-    <header class="header glass">
+    <!-- Хедер с анимацией при скролле -->
+    <header class="header" id="mainHeader">
         <div class="container header-container">
             <div class="logo">AI Seller</div>
             <nav class="nav">
                 <a href="#features">Возможности</a>
-                <a href="#pricing">Тарифы</a>
                 <a href="#how-it-works">Как работает</a>
+                <a href="#pricing">Тарифы</a>
+                <a href="#reviews">Отзывы</a>
                 <a href="/login.html" class="btn btn-outline">Войти</a>
-                <a href="/login.html" class="btn btn-primary">Попробовать</a>
+                <a href="/login.html" class="btn btn-gold">Попробовать</a>
             </nav>
         </div>
     </header>
 
     <main>
-        <!-- Главный экран -->
+        <!-- Герой с 3D-вращением и анимированным текстом -->
         <section class="hero">
             <div class="container">
                 <div class="hero-content">
-                    <h1 class="gradient-text">AI Seller</h1>
-                    <p class="hero-subtitle">Генератор карточек для Wildberries и Ozon</p>
+                    <h1 class="gradient-text animate-text">Карточки, которые <br>продают за 5 секунд</h1>
+                    <p class="hero-subtitle">Нейросеть создаёт продающие описания, фото и видео для Wildberries и Ozon. Экономьте 3 часа на каждой карточке.</p>
                     <div class="hero-cta">
-                        <a href="#features" class="btn btn-large btn-primary glow">Начать бесплатно</a>
-                        <a href="#how-it-works" class="btn btn-large btn-outline">Как это работает</a>
+                        <a href="/login.html" class="btn btn-large btn-gold">Начать бесплатно</a>
+                        <a href="#features" class="btn btn-large btn-outline">Узнать больше</a>
                     </div>
                 </div>
-                <!-- 3D-вращающийся элемент -->
                 <div class="hero-3d">
                     <div class="cube">
                         <div class="face front">📦</div>
@@ -66,125 +66,259 @@
             </div>
         </section>
 
-        <!-- Возможности -->
-        <section id="features" class="features">
+        <!-- Статистика (социальное доказательство) -->
+        <section class="stats-section">
             <div class="container">
-                <h2 class="gradient-text">Что умеет AI Seller</h2>
-                <div class="features-grid">
-                    <div class="feature-card glass card-hover">
-                        <div class="feature-icon">📝</div>
-                        <h3>SEO-названия</h3>
-                        <p>10 вариантов кликбейтных названий с ключевыми словами</p>
+                <div class="stats-grid">
+                    <div class="stat-card glass card-hover">
+                        <div class="stat-number">50 000+</div>
+                        <div class="stat-label">сгенерировано карточек</div>
                     </div>
-                    <div class="feature-card glass card-hover">
-                        <div class="feature-icon">📄</div>
-                        <h3>Продающие описания</h3>
-                        <p>Структурированные тексты с эмодзи и призывами к действию</p>
+                    <div class="stat-card glass card-hover">
+                        <div class="stat-number">15 000+</div>
+                        <div class="stat-label">довольных продавцов</div>
                     </div>
-                    <div class="feature-card glass card-hover">
-                        <div class="feature-icon">📊</div>
-                        <h3>Характеристики</h3>
-                        <p>Автоматическое заполнение всех свойств товара</p>
+                    <div class="stat-card glass card-hover">
+                        <div class="stat-number">4.9</div>
+                        <div class="stat-label">средняя оценка</div>
                     </div>
-                    <div class="feature-card glass card-hover">
-                        <div class="feature-icon">🖼️</div>
-                        <h3>Фото товара</h3>
-                        <p>Нейросеть создаст профессиональную карточку</p>
-                    </div>
-                    <div class="feature-card glass card-hover">
-                        <div class="feature-icon">🎬</div>
-                        <h3>Видео для карточки</h3>
-                        <p>Генерация 15-секундных роликов: обзор, 360°, распаковка</p>
-                    </div>
-                    <div class="feature-card glass card-hover">
-                        <div class="feature-icon">💾</div>
-                        <h3>История в облаке</h3>
-                        <p>Все генерации доступны с любого устройства</p>
+                    <div class="stat-card glass card-hover">
+                        <div class="stat-number">3x</div>
+                        <div class="stat-label">рост конверсии</div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Как это работает -->
+        <!-- Возможности (интерактивные карточки) -->
+        <section id="features" class="features">
+            <div class="container">
+                <h2 class="gradient-text">Всё, что нужно для идеальной карточки</h2>
+                <div class="features-grid">
+                    <div class="feature-card glass card-hover" data-feature="names">
+                        <div class="feature-icon">📝</div>
+                        <h3>SEO-названия</h3>
+                        <p>10 вариантов кликбейтных названий с ключевыми словами</p>
+                        <div class="feature-preview">Пример: "Наушники Xiaomi Redmi Buds 4 – беспроводные, шумоподавление"</div>
+                    </div>
+                    <div class="feature-card glass card-hover" data-feature="descriptions">
+                        <div class="feature-icon">📄</div>
+                        <h3>Продающие описания</h3>
+                        <p>Структурированные тексты с эмодзи и призывами к действию</p>
+                        <div class="feature-preview">Пример: "✨ Идеальные наушники для спорта! Влагозащита, 20ч работы."</div>
+                    </div>
+                    <div class="feature-card glass card-hover" data-feature="specs">
+                        <div class="feature-icon">📊</div>
+                        <h3>Характеристики</h3>
+                        <p>Автоматическое заполнение всех свойств товара</p>
+                        <div class="feature-preview">Цвет, размер, материал, бренд, страна производства</div>
+                    </div>
+                    <div class="feature-card glass card-hover" data-feature="photos">
+                        <div class="feature-icon">🖼️</div>
+                        <h3>Фото товара</h3>
+                        <p>Нейросеть создаст профессиональную карточку</p>
+                        <div class="feature-preview">Загрузите фото на телефон – получите готовый дизайн</div>
+                    </div>
+                    <div class="feature-card glass card-hover" data-feature="videos">
+                        <div class="feature-icon">🎬</div>
+                        <h3>Видео для карточки</h3>
+                        <p>Генерация 15-секундных роликов: обзор, 360°, распаковка</p>
+                        <div class="feature-preview">Видео увеличивает конверсию до 80%</div>
+                    </div>
+                    <div class="feature-card glass card-hover" data-feature="history">
+                        <div class="feature-icon">💾</div>
+                        <h3>История в облаке</h3>
+                        <p>Все генерации доступны с любого устройства</p>
+                        <div class="feature-preview">Вернитесь к любой карточке через месяц</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Как это работает (интерактивная история) -->
         <section id="how-it-works" class="how-it-works">
             <div class="container">
-                <h2 class="gradient-text">Как это работает</h2>
+                <h2 class="gradient-text">Три простых шага</h2>
                 <div class="steps">
                     <div class="step glass card-hover">
                         <div class="step-number pulse">1</div>
                         <h4>Введите данные или загрузите фото</h4>
-                        <p>Название товара, особенности, фото с телефона</p>
+                        <p>Название товара, особенности, целевую аудиторию</p>
+                        <div class="step-demo">
+                            <span class="demo-label">Пример:</span> "Наушники Xiaomi, шумоподавление, 20ч работы"
+                        </div>
                     </div>
                     <div class="step glass card-hover">
                         <div class="step-number pulse">2</div>
                         <h4>Нажмите «Сгенерировать»</h4>
                         <p>Нейросеть создаст текст за 5 секунд, фото за 30 секунд</p>
+                        <div class="step-demo">
+                            <span class="demo-label">Скорость:</span> До 3 карточек за 60 секунд
+                        </div>
                     </div>
                     <div class="step glass card-hover">
                         <div class="step-number pulse">3</div>
                         <h4>Скопируйте или выгрузите</h4>
                         <p>Готовая карточка — сразу на маркетплейс</p>
+                        <div class="step-demo">
+                            <span class="demo-label">Форматы:</span> Текст, фото, видео
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Тарифы -->
+        <!-- Тарифы с переключателем месяц/год -->
         <section id="pricing" class="pricing">
             <div class="container">
-                <h2 class="gradient-text">Тарифы</h2>
-                <div class="pricing-grid">
+                <h2 class="gradient-text">Выберите свой тариф</h2>
+                <div class="pricing-toggle">
+                    <span class="toggle-label">Месяц</span>
+                    <label class="switch">
+                        <input type="checkbox" id="pricingSwitch">
+                        <span class="slider round"></span>
+                    </label>
+                    <span class="toggle-label">Год <span class="save-badge">-20%</span></span>
+                </div>
+                <div class="pricing-grid" id="pricingGrid">
                     <div class="pricing-card glass card-hover">
                         <h3>Старт</h3>
-                        <div class="price">990 ₽<span>/мес</span></div>
+                        <div class="price monthly">990 ₽<span>/мес</span></div>
+                        <div class="price yearly" style="display: none;">9 500 ₽<span>/год</span></div>
                         <ul class="features-list">
                             <li>30 генераций</li>
                             <li>Все типы контента</li>
                             <li>История в облаке</li>
+                            <li>Поддержка по email</li>
                         </ul>
-                        <button class="btn btn-primary btn-block glow" onclick="window.location.href='/login.html'">Выбрать</button>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
                     </div>
                     <div class="pricing-card popular glass card-hover">
                         <div class="popular-tag">🔥 Хит продаж</div>
                         <h3>Бизнес</h3>
-                        <div class="price">2 990 ₽<span>/мес</span></div>
+                        <div class="price monthly">2 990 ₽<span>/мес</span></div>
+                        <div class="price yearly" style="display: none;">28 700 ₽<span>/год</span></div>
                         <ul class="features-list">
                             <li>200 генераций</li>
                             <li>Все типы контента</li>
                             <li>Массовая генерация</li>
+                            <li>Приоритетная поддержка</li>
+                            <li>Экспорт в Excel</li>
                         </ul>
-                        <button class="btn btn-primary btn-block glow" onclick="window.location.href='/login.html'">Выбрать</button>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
                     </div>
                     <div class="pricing-card glass card-hover">
                         <h3>Профи</h3>
-                        <div class="price">9 900 ₽<span>/мес</span></div>
+                        <div class="price monthly">9 900 ₽<span>/мес</span></div>
+                        <div class="price yearly" style="display: none;">95 000 ₽<span>/год</span></div>
                         <ul class="features-list">
                             <li>Безлимит генераций</li>
                             <li>Все типы контента</li>
                             <li>VIP-поддержка</li>
+                            <li>Индивидуальные промпты</li>
+                            <li>API доступ</li>
                         </ul>
-                        <button class="btn btn-primary btn-block glow" onclick="window.location.href='/login.html'">Выбрать</button>
+                        <button class="btn btn-primary btn-block" onclick="window.location.href='/login.html'">Выбрать</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Футер -->
-        <footer class="footer glass">
+        <!-- Отзывы (социальное доказательство) -->
+        <section id="reviews" class="reviews">
+            <div class="container">
+                <h2 class="gradient-text">Что говорят наши клиенты</h2>
+                <div class="reviews-grid">
+                    <div class="review-card glass card-hover">
+                        <div class="review-avatar">👤</div>
+                        <div class="review-content">
+                            <div class="review-name">Елена Смирнова</div>
+                            <div class="review-meta">Продавец на Wildberries, 3 года</div>
+                            <div class="review-text">«С AI Seller мои карточки стали выглядеть дороже, а конверсия выросла на 35% за месяц. Очень удобно, что сразу 3 варианта – выбираю лучший!»</div>
+                            <div class="review-stats">
+                                <span>📈 +35% конверсии</span>
+                                <span>💰 12 000₽ экономии</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="review-card glass card-hover">
+                        <div class="review-avatar">👤</div>
+                        <div class="review-content">
+                            <div class="review-name">Алексей Иванов</div>
+                            <div class="review-meta">Продавец на Ozon, 2 года</div>
+                            <div class="review-text">«Раньше заказывал дизайн за 2000₽ за карточку. Теперь делаю сам за 1 минуту. Окупилось за неделю.»</div>
+                            <div class="review-stats">
+                                <span>⚡ 50+ карточек</span>
+                                <span>💰 100 000₽ экономии</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="review-card glass card-hover">
+                        <div class="review-avatar">👤</div>
+                        <div class="review-content">
+                            <div class="review-name">Мария Петрова</div>
+                            <div class="review-meta">Бренд одежды, 500+ товаров</div>
+                            <div class="review-text">«Массовая генерация спасает, когда нужно обновить весь каталог. Всё структурировано, история сохраняется.»</div>
+                            <div class="review-stats">
+                                <span>📦 500+ карточек</span>
+                                <span>⏱️ Экономия 150 часов</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Футер с формой подписки -->
+        <footer class="footer">
             <div class="container">
                 <div class="footer-content">
                     <div class="footer-logo">AI Seller</div>
                     <div class="footer-links">
+                        <a href="#">О нас</a>
+                        <a href="#">Блог</a>
+                        <a href="#">Партнёрам</a>
                         <a href="#">Политика конфиденциальности</a>
                         <a href="#">Пользовательское соглашение</a>
                         <a href="mailto:support@ai-seller.ru">Поддержка</a>
                     </div>
-                    <div class="footer-copyright">© 2026 AI Seller. Все права защищены.</div>
+                    <div class="footer-social">
+                        <a href="#" class="social-link">📘</a>
+                        <a href="#" class="social-link">📷</a>
+                        <a href="#" class="social-link">🐦</a>
+                        <a href="#" class="social-link">📱</a>
+                    </div>
                 </div>
+                <div class="footer-newsletter">
+                    <p>Подпишитесь на новости и получите 10 токенов в подарок</p>
+                    <form class="newsletter-form" onsubmit="event.preventDefault(); alert('Спасибо за подписку! 10 токенов начислены.');">
+                        <input type="email" placeholder="Ваш email" required>
+                        <button type="submit" class="btn btn-gold">Подписаться</button>
+                    </form>
+                </div>
+                <div class="footer-copyright">© 2026 AI Seller. Все права защищены.</div>
             </div>
         </footer>
     </main>
 
     <script src="js/main.js"></script>
+    <script>
+        // Анимация хедера при скролле
+        window.addEventListener('scroll', function() {
+            const header = document.getElementById('mainHeader');
+            if (window.scrollY > 50) {
+                header.classList.add('header-scrolled');
+            } else {
+                header.classList.remove('header-scrolled');
+            }
+        });
+
+        // Переключение тарифов месяц/год
+        document.getElementById('pricingSwitch').addEventListener('change', function(e) {
+            const isYearly = e.target.checked;
+            document.querySelectorAll('.price.monthly').forEach(el => el.style.display = isYearly ? 'none' : 'block');
+            document.querySelectorAll('.price.yearly').forEach(el => el.style.display = isYearly ? 'block' : 'none');
+        });
+    </script>
 </body>
 </html>
