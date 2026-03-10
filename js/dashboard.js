@@ -477,7 +477,7 @@ window.generateVideo = async function() {
         await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'video',
             productName,
-            videoUrl: result.videos[0],
+            frames: result.frames,
             timestamp: new Date().toISOString()
         });
 
@@ -559,26 +559,27 @@ function displayVideoResults(result) {
     const gallery = document.getElementById('resultImages');
     if (gallery) {
         gallery.innerHTML = '';
-        if (result.videos && result.videos.length) {
-            result.videos.forEach(url => {
-                // Для GIF используем img
+        if (result.frames && result.frames.length) {
+            // Показываем все кадры
+            result.frames.forEach(url => {
                 const img = document.createElement('img');
                 img.src = url;
-                img.alt = 'Generated animation';
+                img.alt = 'Generated frame';
                 img.style.width = '100%';
                 img.style.maxWidth = '300px';
                 img.style.borderRadius = '12px';
+                img.style.margin = '10px';
                 img.onclick = () => window.openLightbox(url);
                 gallery.appendChild(img);
             });
         } else {
-            gallery.innerHTML = '<p class="text-muted">Анимация не сгенерирована</p>';
+            gallery.innerHTML = '<p class="text-muted">Кадры не сгенерированы</p>';
         }
     }
     
     const descList = document.getElementById('resultDescriptions');
     if (descList) {
-        descList.innerHTML = ''; // Очищаем описания для видео
+        descList.innerHTML = ''; // Очищаем описания
     }
 }
 
@@ -646,8 +647,8 @@ window.viewHistoryItem = async function(docId) {
         const docSnap = await getDoc(doc(db, 'users', currentUser.uid, 'generations', docId));
         if (docSnap.exists()) {
             const item = docSnap.data();
-            if (item.type === 'video' && item.videoUrl) {
-                displayVideoResults({ videos: [item.videoUrl] });
+            if (item.type === 'video' && item.frames) {
+                displayVideoResults({ frames: item.frames });
             } else if (item.result && item.result.images && item.result.descriptions) {
                 displayCardResults(item.result, item.type || 'wb-card');
             } else {
