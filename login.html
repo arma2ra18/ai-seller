@@ -23,11 +23,8 @@
                     <label>Номер телефона</label>
                     <input type="tel" id="loginPhone" placeholder="+7 999 123-45-67">
                 </div>
-                <div class="form-group">
-                    <label>Пароль</label>
-                    <input type="password" id="loginPassword" placeholder="••••••••">
-                </div>
-                <button class="btn btn-primary btn-block" onclick="handlePhoneLogin()">Войти</button>
+                
+                <button class="btn btn-primary btn-block" onclick="sendPhoneCode('login')">Войти</button>
                 
                 <div class="auth-divider">
                     <span>или</span>
@@ -39,10 +36,6 @@
                         Войти через Google
                     </button>
                 </div>
-                
-                <div class="forgot-password">
-                    <a href="#" onclick="resetPassword()">Забыли пароль?</a>
-                </div>
             </div>
 
             <!-- Вкладка регистрации -->
@@ -51,23 +44,11 @@
                     <label>Номер телефона</label>
                     <input type="tel" id="registerPhone" placeholder="+7 999 123-45-67">
                 </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="registerEmail" placeholder="your@email.com">
-                </div>
-                <div class="form-group">
-                    <label>Пароль</label>
-                    <input type="password" id="registerPassword" placeholder="минимум 6 символов">
-                </div>
-                <div class="form-group">
-                    <label>Повторите пароль</label>
-                    <input type="password" id="registerConfirm" placeholder="••••••••">
-                </div>
                 
-                <!-- Контейнер для reCAPTCHA (скрыт, но нужен) -->
+                <!-- Контейнер для reCAPTCHA (невидимый) -->
                 <div id="recaptcha-container"></div>
                 
-                <button class="btn btn-primary btn-block" onclick="handlePhoneRegistration()">Зарегистрироваться</button>
+                <button class="btn btn-primary btn-block" onclick="sendPhoneCode('register')">Зарегистрироваться</button>
                 
                 <div class="auth-divider">
                     <span>или</span>
