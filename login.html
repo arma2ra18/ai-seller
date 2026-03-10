@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход — AI Seller</title>
+    <title>Вход — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
     <div class="auth-container">
         <div class="auth-card">
-            <div class="auth-logo">AI Seller</div>
+            <div class="auth-logo">Prodiger</div>
             <h2>Вход в личный кабинет</h2>
             
             <div class="auth-tabs">
@@ -23,8 +23,11 @@
                     <label>Номер телефона</label>
                     <input type="tel" id="loginPhone" placeholder="+7 999 123-45-67">
                 </div>
-                
-                <button class="btn btn-primary btn-block" onclick="sendPhoneCode('login')">Войти</button>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••">
+                </div>
+                <button class="btn btn-primary btn-block" onclick="handlePhoneLogin()">Войти</button>
                 
                 <div class="auth-divider">
                     <span>или</span>
@@ -36,6 +39,10 @@
                         Войти через Google
                     </button>
                 </div>
+                
+                <div class="forgot-password">
+                    <a href="#" onclick="resetPassword()">Забыли пароль?</a>
+                </div>
             </div>
 
             <!-- Вкладка регистрации -->
@@ -44,11 +51,22 @@
                     <label>Номер телефона</label>
                     <input type="tel" id="registerPhone" placeholder="+7 999 123-45-67">
                 </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="registerPassword" placeholder="минимум 6 символов">
+                </div>
+                <div class="form-group">
+                    <label>Повторите пароль</label>
+                    <input type="password" id="registerConfirm" placeholder="••••••••">
+                </div>
                 
-                <!-- Контейнер для reCAPTCHA (невидимый) -->
                 <div id="recaptcha-container"></div>
                 
-                <button class="btn btn-primary btn-block" onclick="sendPhoneCode('register')">Зарегистрироваться</button>
+                <button class="btn btn-primary btn-block" onclick="sendPhoneCode()">Зарегистрироваться</button>
                 
                 <div class="auth-divider">
                     <span>или</span>

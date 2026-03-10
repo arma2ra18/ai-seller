@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Seller — премиальный генератор карточек для WB и Ozon</title>
+    <title>Prodiger — премиальный генератор карточек для WB и Ozon</title>
     <meta name="description" content="Нейросеть создаёт продающие описания, фото и видео для Wildberries и Ozon. Экономьте 3 часа на каждой карточке. Попробуйте бесплатно!">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -29,7 +29,7 @@
     <!-- Хедер -->
     <header class="header" id="mainHeader">
         <div class="container header-container">
-            <div class="logo">AI Seller</div>
+            <div class="logo">Prodiger</div>
             <nav class="nav" id="mainNav">
                 <a href="#features">Возможности</a>
                 <a href="#how-it-works">Как работает</a>
@@ -168,28 +168,24 @@
             </div>
         </section>
 
-      <!-- Примеры работ: улучшенная карусель -->
-<section id="examples" class="examples">
-    <div class="container">
-        <h2 class="gradient-text">Примеры готовых карточек</h2>
-        
-        <div class="carousel-container" id="carouselContainer">
-            <button class="carousel-btn prev" onclick="moveCarousel(-1)">←</button>
-            
-            <div class="carousel-wrapper">
-                <div class="carousel-track" id="carouselTrack">
-                    <!-- Слайды будут добавляться сюда динамически -->
+        <!-- Примеры работ -->
+        <section id="examples" class="examples">
+            <div class="container">
+                <h2 class="gradient-text">Примеры готовых карточек</h2>
+                <div class="carousel-container" id="carouselContainer">
+                    <button class="carousel-btn prev" onclick="moveCarousel(-1)">←</button>
+                    <div class="carousel-wrapper">
+                        <div class="carousel-track" id="carouselTrack">
+                            <!-- Слайды добавляются через JS -->
+                        </div>
+                    </div>
+                    <button class="carousel-btn next" onclick="moveCarousel(1)">→</button>
                 </div>
+                <div class="carousel-dots" id="carouselDots"></div>
             </div>
-            
-            <button class="carousel-btn next" onclick="moveCarousel(1)">→</button>
-        </div>
-        
-        <div class="carousel-dots" id="carouselDots"></div>
-    </div>
-</section>
+        </section>
 
-        <!-- Тарифы с переключателем месяц/год -->
+        <!-- Тарифы -->
         <section id="pricing" class="pricing">
             <div class="container">
                 <h2 class="gradient-text">Выберите свой тариф</h2>
@@ -258,7 +254,7 @@
                                 <div class="review-title">Продавец на Wildberries, 3 года</div>
                             </div>
                         </div>
-                        <div class="review-text">«С AI Seller мои карточки стали выглядеть дороже, а конверсия выросла на 35% за месяц. Очень удобно, что сразу 3 варианта – выбираю лучший!»</div>
+                        <div class="review-text">«С Prodiger мои карточки стали выглядеть дороже, а конверсия выросла на 35% за месяц. Очень удобно, что сразу 3 варианта – выбираю лучший!»</div>
                         <div class="review-stats">
                             <span class="stat-badge">📈 +35% конверсии</span>
                             <span class="stat-badge">💰 12 000₽ экономии</span>
@@ -301,7 +297,7 @@
             <div class="container">
                 <div class="footer-main">
                     <div class="footer-col">
-                        <div class="footer-logo">AI Seller</div>
+                        <div class="footer-logo">Prodiger</div>
                         <p class="footer-description">Премиальный генератор карточек для Wildberries и Ozon с использованием нейросетей.</p>
                         <div class="footer-social">
                             <a href="#" class="social-link" aria-label="Telegram">📘</a>
@@ -340,7 +336,7 @@
                     </form>
                 </div>
                 <div class="footer-bottom">
-                    <div class="footer-copyright">© 2026 AI Seller. Все права защищены.</div>
+                    <div class="footer-copyright">© 2026 Prodiger. Все права защищены.</div>
                     <div class="footer-legal">
                         <a href="#">Политика конфиденциальности</a>
                         <a href="#">Пользовательское соглашение</a>
@@ -359,73 +355,65 @@
             document.querySelectorAll('.price.yearly').forEach(el => el.style.display = isYearly ? 'block' : 'none');
         });
 
-// ===== УЛУЧШЕННАЯ КАРУСЕЛЬ =====
-const images = [
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
-];
+        // Карусель
+        const images = [
+            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
+        ];
 
-let currentIndex = 0;
-const track = document.getElementById('carouselTrack');
-const dotsContainer = document.getElementById('carouselDots');
+        let currentIndex = 0;
+        const track = document.getElementById('carouselTrack');
+        const dotsContainer = document.getElementById('carouselDots');
 
-// Создаём слайды
-images.forEach((src, index) => {
-    const slide = document.createElement('div');
-    slide.className = 'carousel-slide';
-    
-    const img = document.createElement('img');
-    img.src = src;
-    img.alt = `Пример ${index + 1}`;
-    img.loading = 'lazy';
-    
-    slide.appendChild(img);
-    track.appendChild(slide);
-    
-    // Создаём точки
-    const dot = document.createElement('span');
-    dot.className = 'dot' + (index === 0 ? ' active' : '');
-    dot.onclick = () => goToSlide(index);
-    dotsContainer.appendChild(dot);
-});
+        // Создаём слайды
+        images.forEach((src, index) => {
+            const slide = document.createElement('div');
+            slide.className = 'carousel-slide';
+            
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = `Пример ${index + 1}`;
+            img.loading = 'lazy';
+            
+            slide.appendChild(img);
+            track.appendChild(slide);
+            
+            const dot = document.createElement('span');
+            dot.className = 'dot' + (index === 0 ? ' active' : '');
+            dot.onclick = () => goToSlide(index);
+            dotsContainer.appendChild(dot);
+        });
 
-const slides = document.querySelectorAll('.carousel-slide');
-const totalSlides = slides.length;
+        const slides = document.querySelectorAll('.carousel-slide');
+        const totalSlides = slides.length;
 
-// Функция обновления активной точки
-function updateDots() {
-    document.querySelectorAll('.dot').forEach((dot, index) => {
-        dot.classList.toggle('active', index === currentIndex);
-    });
-}
+        function updateDots() {
+            document.querySelectorAll('.dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentIndex);
+            });
+        }
 
-// Функция перехода к слайду
-function goToSlide(index) {
-    if (index < 0 || index >= totalSlides) return;
-    currentIndex = index;
-    
-    // Вычисляем ширину одного слайда с учётом gap
-    const slideWidth = slides[0].offsetWidth + 20; // 20px - это gap
-    track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
-    
-    updateDots();
-}
+        function goToSlide(index) {
+            if (index < 0 || index >= totalSlides) return;
+            currentIndex = index;
+            
+            const slideWidth = slides[0].offsetWidth + 20;
+            track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+            updateDots();
+        }
 
-// Функция перемещения (вызывается из кнопок)
-window.moveCarousel = function(direction) {
-    goToSlide(currentIndex + direction);
-};
+        window.moveCarousel = function(direction) {
+            goToSlide(currentIndex + direction);
+        };
 
-// Обработка ресайза окна
-window.addEventListener('resize', () => {
-    goToSlide(currentIndex); // пересчитываем позицию
-});
+        window.addEventListener('resize', () => {
+            goToSlide(currentIndex);
+        });
 
-// Инициализация
-goToSlide(0);
+        goToSlide(0);
     </script>
 </body>
 </html>
