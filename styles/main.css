@@ -1536,3 +1536,225 @@ section {
         text-align: center;
     }
 }
+/* Карусель */
+.examples {
+    padding: 80px 0;
+}
+.carousel-container {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 24px;
+}
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+.carousel-slide {
+    min-width: 100%;
+    position: relative;
+}
+.carousel-slide img {
+    width: 100%;
+    display: block;
+    border-radius: 24px;
+}
+.slide-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 30px 20px 20px;
+    color: white;
+    border-radius: 0 0 24px 24px;
+}
+.slide-caption h4 {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+.slide-caption p {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+.slide-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent-gold);
+}
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    transition: var(--transition);
+    z-index: 2;
+}
+.carousel-btn:hover {
+    background: rgba(0,113,227,0.8);
+}
+.carousel-btn.prev {
+    left: 20px;
+}
+.carousel-btn.next {
+    right: 20px;
+}
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+.dot {
+    width: 12px;
+    height: 12px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.dot.active {
+    background: var(--accent);
+    transform: scale(1.2);
+}
+
+/* Премиальные отзывы */
+.review-card {
+    padding: 30px;
+    border-radius: 24px;
+    transition: var(--transition);
+}
+.review-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,113,227,0.2);
+}
+.review-header {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.review-avatar {
+    width: 50px;
+    height: 50px;
+    background: var(--accent-gradient);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 18px;
+    color: white;
+}
+.review-name {
+    font-weight: 700;
+    font-size: 18px;
+}
+.review-title {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+.review-text {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-style: italic;
+}
+.review-stats {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.stat-badge {
+    background: rgba(0,113,227,0.1);
+    color: var(--accent);
+    padding: 6px 12px;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Новый футер */
+.footer-main {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+.footer-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.footer-col h4 {
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+.footer-col a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s;
+}
+.footer-col a:hover {
+    color: white;
+}
+.footer-description {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin: 15px 0;
+    line-height: 1.6;
+}
+.footer-newsletter {
+    padding: 30px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+}
+.footer-newsletter p {
+    margin-bottom: 15px;
+    color: var(--text-secondary);
+}
+.footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 30px;
+}
+.footer-legal {
+    display: flex;
+    gap: 20px;
+}
+.footer-legal a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+}
+.footer-legal a:hover {
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .footer-main {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .footer-bottom {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    .footer-legal {
+        justify-content: center;
+    }
+}
