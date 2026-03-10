@@ -26,6 +26,7 @@ const bucket = admin.storage().bucket();
 export const config = {
     api: {
         bodyParser: false,
+        maxDuration: 180,
     },
 };
 
@@ -48,7 +49,7 @@ async function generateGeminiImage(prompt, referenceImage) {
         ];
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3-pro-image-preview',
+            model: 'gemini-3.1-flash-image-preview',
             contents: contents,
             config: {
                 responseModalities: ['Image'],
@@ -113,25 +114,57 @@ export default async function handler(req, res) {
         const price = fields.price?.[0] || '1990';
         const userFeatures = (fields.features?.[0] || '').split(',').map(f => f.trim()).filter(Boolean);
         const platform = fields.platform?.[0] || 'wb';
+        const attempt = parseInt(fields.attempt?.[0]) || 0;
+        const originalImageId = fields.originalImageId?.[0] || null;
 
         if (!productName) {
             return res.status(400).json({ error: 'Product name is required' });
         }
 
         let referenceBuffer = null;
+        let savedOriginalId = null;
+
+        // Загружаем референсное изображение
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             if (photoArray.length) {
                 referenceBuffer = fs.readFileSync(photoArray[0].filepath);
                 console.log(`Loaded reference image: ${photoArray[0].originalFilename}`);
             }
-        }
-        if (!referenceBuffer) {
-            return res.status(400).json({ error: 'No photo uploaded' });
+        } else if (originalImageId) {
+            // Загружаем оригинал из Storage для повторных генераций
+            try {
+                const file = bucket.file(`originals/${originalImageId}`);
+                const [fileBuffer] = await file.download();
+                referenceBuffer = fileBuffer;
+                console.log(`Loaded original image from Storage: ${originalImageId}`);
+            } catch (err) {
+                console.error('Failed to load original image from Storage:', err);
+                return res.status(400).json({ error: 'Original image not found' });
+            }
         }
 
-        // УЛЬТРА-ПРОМПТ (без изменений)
-        const prompt = `Ты — ведущий дизайнер инфографики для Wildberries. Твоя задача создать фото-карточку товара, которая привлечет максимум внимания и увеличит продажи.
+        if (!referenceBuffer) {
+            return res.status(400).json({ error: 'No photo uploaded or original image not found' });
+        }
+
+        // Сохраняем оригинал при первой генерации
+        if (attempt === 0 && files.photos) {
+            const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
+            if (photoArray.length) {
+                const originalFileName = `original_${Date.now()}_${photoArray[0].originalFilename}`;
+                const file = bucket.file(`originals/${originalFileName}`);
+                await file.save(referenceBuffer, { 
+                    metadata: { contentType: photoArray[0].mimetype }, 
+                    public: false 
+                });
+                savedOriginalId = originalFileName;
+                console.log(`Saved original image as: ${originalFileName}`);
+            }
+        }
+
+        // УЛЬТРА-ПРОМПТ
+        const basePrompt = `Ты — ведущий дизайнер инфографики для Wildberries. Твоя задача создать фото-карточку товара, которая привлечет максимум внимания и увеличит продажи.
 
 **Товар:** "${productName}"
 **Бренд:** ${brand}
@@ -140,24 +173,24 @@ export default async function handler(req, res) {
 
 ### **Правила создания шедевра:**
 
-1.  **Используй свои знания.** На основе названия "${productName}", найди в своей базе данных реальные характеристики, технические детали и преимущества этого товара. Добавь их на карточку в виде иконок или коротких надписей. Например, для "AirPods Pro" ты должна знать про чип H2, активное шумоподавление, влагозащиту IPX4 и время работы 30 часов. Обязательно используй эту информацию.
+1.  **Используй свои знания.** На основе названия "${productName}", найди в своей базе данных реальные характеристики, технические детали и преимущества этого товара. Добавь их на карточку в виде иконок или коротких надписей. Обязательно используй эту информацию.
 
 2.  **Цветовая стратегия (выбери подходящую):**
-    *   Если товар премиальный или технологичный (украшения, электроника), используй глубокий, насыщенный фон (тёмно-синий, чёрный, изумрудный). Товар должен светиться на нём.
+    *   Если товар премиальный или технологичный, используй глубокий, насыщенный фон (тёмно-синий, чёрный, изумрудный). Товар должен светиться на нём.
     *   Если товар для дома, уюта или еда, используй тёплые, "вкусные" тона (бежевый, терракотовый, мягкий зелёный).
     *   Если товар для молодёжи или спорта, добавь яркие, контрастные цвета.
 
 3.  **3D и объём:** Добавь мягкие, но заметные 3D-эффекты. Товар должен выглядеть объёмно. Тени должны быть реалистичными.
 
 4.  **Типографика (разные шрифты):**
-    *   **Название товара:** Крупный, жирный, современный шрифт (например, Bebas Neue, Oswald).
+    *   **Название товара:** Крупный, жирный, современный шрифт.
     *   **Цена:** Самый яркий элемент. Сделай её "золотой", неоновой или обведи контуром. Добавь эффект лёгкого свечения.
-    *   **Характеристики:** Используй чистый, хорошо читаемый шрифт (например, Roboto, Open Sans). Сгруппируй их в аккуратные блоки.
+    *   **Характеристики:** Используй чистый, хорошо читаемый шрифт. Сгруппируй их в аккуратные блоки.
 
 5.  **Композиция (как у лучших селлеров):**
     *   Размести товар в центре. Вокруг него, словно на прилавке магазина, разложи информацию.
-    *   **Вверху:** Название и главный слоган (например, "Лидер продаж 2026").
-    *   **По бокам:** Ключевые фишки в виде иконок с подписями (шумоподавление 🎧, влагозащита 💧, 30ч работы 🔋).
+    *   **Вверху:** Название и главный слоган.
+    *   **По бокам:** Ключевые фишки в виде иконок с подписями.
     *   **Внизу:** Цена и кнопка призыва к покупке (стилизованно).
     *   Используй выноски и указатели, чтобы связать текст с деталями товара.
 
@@ -165,31 +198,23 @@ export default async function handler(req, res) {
 
 Создай фото-карточку, от которой невозможно оторвать взгляд.`;
 
-        const images = [];
-        // Генерируем 3 разных варианта
-        for (let i = 0; i < 3; i++) {
-            const variation = ` (Вариант ${i+1}: попробуй другое расположение текста или цветовую гамму, но сохрани все ключевые элементы)`;
-            try {
-                console.log(`Generating image ${i+1}...`);
-                const imageDataUrl = await generateGeminiImage(prompt + variation, referenceBuffer);
-                
-                // Загружаем в Storage и получаем публичный URL
-                const fileName = `card_${Date.now()}_${i}.jpg`;
-                const publicUrl = await uploadToStorage(imageDataUrl, fileName);
-                images.push(publicUrl);
-                
-                console.log(`Image ${i+1} generated and uploaded`);
-                await new Promise(resolve => setTimeout(resolve, 2000));
-            } catch (err) {
-                console.error(`❌ Ошибка при генерации изображения ${i+1}:`, err);
-            }
+        const variation = ` (Попытка ${attempt + 1}. Вариант ${attempt + 1} из 5: используй другое расположение текста, цветовую гамму или композицию, но сохрани все ключевые элементы товара)`;
+        const finalPrompt = basePrompt + variation;
+
+        let imageDataUrl;
+        try {
+            console.log(`Generating image (attempt ${attempt + 1})...`);
+            imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer);
+        } catch (err) {
+            console.error(`❌ Ошибка при генерации изображения (attempt ${attempt + 1}):`, err);
+            return res.status(500).json({ error: 'Failed to generate image: ' + err.message });
         }
 
-        if (images.length === 0) {
-            throw new Error('Не удалось сгенерировать ни одного изображения');
-        }
-
-        // Описания (продающие)
+        // Загружаем в Storage
+        const fileName = `card_${Date.now()}_${attempt}.jpg`;
+        const publicUrl = await uploadToStorage(imageDataUrl, fileName);
+        
+        // Генерируем описания (можно варьировать в зависимости от попытки)
         const descriptions = [
             `✨ ${productName} от ${brand}. ${userFeatures.slice(0,3).join(', ')}. Премиальное качество по цене ${price} ₽.`,
             `💎 Ваш идеальный выбор: ${productName}. Всего ${price} ₽. Особенности: ${userFeatures.join(', ')}. Закажи сейчас!`,
@@ -206,8 +231,13 @@ export default async function handler(req, res) {
             });
         }
 
-        console.log('✅ Успешно сгенерировано изображений:', images.length);
-        res.status(200).json({ images, descriptions });
+        console.log('✅ Успешно сгенерировано изображение');
+        res.status(200).json({ 
+            images: [publicUrl], 
+            descriptions,
+            originalImageId: savedOriginalId,
+            attempt: attempt
+        });
     } catch (error) {
         console.error('❌ Ошибка в handler:', error);
         res.status(500).json({ error: error.message });
