@@ -25,14 +25,14 @@ const bucket = admin.storage().bucket();
 export const config = {
     api: {
         bodyParser: false,
-        maxDuration: 300, // Увеличиваем время до 300 секунд (5 минут) для видео
+        maxDuration: 180, // 3 минуты на генерацию видео
     },
 };
 
 /**
- * Генерация видео через WaveSpeed API v1
+ * Генерация видео через WaveSpeed API с моделью WAN 2.6 Flash
  */
-async function generateVideo(imageBuffer, prompt) {
+async function generateVideo(imageBuffer, prompt, duration = 5) {
     const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
     
     if (!WAVESPEED_API_KEY) {
@@ -43,13 +43,14 @@ async function generateVideo(imageBuffer, prompt) {
     const formData = new FormData();
     const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
     formData.append('image', blob, 'product.jpg');
+    formData.append('model', 'alibaba/wan-2.6/image-to-video-flash'); // Правильная модель
     formData.append('prompt', prompt);
-    formData.append('model', 'wan-2.1-image-to-video');
-    formData.append('duration', '5');
-    formData.append('aspect_ratio', '1:1');
-    formData.append('resolution', '720p');
+    formData.append('duration', duration.toString());
+    formData.append('resolution', '720p'); // Можно сделать выбор в будущем
+    formData.append('shot_type', 'single'); // Один непрерывный кадр
+    formData.append('enable_audio', 'false'); // Аудио не нужно
+    formData.append('enable_prompt_expansion', 'true'); // Авто-улучшение промпта
 
-    // Отправляем запрос на генерацию 
     const response = await fetch('https://api.wavespeed.ai/v1/predictions', {
         method: 'POST',
         headers: {
@@ -65,11 +66,12 @@ async function generateVideo(imageBuffer, prompt) {
     }
 
     const result = await response.json();
+    console.log('Generation started:', result);
     
-    // Polling для получения результата 
+    // Polling для получения результата
     let videoUrl = null;
     const predictionId = result.id;
-    const maxAttempts = 150; // максимум 150 попыток (примерно 5 минут)
+    const maxAttempts = 60; // максимум 60 попыток (примерно 2 минуты)
     
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const statusResponse = await fetch(`https://api.wavespeed.ai/v1/predictions/${predictionId}`, {
@@ -86,13 +88,14 @@ async function generateVideo(imageBuffer, prompt) {
         console.log(`Status check ${attempt + 1}:`, status.status);
         
         if (status.status === 'completed') {
-            videoUrl = status.output;
+            // URL может быть в разных полях
+            videoUrl = status.output?.video || status.output?.url || status.output;
             break;
         } else if (status.status === 'failed') {
             throw new Error(`Generation failed: ${status.error || 'Unknown error'}`);
         }
         
-        // Ждем 2 секунды перед следующей проверкой 
+        // Ждем 2 секунды перед следующей проверкой
         await new Promise(resolve => setTimeout(resolve, 2000));
     }
     
@@ -131,6 +134,9 @@ export default async function handler(req, res) {
             const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
             imageBuffer = fs.readFileSync(photoFile.filepath);
             console.log(`Loaded reference image: ${photoFile.originalFilename}`);
+            
+            // Удаляем временный файл
+            fs.unlinkSync(photoFile.filepath);
         } else {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
@@ -152,8 +158,8 @@ Animation type: ${animationType === 'cinematic' ? 'cinematic with smooth motion'
 
         console.log('Starting video generation with WaveSpeed...');
         
-        // Генерируем видео
-        const waveSpeedVideoUrl = await generateVideo(imageBuffer, prompt);
+        // Генерируем видео (5 секунд, 720p, без аудио)
+        const waveSpeedVideoUrl = await generateVideo(imageBuffer, prompt, 5);
         
         console.log('Video generated, downloading...');
         
@@ -172,14 +178,6 @@ Animation type: ${animationType === 'cinematic' ? 'cinematic with smooth motion'
         });
         
         const publicVideoUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-        
-        // Удаляем временный файл изображения
-        if (files.photo) {
-            const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
-            if (photoFile.filepath && fs.existsSync(photoFile.filepath)) {
-                fs.unlinkSync(photoFile.filepath);
-            }
-        }
 
         console.log('✅ Animation generated and uploaded');
 
