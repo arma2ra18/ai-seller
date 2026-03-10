@@ -1705,6 +1705,10 @@ input:checked + .slider:before {
     .bottom { transform: rotateX(-90deg) translateZ(75px); }
 }
 /* Премиум-карусель */
+.examples {
+    padding: 80px 0;
+}
+
 .premium-carousel {
     position: relative;
     max-width: 1000px;
@@ -1786,7 +1790,6 @@ input:checked + .slider:before {
     right: 10px;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .premium-slide {
         flex: 0 0 calc(100% - 40px);
