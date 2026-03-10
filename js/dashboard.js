@@ -84,7 +84,7 @@ function updateUI() {
     });
 
     // Можно оставить максимум для других целей, но не отображать
-    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
+    const maxGen = { 'start': 5, 'business': 200, 'pro': 999999 }[userData.plan] || 5;
 
     // Email в шапке и сайдбаре
     const userEmailEl = document.getElementById('userEmail');
@@ -125,10 +125,10 @@ function updateStats() {
     if (statHistory) statHistory.textContent = 0;
     
     const statBalance = document.getElementById('statBalance');
-    if (statBalance) statBalance.textContent = userData?.balance || 30;
+    if (statBalance) statBalance.textContent = userData?.balance || 5;
     
     const statNews = document.getElementById('statNews');
-    if (statNews) statNews.textContent = 29;
+    if (statNews) statNews.textContent = 5;
     
     const statBonus = document.getElementById('statBonus');
     if (statBonus) statBonus.textContent = 0;
