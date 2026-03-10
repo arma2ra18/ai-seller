@@ -335,12 +335,92 @@ window.generateOzonCard = async function() {
     }
 };
 
-// ----- Генерация фото (заглушка) -----
+// ----- Генерация фото (рабочая версия) -----
 window.generateProductPhoto = async function() {
-    showNotification('Функция генерации фото находится в разработке', 'info');
+    if (!currentUser || !userData) return;
+
+    const fileInput = document.getElementById('productPhoto');
+    if (!fileInput) {
+        showNotification('Ошибка: элемент загрузки не найден.', 'error');
+        return;
+    }
+    
+    const prompt = document.getElementById('photoPrompt')?.value.trim() || 'профессиональное фото товара, студийное освещение, белый фон';
+    const files = fileInput.files;
+    
+    if (files.length === 0) {
+        showNotification('Выберите фото для генерации', 'error');
+        return;
+    }
+
+    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
+    if ((userData.usedGenerations || 0) + 2 > maxGen) {
+        showNotification('Недостаточно токенов (требуется 2)', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('generatePhotoBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Генерация фото...';
+    }
+
+    showGenerationModal();
+
+    try {
+        const formData = new FormData();
+        formData.append('photos', files[0]);
+        formData.append('productName', 'фото');
+        formData.append('brand', '');
+        formData.append('category', '');
+        formData.append('price', '0');
+        formData.append('features', '[]');
+        formData.append('platform', 'photo');
+        formData.append('customPrompt', prompt);
+
+        const response = await fetch('/api/generate-card', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText);
+        }
+        
+        const result = await response.json();
+        displayCardResults(result, 'photo');
+
+        await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+            type: 'photo',
+            productName: 'фото',
+            result,
+            timestamp: new Date().toISOString()
+        });
+
+        await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(2) });
+
+        const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (updatedDoc.exists()) {
+            userData = updatedDoc.data();
+        }
+        
+        updateUI();
+        loadHistory();
+        showNotification('Фото создано!', 'success');
+    } catch (error) {
+        console.error('Ошибка генерации фото:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    } finally {
+        hideGenerationModal();
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '✨ Сгенерировать фото (2 токена)';
+        }
+    }
 };
 
-// ----- Генерация видео (анимация) -----
+// ----- Генерация видео/анимации (рабочая версия) -----
 window.generateVideo = async function() {
     if (!currentUser || !userData) return;
 
@@ -541,7 +621,7 @@ async function loadHistory() {
         snapshot.forEach(doc => {
             const item = doc.data();
             const date = new Date(item.timestamp).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-            const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : 'Видео';
+            const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : item.type === 'video' ? 'Видео' : 'Фото';
             historyList.innerHTML += `
                 <div class="history-item">
                     <div>
