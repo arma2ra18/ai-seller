@@ -1704,29 +1704,47 @@ input:checked + .slider:before {
     .top { transform: rotateX(90deg) translateZ(75px); }
     .bottom { transform: rotateX(-90deg) translateZ(75px); }
 }
-/* Стили для сетки */
-.examples-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-top: 30px;
-}
-.example-card {
-    border-radius: 16px;
+/* Стили для премиум-карусели */
+.premium-carousel {
+    position: relative;
     overflow: hidden;
-    transition: transform 0.3s, box-shadow 0.3s;
-    cursor: pointer;
+    padding: 20px 0;
 }
-.example-card img {
+.premium-track {
+    display: flex;
+    transition: transform 0.5s ease;
+    gap: 20px;
+}
+.premium-slide {
+    flex: 0 0 calc(33.333% - 14px);
+    transition: all 0.3s;
+    filter: brightness(0.7) blur(1px);
+    transform: scale(0.9);
+}
+.premium-slide.active {
+    filter: brightness(1) blur(0);
+    transform: scale(1);
+    z-index: 2;
+}
+.premium-slide img {
     width: 100%;
-    height: auto;
-    display: block;
-    transition: transform 0.5s;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
-.example-card:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 15px 30px rgba(0,113,227,0.3);
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    z-index: 3;
 }
-.example-card:hover img {
-    transform: scale(1.05);
-}
+.carousel-arrow.prev { left: 10px; }
+.carousel-arrow.next { right: 10px; }
+.carousel-arrow:hover { background: var(--accent); }

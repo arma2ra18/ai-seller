@@ -168,26 +168,30 @@
             </div>
         </section>
 
-<!-- Примеры работ: сетка -->
+<!-- Примеры работ: премиум-карусель -->
 <section id="examples" class="examples">
     <div class="container">
         <h2 class="gradient-text">Примеры готовых карточек</h2>
-        <div class="examples-grid">
-            <div class="example-card">
-                <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg" alt="Lamborghini Urus">
+        <div class="premium-carousel">
+            <button class="carousel-arrow prev" onclick="premiumMove(-1)">←</button>
+            <div class="premium-track" id="premiumTrack">
+                <div class="premium-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg" alt="Lamborghini Urus">
+                </div>
+                <div class="premium-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
+                </div>
+                <div class="premium-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg" alt="Waka Blast">
+                </div>
+                <div class="premium-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg" alt="ASUS ROG Strix">
+                </div>
+                <div class="premium-slide">
+                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg" alt="iPhone 17 Pro">
+                </div>
             </div>
-            <div class="example-card">
-                <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
-            </div>
-            <div class="example-card">
-                <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg" alt="Waka Blast">
-            </div>
-            <div class="example-card">
-                <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg" alt="ASUS ROG Strix">
-            </div>
-            <div class="example-card">
-                <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg" alt="iPhone 17 Pro">
-            </div>
+            <button class="carousel-arrow next" onclick="premiumMove(1)">→</button>
         </div>
     </div>
 </section>
