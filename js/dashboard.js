@@ -322,6 +322,32 @@ window.generateWBCard = async function() {
     const category = document.getElementById('wbCategory')?.value;
     const price = document.getElementById('wbPrice')?.value.trim() || '1990';
     const featuresInput = document.getElementById('wbFeatures')?.value;
+window.generateWBCard = async function() {
+    if (!currentUser || !userData) return;
+
+    const fileInput = document.getElementById('wbPhotos');
+    if (!fileInput) {
+        showNotification('Ошибка: элемент загрузки не найден.', 'error');
+        return;
+    }
+    
+    const productName = document.getElementById('wbProductName')?.value.trim();
+    const brand = document.getElementById('wbBrand')?.value.trim();
+    const category = document.getElementById('wbCategory')?.value;
+    const price = document.getElementById('wbPrice')?.value.trim() || '1990';
+    const featuresInput = document.getElementById('wbFeatures')?.value;
+    
+    // ========== НОВАЯ ПРОВЕРКА ==========
+    // Проверка, не содержит ли поле "Ключевые особенности" email
+    if (featuresInput && featuresInput.includes('@')) {
+        document.getElementById('wbFeatures').value = '';
+        document.getElementById('wbFeatures').focus();
+        showNotification('Пожалуйста, введите характеристики товара (например: шумоподавление, влагозащита), а не email', 'warning');
+        return;
+    }
+    // ====================================
+    
+    const files = fileInput.files;
     const features = featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : [];
     const files = fileInput.files;
     
