@@ -2,7 +2,7 @@ import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import admin from 'firebase-admin';
 
-// Firebase Admin SDK (инициализация такая же, как в generate-card.js)
+// Firebase Admin SDK (та же инициализация)
 if (!admin.apps.length) {
   try {
     const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -25,42 +25,106 @@ const bucket = admin.storage().bucket();
 export const config = {
     api: {
         bodyParser: false,
-        maxDuration: 60, // Увеличиваем время для генерации видео
+        maxDuration: 120, // Увеличиваем время до 120 секунд для видео
     },
 };
 
-// Функция для генерации анимации через WaveSpeedAI
-async function generateAnimation(imageBase64, prompt) {
+/**
+ * Загружает изображение в WaveSpeed и получает URL для генерации
+ */
+async function uploadToWaveSpeed(imageBase64) {
     const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
     
     if (!WAVESPEED_API_KEY) {
         throw new Error('WAVESPEED_API_KEY not set');
     }
 
-    // Используем Google Veo 2 (лучший для товарной анимации) [citation:7]
-    const response = await fetch('https://api.wavespeed.ai/v1/generate', {
+    // WaveSpeed ожидает base64 изображения в определенном формате [citation:3]
+    const response = await fetch('https://api.wavespeed.ai/api/v3/upload', {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            model: 'google-veo-2-image-to-video',
-            image: imageBase64, // base64 изображения
-            prompt: prompt,
-            duration: 5, // 5 секунд
-            resolution: '720p', // HD качество
-            aspect_ratio: '1:1', // Квадрат для карточек
+            image: imageBase64 // Передаем base64 напрямую
         }),
     });
 
     if (!response.ok) {
         const error = await response.text();
-        throw new Error(`WaveSpeedAI error: ${error}`);
+        throw new Error(`WaveSpeed upload error: ${response.status} ${error}`);
     }
 
     const result = await response.json();
-    return result.video_url; // URL сгенерированного видео
+    return result.image_url; // WaveSpeed возвращает временный URL для использования в генерации
+}
+
+/**
+ * Генерация видео через WaveSpeed API
+ */
+async function generateVideo(imageUrl, prompt, duration = 5) {
+    const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
+    
+    // Используем правильный эндпоинт для image-to-video [citation:3][citation:9]
+    const response = await fetch('https://api.wavespeed.ai/api/v3/predictions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model: 'wan-ai/wan-2.1-i2v-720p', // Правильный ID модели для Wan 2.1 Image-to-Video [citation:9]
+            input: {
+                image_url: imageUrl,
+                prompt: prompt,
+                duration: duration, // 5 секунд
+                negative_prompt: "distortion, blurry, shaking camera, low quality"
+            }
+        }),
+    });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`WaveSpeed generation error: ${response.status} ${error}`);
+    }
+
+    const result = await response.json();
+    
+    // Polling для получения результата [citation:3]
+    let videoUrl = null;
+    const taskId = result.id;
+    const maxAttempts = 60; // максимум 60 попыток (примерно 120 секунд)
+    
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const statusResponse = await fetch(`https://api.wavespeed.ai/api/v3/predictions/${taskId}`, {
+            headers: {
+                'Authorization': `Bearer ${WAVESPEED_API_KEY}`,
+            },
+        });
+        
+        if (!statusResponse.ok) {
+            throw new Error(`Failed to check status: ${statusResponse.status}`);
+        }
+        
+        const status = await statusResponse.json();
+        
+        if (status.status === 'completed') {
+            videoUrl = status.outputs[0];
+            break;
+        } else if (status.status === 'failed') {
+            throw new Error(`Generation failed: ${status.error || 'Unknown error'}`);
+        }
+        
+        // Ждем 2 секунды перед следующей проверкой [citation:4]
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    
+    if (!videoUrl) {
+        throw new Error('Generation timeout');
+    }
+    
+    return videoUrl;
 }
 
 export default async function handler(req, res) {
@@ -79,13 +143,13 @@ export default async function handler(req, res) {
         const brand = fields.brand?.[0] || '';
         const price = fields.price?.[0] || '1990';
         const userFeatures = (fields.features?.[0] || '').split(',').map(f => f.trim()).filter(Boolean);
-        const animationType = fields.animationType?.[0] || 'cinematic'; // тип анимации
+        const animationType = fields.animationType?.[0] || 'cinematic';
 
         if (!productName) {
             return res.status(400).json({ error: 'Product name is required' });
         }
 
-        // Получаем загруженное фото
+        // Получаем загруженное фото и конвертируем в base64
         let imageBase64 = null;
         if (files.photo) {
             const photoFile = Array.isArray(files.photo) ? files.photo[0] : files.photo;
@@ -98,7 +162,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
-        // Промпт для анимации (адаптированный из нашего ультра-промпта)
+        // Промпт для анимации
         const prompt = `Create a 5-second cinematic product animation for Wildberries. 
 The product is "${productName}" by brand ${brand}. Price: ${price} ₽. Features: ${userFeatures.join(', ')}.
 
@@ -113,16 +177,25 @@ The animation should:
 
 Animation type: ${animationType === 'cinematic' ? 'cinematic with smooth motion' : 'dynamic with more energy'}`;
 
+        console.log('Uploading image to WaveSpeed...');
+        
+        // Загружаем изображение в WaveSpeed
+        const imageUrl = await uploadToWaveSpeed(imageBase64);
+        
         console.log('Generating animation...');
         
-        // Генерируем анимацию
-        const videoUrl = await generateAnimation(imageBase64, prompt);
+        // Генерируем видео
+        const waveSpeedVideoUrl = await generateVideo(imageUrl, prompt, 5);
         
-        // Загружаем видео в Firebase Storage для постоянного хранения
-        const videoFileName = `animation_${Date.now()}.mp4`;
-        const videoResponse = await fetch(videoUrl);
+        // Скачиваем видео и загружаем в Firebase Storage
+        console.log('Downloading generated video...');
+        const videoResponse = await fetch(waveSpeedVideoUrl);
+        if (!videoResponse.ok) {
+            throw new Error(`Failed to download video: ${videoResponse.status}`);
+        }
         const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
         
+        const videoFileName = `animation_${Date.now()}.mp4`;
         const file = bucket.file(`animations/${videoFileName}`);
         await file.save(videoBuffer, {
             metadata: { contentType: 'video/mp4' },
