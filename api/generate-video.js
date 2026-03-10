@@ -1,5 +1,27 @@
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
+import { GoogleGenAI } from '@google/genai';
+import admin from 'firebase-admin';
+
+// Используем ту же инициализацию Firebase Admin, что и в generate-card.js
+if (!admin.apps.length) {
+  try {
+    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountEnv) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
+    }
+    const serviceAccount = JSON.parse(serviceAccountEnv);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    });
+    console.log('Firebase Admin initialized successfully (generate-video)');
+  } catch (error) {
+    console.error('Firebase Admin initialization error:', error);
+    throw new Error(`Firebase init failed: ${error.message}`);
+  }
+}
+const bucket = admin.storage().bucket();
 
 export const config = {
     api: {
@@ -7,36 +29,80 @@ export const config = {
     },
 };
 
-const GIGACHAT_API_URL = 'https://gigachat.devices.sberbank.ru/api/v1';
+const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-// Получение токена доступа (GigaChat требует Bearer token)
-async function getAccessToken(authKey) {
-    const response = await fetch(`${GIGACHAT_API_URL}/oauth`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-            'Authorization': `Basic ${authKey}`
-        },
-        body: 'scope=GIGACHAT_API_PERS'
+/**
+ * Генерация видео через Veo 3.1
+ */
+async function generateVideo(prompt, referenceImage) {
+    try {
+        const base64Image = referenceImage.toString('base64');
+        const contents = [
+            {
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Image
+                }
+            },
+            prompt
+        ];
+
+        // Используем модель Veo 3.1 для генерации видео
+        const response = await ai.models.generateContent({
+            model: 'veo-3.1-generate-preview', // Специальная модель для видео
+            contents: contents,
+            config: {
+                responseModalities: ['Video'],
+                aspectRatio: '9:16', // Вертикальный формат для соцсетей
+                durationSeconds: 8,   // Максимальная длительность
+            }
+        });
+
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
+        }
+        throw new Error('Ответ не содержит видео');
+    } catch (error) {
+        console.error('Veo generation error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Загружает видео в Firebase Storage и возвращает публичный URL.
+ */
+async function uploadToStorage(base64Data, fileName) {
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+        throw new Error('Invalid base64 data');
+    }
+    const mimeType = matches[1];
+    const base64 = matches[2];
+    const buffer = Buffer.from(base64, 'base64');
+
+    const file = bucket.file(`videos/${fileName}`);
+    await file.save(buffer, {
+        metadata: { contentType: mimeType },
+        public: true,
     });
-    const data = await response.json();
-    return data.access_token;
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+    console.log(`Uploaded video to Storage: ${publicUrl}`);
+    return publicUrl;
 }
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
+    if (req.method !== 'POST') return res.status(405).end();
 
-    const authKey = process.env.GIGACHAT_AUTH_KEY;
-    if (!authKey) {
-        return res.status(500).json({ error: 'GIGACHAT_AUTH_KEY not set' });
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+        console.error('❌ GOOGLE_API_KEY not set');
+        return res.status(500).json({ error: 'GOOGLE_API_KEY not set' });
     }
 
     try {
-        // 1. Парсим multipart/form-data
-        const form = new IncomingForm({ keepExtensions: true });
+        const form = new IncomingForm({ keepExtensions: true, multiples: true });
         const { fields, files } = await new Promise((resolve, reject) => {
             form.parse(req, (err, fields, files) => {
                 if (err) reject(err);
@@ -44,71 +110,66 @@ export default async function handler(req, res) {
             });
         });
 
-        // 2. Извлекаем поля
-        const videoType = fields.videoType?.[0] || fields.videoType || 'standard';
-        const prompt = fields.prompt?.[0] || fields.prompt || '';
-        const resolution = fields.resolution?.[0] || fields.resolution || '512P';
+        const productName = fields.productName?.[0] || 'товар';
+        const videoType = fields.videoType?.[0] || 'standard';
+        const customPrompt = fields.customPrompt?.[0] || '';
 
-        // 3. Получаем загруженное фото
-        const photoFile = files.videoPhoto;
-        if (!photoFile) {
+        let referenceBuffer = null;
+        if (files.videoPhoto) { // В форме video.html у нас id="videoPhoto"
+            const photoArray = Array.isArray(files.videoPhoto) ? files.videoPhoto : [files.videoPhoto];
+            if (photoArray.length) {
+                referenceBuffer = fs.readFileSync(photoArray[0].filepath);
+                console.log(`Loaded reference image: ${photoArray[0].originalFilename}`);
+            }
+        }
+        if (!referenceBuffer) {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
-        const photoPath = photoFile.filepath;
-        const fileBuffer = fs.readFileSync(photoPath);
-        const base64Image = `data:${photoFile.mimetype};base64,${fileBuffer.toString('base64')}`;
+        // Базовый промпт для видео, используем тип видео
+        const basePrompt = customPrompt || 
+            `Create a dynamic product video for ${productName}. Show the product rotating smoothly, with soft studio lighting, highlighting its best features. Cinematic style, high quality, 8 seconds.`;
 
-        // 4. Получаем access token
-        const accessToken = await getAccessToken(authKey);
+        const variations = [
+            basePrompt,
+            `${basePrompt} (Slow motion, elegant reveal)`,
+            `${basePrompt} (360-degree view with subtle glow)`
+        ];
 
-        // 5. Формируем промпт (Kandinsky 5.0 Video Pro)
-        const promptTemplates = {
-            'standard': 'Профессиональное видео товара на белом фоне, студийное освещение, плавное вращение',
-            '360': 'Товар плавно вращается на 360 градусов, белый фон, детальный обзор',
-            'lifestyle': 'Товар используется в естественной обстановке, реалистично, повседневное использование',
-            'unboxing': 'Распаковка товара, руки открывают коробку, качественная анимация'
-        };
-        
-        const finalPrompt = prompt || promptTemplates[videoType] || promptTemplates.standard;
-
-        // 6. Вызываем Kandinsky Video Pro через GigaChat API
-        const videoResponse = await fetch(`${GIGACHAT_API_URL}/video/generation`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: 'KandinskyVideoPro',  // или 'KandinskyVideoLite' для более быстрой версии
-                prompt: finalPrompt,
-                image: base64Image,  // стартовый кадр
-                duration: 5,          // секунд
-                resolution: resolution, // 512P или 1024P
-                fps: 24
-            })
-        });
-
-        if (!videoResponse.ok) {
-            const errorData = await videoResponse.text();
-            throw new Error(`Kandinsky video error: ${errorData}`);
+        const videos = [];
+        // Генерируем видео (Veo работает медленнее, поэтому только 1 вариант)
+        try {
+            console.log('Generating video...');
+            const videoDataUrl = await generateVideo(variations[0], referenceBuffer);
+            
+            // Загружаем в Storage
+            const fileName = `video_${Date.now()}.mp4`;
+            const publicUrl = await uploadToStorage(videoDataUrl, fileName);
+            videos.push(publicUrl);
+            
+            console.log('Video generated and uploaded');
+        } catch (err) {
+            console.error('❌ Ошибка при генерации видео:', err);
         }
 
-        const videoData = await videoResponse.json();
+        if (videos.length === 0) {
+            throw new Error('Не удалось сгенерировать видео');
+        }
 
-        // 7. Возвращаем результат
-        res.status(200).json({
-            success: true,
-            videoUrl: videoData.video_url,  // URL сгенерированного видео
-            duration: 5,
-            type: videoType
-        });
+        // Удаляем временные файлы
+        if (files.videoPhoto) {
+            const photoArray = Array.isArray(files.videoPhoto) ? files.videoPhoto : [files.videoPhoto];
+            photoArray.forEach(file => {
+                if (file.filepath && fs.existsSync(file.filepath)) {
+                    fs.unlinkSync(file.filepath);
+                }
+            });
+        }
 
-        // 8. Удаляем временный файл
-        fs.unlinkSync(photoPath);
-
+        console.log('✅ Успешно сгенерировано видео');
+        res.status(200).json({ videos });
     } catch (error) {
-        console.error('Video generation error:', error);
+        console.error('❌ Ошибка в handler:', error);
         res.status(500).json({ error: error.message });
     }
 }
