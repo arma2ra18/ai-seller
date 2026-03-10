@@ -11,7 +11,8 @@ import {
     updatePassword, 
     deleteUser,
     reauthenticateWithCredential,
-    EmailAuthProvider 
+    EmailAuthProvider,
+    updatePhoneNumber
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 
 let currentUser = null;
@@ -48,6 +49,8 @@ async function loadUserData() {
         } else {
             await setDoc(doc(db, 'users', currentUser.uid), {
                 email: currentUser.email,
+                displayName: currentUser.displayName || '',
+                phoneNumber: currentUser.phoneNumber || '',
                 plan: 'start',
                 balance: 30,
                 usedGenerations: 0,
@@ -570,7 +573,7 @@ window.closeModal = function() {
     selectedPrice = 0;
 };
 
-// ========== НАСТРОЙКИ ПРОФИЛЯ ==========
+// ========== НАСТРОЙКИ ПРОФИЛЯ (С СОХРАНЕНИЕМ В БД) ==========
 
 function loadSettingsData() {
     if (!currentUser || !userData) return;
@@ -628,7 +631,18 @@ window.updateDisplayName = async function() {
     }
     
     try {
+        // Обновляем в Firebase Auth
         await updateProfile(auth.currentUser, { displayName: newName });
+        
+        // Обновляем в Firestore
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            displayName: newName
+        });
+        
+        // Обновляем локальные данные
+        currentUser.displayName = newName;
+        userData.displayName = newName;
+        
         showNotification('Имя обновлено!', 'success');
     } catch (error) {
         console.error('Error updating name:', error);
@@ -660,9 +674,17 @@ window.confirmEmailChange = async function() {
     }
     
     try {
+        // Требуется повторная аутентификация
         const credential = EmailAuthProvider.credential(currentUser.email, password);
         await reauthenticateWithCredential(currentUser, credential);
+        
+        // Меняем email в Auth
         await updateEmail(currentUser, newEmail);
+        
+        // Обновляем email в Firestore
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            email: newEmail
+        });
         
         showNotification('Email успешно изменён!', 'success');
         closeEmailModal();
@@ -681,7 +703,21 @@ window.updatePhoneNumber = async function() {
     }
     
     try {
-        await updateProfile(auth.currentUser, { phoneNumber: newPhone });
+        // Обновляем телефон в Auth
+        // Внимание: updatePhoneNumber требует рекапчу и верификацию!
+        // Для упрощения сохраняем только в Firestore
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            phoneNumber: newPhone
+        });
+        
+        // Также пытаемся обновить в Auth (если не выйдет, просто проигнорируем)
+        try {
+            await updateProfile(auth.currentUser, { phoneNumber: newPhone });
+        } catch (e) {
+            console.log('Phone update in Auth failed, saved only in Firestore');
+        }
+        
+        userData.phoneNumber = newPhone;
         showNotification('Номер телефона обновлён!', 'success');
     } catch (error) {
         console.error('Error updating phone:', error);
@@ -722,8 +758,12 @@ window.deleteAccount = async function() {
     }
     
     try {
+        // Сначала удаляем данные из Firestore
         await deleteDoc(doc(db, 'users', currentUser.uid));
+        
+        // Затем удаляем сам аккаунт из Auth
         await deleteUser(currentUser);
+        
         showNotification('Аккаунт удалён. Перенаправление...', 'info');
         setTimeout(() => window.location.href = '/', 2000);
     } catch (error) {
@@ -741,11 +781,14 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Закрытие модального окна по клику вне его
+// Закрытие модальных окон по клику вне их
 window.onclick = function(event) {
-    const modal = document.getElementById('paymentModal');
-    if (event.target === modal) closeModal();
+    const paymentModal = document.getElementById('paymentModal');
+    if (event.target === paymentModal) closeModal();
     
     const emailModal = document.getElementById('emailModal');
     if (event.target === emailModal) closeEmailModal();
+    
+    const generationModal = document.getElementById('generationModal');
+    if (event.target === generationModal) hideGenerationModal();
 };
