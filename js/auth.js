@@ -1,7 +1,6 @@
 import { auth, db } from './firebase.js';
 import { 
     signOut,
-    sendPasswordResetEmail,
     GoogleAuthProvider,
     signInWithPopup,
     RecaptchaVerifier,
@@ -12,7 +11,7 @@ import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/f
 
 // Переменные для хранения confirmationResult и режима (login/register)
 let confirmationResult = null;
-let currentMode = null; // 'login' или 'register'
+let currentMode = null;
 
 // Переключение вкладок
 window.showTab = function(tab) {
@@ -44,22 +43,25 @@ window.sendPhoneCode = async function(mode) {
     }
 
     try {
-        // Инициализируем невидимую reCAPTCHA
-        if (!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                'size': 'invisible',
-                'callback': () => {}
-            });
+        // Удаляем старый recaptchaVerifier, если есть
+        if (window.recaptchaVerifier) {
+            window.recaptchaVerifier.clear();
+            window.recaptchaVerifier = null;
         }
 
-        // Отправляем код
+        // Создаём новый recaptchaVerifier
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': () => {
+                console.log('reCAPTCHA verified');
+            }
+        });
+
         const appVerifier = window.recaptchaVerifier;
         confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
         
-        // Запоминаем режим (login или register)
         currentMode = mode;
         
-        // Показываем модальное окно для ввода кода
         const codeModal = document.getElementById('codeModal');
         if (codeModal) codeModal.classList.add('show');
         
@@ -83,33 +85,53 @@ window.verifyPhoneCode = async function() {
     }
     
     try {
-        // Подтверждаем код
+        console.log('Verifying code:', code);
         const result = await confirmationResult.confirm(code);
         const user = result.user;
+        console.log('User authenticated:', user.uid);
         
-        // Если это регистрация (новый пользователь) — создаём запись в Firestore
-        if (currentMode === 'register') {
-            const userDoc = await getDoc(doc(db, 'users', user.uid));
-            if (!userDoc.exists()) {
-                await setDoc(doc(db, 'users', user.uid), {
-                    phoneNumber: user.phoneNumber,
-                    email: user.email || '',
-                    displayName: user.displayName || '',
-                    plan: 'start',
-                    balance: 30,
-                    usedGenerations: 0,
-                    createdAt: new Date().toISOString()
-                });
+        // Всегда создаём/обновляем запись в Firestore
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (!userDoc.exists()) {
+            console.log('Creating new user in Firestore');
+            await setDoc(userRef, {
+                phoneNumber: user.phoneNumber,
+                email: user.email || '',
+                displayName: user.displayName || '',
+                plan: 'start',
+                balance: 30,
+                usedGenerations: 0,
+                createdAt: new Date().toISOString()
+            });
+        } else {
+            console.log('User already exists in Firestore');
+            // Если нужно, можно обновить номер телефона
+            if (user.phoneNumber && userDoc.data().phoneNumber !== user.phoneNumber) {
+                await setDoc(userRef, { phoneNumber: user.phoneNumber }, { merge: true });
             }
         }
         
         messageEl.textContent = '✅ Успешно! Перенаправляем...';
         messageEl.className = 'auth-message success';
         closeCodeModal();
-        setTimeout(() => window.location.href = '/dashboard.html', 1500);
+        
+        // Небольшая задержка перед редиректом
+        setTimeout(() => {
+            window.location.href = '/dashboard.html';
+        }, 1500);
     } catch (error) {
         console.error('Verification error:', error);
-        messageEl.textContent = '❌ Неверный код: ' + error.message;
+        
+        // Детальный разбор ошибки
+        if (error.code === 'auth/invalid-verification-code') {
+            messageEl.textContent = '❌ Неверный код. Попробуйте ещё раз.';
+        } else if (error.code === 'auth/code-expired') {
+            messageEl.textContent = '❌ Код истёк. Запросите новый.';
+        } else {
+            messageEl.textContent = '❌ Ошибка: ' + error.message;
+        }
         messageEl.className = 'auth-message error';
     }
 };
@@ -161,7 +183,7 @@ window.resendPhoneCode = async function() {
         return;
     }
     try {
-        // Повторно отправляем код (используем тот же verificationId)
+        // Повторно отправляем код
         await confirmationResult.confirm('');
         alert('Код отправлен повторно');
     } catch (error) {
