@@ -63,15 +63,12 @@ async function loadUserData() {
     }
 }
 
-// Обновление интерфейса (баланс, тариф) – теперь используем balance напрямую
+// Обновление интерфейса (только баланс, без дроби)
 function updateUI() {
     if (!userData) return;
     
     // Баланс из Firestore (поле balance)
     const currentBalance = userData.balance || 0;
-    
-    // Максимальное количество токенов (оставляем для совместимости, но не используем для ограничений)
-    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
 
     // Обновляем баланс везде
     const balanceSelectors = [
@@ -86,18 +83,8 @@ function updateUI() {
         });
     });
 
-    // Обновляем максимум везде (опционально, можно убрать если не нужно)
-    const maxSelectors = [
-        '#maxGenerations',
-        '#maxGenerationsDetail',
-        '#sidebarMaxGen'
-    ];
-    
-    maxSelectors.forEach(selector => {
-        document.querySelectorAll(selector).forEach(el => {
-            if (el) el.textContent = maxGen;
-        });
-    });
+    // Можно оставить максимум для других целей, но не отображать
+    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
 
     // Email в шапке и сайдбаре
     const userEmailEl = document.getElementById('userEmail');
