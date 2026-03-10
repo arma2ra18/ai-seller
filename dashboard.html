@@ -26,7 +26,22 @@
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
         <aside class="sidebar glass">
-            <div class="sidebar-logo">Prodiger</div>
+            <div class="sidebar-logo-container">
+                <div class="sidebar-logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="14" stroke="url(#grad2)" stroke-width="2" fill="none"/>
+                        <path d="M10 16L14 20L22 12" stroke="url(#grad2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#0071e3" />
+                                <stop offset="50%" stop-color="#9b5ef0" />
+                                <stop offset="100%" stop-color="#f5b041" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="sidebar-logo-text gradient-logo">Prodiger</div>
+            </div>
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item active" data-section="balance">💰 Баланс</li>
@@ -118,7 +133,7 @@
 
             <!-- Динамические секции -->
             <div class="content-area glass" id="contentArea">
-                <!-- Баланс (бывшие Токены) -->
+                <!-- Баланс -->
                 <div class="content-section active" id="balance-section">
                     <h2>Баланс и статистика</h2>
                     <div class="info-cards">
@@ -327,7 +342,7 @@
         </main>
     </div>
 
-    <!-- Модальное окно пополнения (упрощённое, без пакетов) -->
+    <!-- Модальное окно пополнения -->
     <div id="paymentModal" class="modal">
         <div class="modal-content glass payment-modal">
             <button class="modal-close" onclick="closeModal()">&times;</button>
