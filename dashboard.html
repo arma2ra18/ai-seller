@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <!-- Видеофон заменён на рабочий источник (можно заменить на своё видео) -->
+    <!-- Видеофон (без изменений) -->
     <div class="video-background" style="opacity: 0.2;">
         <video autoplay muted loop playsinline>
             <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
@@ -21,7 +21,7 @@
     </div>
 
     <div class="dashboard-wrapper">
-        <!-- Сайдбар -->
+        <!-- Сайдбар (без Фото, Видео, Тарифы) -->
         <aside class="sidebar glass">
             <div class="sidebar-logo">AI Seller</div>
             <nav class="sidebar-nav">
@@ -29,10 +29,7 @@
                     <li class="menu-item active" data-section="tokens">💰 Токены</li>
                     <li class="menu-item" data-section="wb">📦 Wildberries</li>
                     <li class="menu-item" data-section="ozon">🛒 Ozon</li>
-                    <li class="menu-item" data-section="photo">🖼️ Фото</li>
-                    <li class="menu-item" data-section="video">🎬 Видео</li>
                     <li class="menu-item" data-section="history">📜 История</li>
-                    <li class="menu-item" data-section="tariffs">💎 Тарифы</li>
                     <li class="menu-item" data-section="settings">⚙️ Настройки</li>
                 </ul>
             </nav>
@@ -56,7 +53,7 @@
                 <p>AI-сервис для создания карточек Wildberries и Ozon</p>
             </div>
 
-            <!-- Статистика -->
+            <!-- Статистика (без изменений) -->
             <div class="stats-grid">
                 <div class="stat-card glass card-hover">
                     <div class="stat-icon">👤</div>
@@ -226,91 +223,10 @@
                     </div>
                 </div>
 
-                <!-- Фото -->
-                <div class="content-section" id="photo-section">
-                    <h2>Генерация фото товара</h2>
-                    <div class="generation-form">
-                        <div class="form-group">
-                            <label>Загрузите фото товара</label>
-                            <div class="file-upload-wrapper">
-                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('productPhoto').click()">Выбрать файл</button>
-                                <input type="file" id="productPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileInfo('productPhoto', 'photoFileInfo')">
-                                <span class="file-upload-info" id="photoFileInfo">Файл не выбран</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Дополнительные пожелания</label>
-                            <textarea id="photoPrompt" rows="3" placeholder="Например: на мраморном столе, с кофейными зернами"></textarea>
-                        </div>
-                        <button class="btn btn-primary btn-large glow" id="generatePhotoBtn" onclick="generateProductPhoto()">✨ Сгенерировать фото (2 токена)</button>
-                    </div>
-                </div>
-
-                <!-- Видео -->
-                <div class="content-section" id="video-section">
-                    <h2>Генерация видео товара</h2>
-                    <div class="generation-form">
-                        <div class="form-group">
-                            <label>Загрузите фото товара</label>
-                            <div class="file-upload-wrapper">
-                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('videoPhoto').click()">Выбрать файл</button>
-                                <input type="file" id="videoPhoto" accept="image/*" class="file-input-hidden" onchange="updateFileInfo('videoPhoto', 'videoFileInfo')">
-                                <span class="file-upload-info" id="videoFileInfo">Файл не выбран</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Тип видео</label>
-                            <select id="videoType">
-                                <option value="standard">Стандартный обзор</option>
-                                <option value="360">Обзор на 360°</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary btn-large glow" id="generateVideoBtn" onclick="generateVideo()">✨ Сгенерировать видео (5 токенов)</button>
-                    </div>
-                </div>
-
                 <!-- История -->
                 <div class="content-section" id="history-section">
                     <h2>История генераций</h2>
                     <div class="history-list" id="historyListDetail"></div>
-                </div>
-
-                <!-- Тарифы -->
-                <div class="content-section" id="tariffs-section">
-                    <h2>Тарифы и подписка</h2>
-                    <div class="pricing-grid">
-                        <div class="pricing-card glass card-hover">
-                            <h3>Старт</h3>
-                            <div class="price">990 ₽<span>/мес</span></div>
-                            <ul class="features-list">
-                                <li>30 генераций</li>
-                                <li>Все типы контента</li>
-                                <li>История в облаке</li>
-                            </ul>
-                            <button class="btn btn-primary btn-block glow" onclick="selectPlan('start')">Выбрать</button>
-                        </div>
-                        <div class="pricing-card popular glass card-hover">
-                            <div class="popular-tag">🔥 Хит продаж</div>
-                            <h3>Бизнес</h3>
-                            <div class="price">2 990 ₽<span>/мес</span></div>
-                            <ul class="features-list">
-                                <li>200 генераций</li>
-                                <li>Все типы контента</li>
-                                <li>Массовая генерация</li>
-                            </ul>
-                            <button class="btn btn-primary btn-block glow" onclick="selectPlan('business')">Выбрать</button>
-                        </div>
-                        <div class="pricing-card glass card-hover">
-                            <h3>Профи</h3>
-                            <div class="price">9 900 ₽<span>/мес</span></div>
-                            <ul class="features-list">
-                                <li>Безлимит генераций</li>
-                                <li>Все типы контента</li>
-                                <li>VIP-поддержка</li>
-                            </ul>
-                            <button class="btn btn-primary btn-block glow" onclick="selectPlan('pro')">Выбрать</button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Настройки -->
@@ -343,14 +259,56 @@
         </main>
     </div>
 
-    <!-- Модальное окно оплаты -->
+    <!-- Модальное окно оплаты (новое) -->
     <div id="paymentModal" class="modal">
         <div class="modal-content glass">
             <button class="modal-close" onclick="closeModal()">&times;</button>
-            <h2 id="modalTitle">Пополнение баланса</h2>
-            <p id="modalDescription">Вы выбрали тариф: <span id="selectedPlanName">—</span></p>
-            <p>Сумма к оплате: <strong id="modalAmount">0 ₽</strong></p>
-            <p class="text-muted">Оплата будет выполнена через ЮKassa.</p>
+            <h2 class="gradient-text">Пополнение баланса</h2>
+            
+            <div class="payment-options">
+                <!-- Предустановленные пакеты -->
+                <div class="package-grid">
+                    <div class="package-card" onclick="selectPackage(30, 990)">
+                        <div class="package-tokens">30 токенов</div>
+                        <div class="package-price">990 ₽</div>
+                        <div class="package-bonus">+0 бонусов</div>
+                    </div>
+                    <div class="package-card" onclick="selectPackage(100, 2990)">
+                        <div class="package-tokens">100 токенов</div>
+                        <div class="package-price">2 990 ₽</div>
+                        <div class="package-bonus">+10 бонусов</div>
+                    </div>
+                    <div class="package-card" onclick="selectPackage(300, 7990)">
+                        <div class="package-tokens">300 токенов</div>
+                        <div class="package-price">7 990 ₽</div>
+                        <div class="package-bonus">+30 бонусов</div>
+                    </div>
+                </div>
+
+                <!-- Свой вариант -->
+                <div class="custom-package">
+                    <h3>Своё количество</h3>
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label>Токенов</label>
+                            <input type="number" id="customTokens" min="1" value="50" step="1" oninput="calculateCustomPrice()">
+                        </div>
+                        <div class="form-group half">
+                            <label>Цена (33 ₽/токен)</label>
+                            <input type="text" id="customPrice" value="1650 ₽" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Выбранный пакет -->
+                <div class="selected-info">
+                    <p>Вы выбрали: <span id="selectedPackageName">—</span></p>
+                    <p>Сумма к оплате: <strong id="modalAmount">0 ₽</strong></p>
+                </div>
+            </div>
+
+            <p class="text-muted" style="margin: 10px 0 20px;">После оплаты токены поступят на ваш баланс автоматически.</p>
+            
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-primary glow" onclick="confirmPayment()">Оплатить</button>
                 <button class="btn btn-outline" onclick="closeModal()">Отмена</button>
@@ -358,7 +316,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно загрузки (генерация) -->
+    <!-- Модальное окно загрузки (генерация) – без изменений -->
     <div id="generationModal" class="modal">
         <div class="modal-content glass loading-content">
             <h2 class="gradient-text">✨ Генерация карточек ✨</h2>
@@ -374,7 +332,7 @@
         </div>
     </div>
 
-    <!-- Лайтбокс для изображений -->
+    <!-- Лайтбокс для изображений (без изменений) -->
     <div id="lightbox" class="lightbox" onclick="closeLightbox()">
         <span class="lightbox-close">&times;</span>
         <img class="lightbox-content" id="lightbox-img" alt="">

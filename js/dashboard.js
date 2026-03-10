@@ -12,6 +12,11 @@ let userData = null;
 let generationInterval;
 let generationStartTime;
 
+// Переменные для пополнения
+let selectedTokens = 0;
+let selectedPrice = 0;
+
+// Следим за состоянием авторизации
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
@@ -21,6 +26,7 @@ onAuthStateChanged(auth, async (user) => {
     await loadUserData();
 });
 
+// Загрузка данных пользователя из Firestore
 async function loadUserData() {
     if (!currentUser) return;
     try {
@@ -46,6 +52,7 @@ async function loadUserData() {
     }
 }
 
+// Обновление интерфейса (баланс, тариф)
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
@@ -67,6 +74,7 @@ function updateUI() {
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
 }
 
+// Обновление плиток статистики
 function updateStats() {
     const statUser = document.getElementById('statUser');
     if (statUser) statUser.textContent = currentUser.email.split('@')[0];
@@ -86,6 +94,7 @@ function updateStats() {
     if (statBonus) statBonus.textContent = 0;
 }
 
+// Выход
 window.logout = async function() {
     try {
         await signOut(auth);
@@ -216,7 +225,6 @@ window.generateWBCard = async function() {
         const result = await response.json();
         displayCardResults(result, 'wb');
 
-        // Сохраняем в историю
         await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'wb-card',
             productName,
@@ -224,10 +232,9 @@ window.generateWBCard = async function() {
             timestamp: new Date().toISOString()
         });
 
-        // Обновляем использованные генерации
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
         
-        // Перезагружаем данные пользователя, чтобы баланс обновился
+        // Перезагружаем данные пользователя
         const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (updatedDoc.exists()) {
             userData = updatedDoc.data();
@@ -464,69 +471,88 @@ window.viewHistoryItem = async function(docId) {
     }
 };
 
-// ----- Пополнение баланса -----
-let currentPlan = null;
-
+// ----- НОВЫЕ ФУНКЦИИ ДЛЯ ПОПОЛНЕНИЯ -----
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
-    if (modal) modal.classList.add('show');
-    const title = document.getElementById('modalTitle');
-    if (title) title.textContent = 'Пополнение баланса';
-    const desc = document.getElementById('modalDescription');
-    if (desc) desc.innerHTML = 'Выберите один из тарифов ниже.';
-    const planSpan = document.getElementById('selectedPlanName');
-    if (planSpan) planSpan.textContent = '—';
-    const amount = document.getElementById('modalAmount');
-    if (amount) amount.textContent = '0 ₽';
+    if (modal) {
+        modal.classList.add('show');
+        // Сбрасываем выбранный пакет
+        selectedTokens = 0;
+        selectedPrice = 0;
+        document.getElementById('selectedPackageName').textContent = '—';
+        document.getElementById('modalAmount').textContent = '0 ₽';
+        const customInput = document.getElementById('customTokens');
+        if (customInput) {
+            customInput.value = 50;
+            calculateCustomPrice();
+        }
+        // Снимаем выделение с карточек
+        document.querySelectorAll('.package-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+    }
 };
 
-window.selectPlan = function(plan) {
-    const plans = {
-        'start': { name: 'Старт', price: 990 },
-        'business': { name: 'Бизнес', price: 2990 },
-        'pro': { name: 'Профи', price: 9900 }
-    };
-    currentPlan = plan;
+window.selectPackage = function(tokens, price) {
+    selectedTokens = tokens;
+    selectedPrice = price;
+    document.getElementById('selectedPackageName').textContent = `${tokens} токенов за ${price} ₽`;
+    document.getElementById('modalAmount').textContent = `${price} ₽`;
+    
+    // Визуально выделяем выбранный пакет
+    document.querySelectorAll('.package-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    // Добавляем класс selected текущему элементу
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('selected');
+    }
+};
 
-    const title = document.getElementById('modalTitle');
-    if (title) title.textContent = 'Оформление подписки';
-    const planSpan = document.getElementById('selectedPlanName');
-    if (planSpan) planSpan.textContent = plans[plan].name;
-    const amount = document.getElementById('modalAmount');
-    if (amount) amount.textContent = `${plans[plan].price} ₽`;
-    const modal = document.getElementById('paymentModal');
-    if (modal) modal.classList.add('show');
+window.calculateCustomPrice = function() {
+    const tokens = parseInt(document.getElementById('customTokens').value) || 0;
+    const pricePerToken = 33; // 33 ₽ за токен
+    const price = tokens * pricePerToken;
+    document.getElementById('customPrice').value = `${price} ₽`;
+    
+    // Если пользователь выбирает свой вариант, обновляем информацию
+    document.getElementById('selectedPackageName').textContent = `${tokens} токенов за ${price} ₽ (своё)`;
+    document.getElementById('modalAmount').textContent = `${price} ₽`;
+    selectedTokens = tokens;
+    selectedPrice = price;
+    
+    // Снимаем выделение с карточек
+    document.querySelectorAll('.package-card').forEach(card => {
+        card.classList.remove('selected');
+    });
 };
 
 window.confirmPayment = function() {
-    if (!currentPlan) {
-        showNotification('Сначала выберите тариф', 'warning');
+    if (selectedTokens <= 0 || selectedPrice <= 0) {
+        showNotification('Выберите количество токенов', 'warning');
         return;
     }
 
-    const tokensMap = { 'start': 30, 'business': 200, 'pro': 999999 };
-    const tokens = tokensMap[currentPlan];
-
     showNotification('Оплата обрабатывается...', 'info');
 
+    // Имитация оплаты через 2 секунды
     setTimeout(async () => {
         try {
+            // Добавляем токены к текущему балансу
+            const newBalance = (userData.balance || 0) + selectedTokens;
             await updateDoc(doc(db, 'users', currentUser.uid), {
-                plan: currentPlan,
-                balance: tokens,
-                usedGenerations: userData.usedGenerations || 0
+                balance: newBalance,
             });
-            // Перезагружаем данные
-            const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (updatedDoc.exists()) {
-                userData = updatedDoc.data();
-            }
+            
+            // Обновляем локальные данные
+            userData.balance = newBalance;
             updateUI();
-            showNotification(`Тариф "${currentPlan}" активирован!`, 'success');
+            
+            showNotification(`Баланс пополнен на ${selectedTokens} токенов!`, 'success');
             closeModal();
         } catch (error) {
-            console.error('Ошибка при активации:', error);
-            showNotification('Ошибка при активации', 'error');
+            console.error('Ошибка при пополнении:', error);
+            showNotification('Ошибка при пополнении', 'error');
         }
     }, 2000);
 };
@@ -534,7 +560,8 @@ window.confirmPayment = function() {
 window.closeModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) modal.classList.remove('show');
-    currentPlan = null;
+    selectedTokens = 0;
+    selectedPrice = 0;
 };
 
 // ----- Уведомления -----
@@ -546,6 +573,7 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
+// Закрытие модального окна по клику вне его
 window.onclick = function(event) {
     const modal = document.getElementById('paymentModal');
     if (event.target === modal) closeModal();
