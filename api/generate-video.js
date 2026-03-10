@@ -2,6 +2,8 @@ import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import admin from 'firebase-admin';
+import GIFEncoder from 'gifencoder';
+import { createCanvas, loadImage } from 'canvas';
 
 // Инициализация Firebase Admin
 if (!admin.apps.length) {
@@ -26,23 +28,91 @@ const bucket = admin.storage().bucket();
 export const config = {
     api: {
         bodyParser: false,
-        maxDuration: 300, // 5 минут для Vercel Pro
+        maxDuration: 60, // 60 секунд достаточно
     },
 };
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Загружает видео в Firebase Storage и возвращает публичный URL
+ * Генерация одного изображения через Gemini
  */
-async function uploadToStorage(videoBuffer, fileName, mimeType = 'video/mp4') {
-    const file = bucket.file(`videos/${fileName}`);
-    await file.save(videoBuffer, {
-        metadata: { contentType: mimeType },
-        public: true,
+async function generateGeminiImage(prompt, referenceImage) {
+    try {
+        const base64Image = referenceImage.toString('base64');
+        const contents = [
+            {
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: base64Image
+                }
+            },
+            prompt
+        ];
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-pro-image-preview',
+            contents: contents,
+            config: {
+                responseModalities: ['Image'],
+                aspectRatio: '1:1',
+            }
+        });
+
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                const base64Data = part.inlineData.data;
+                const buffer = Buffer.from(base64Data, 'base64');
+                return buffer;
+            }
+        }
+        throw new Error('Ответ не содержит изображения');
+    } catch (error) {
+        console.error('Gemini generation error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Создание GIF из массива буферов изображений
+ */
+async function createGIF(imageBuffers, outputPath) {
+    const encoder = new GIFEncoder(1024, 1024);
+    const stream = encoder.createReadStream().pipe(fs.createWriteStream(outputPath));
+
+    encoder.start();
+    encoder.setRepeat(0); // Бесконечное повторение
+    encoder.setDelay(200); // 200 мс между кадрами (5 кадров в секунду)
+    encoder.setQuality(10); // Качество GIF
+
+    for (const buffer of imageBuffers) {
+        const image = await loadImage(buffer);
+        const canvas = createCanvas(1024, 1024);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0, 1024, 1024);
+        encoder.addFrame(ctx);
+    }
+
+    encoder.finish();
+    
+    return new Promise((resolve, reject) => {
+        stream.on('finish', resolve);
+        stream.on('error', reject);
     });
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-    console.log(`✅ Uploaded video to Storage: ${publicUrl}`);
+}
+
+/**
+ * Загружает видео/GIF в Firebase Storage и возвращает публичный URL
+ */
+async function uploadToStorage(filePath, fileName, mimeType = 'image/gif') {
+    const file = bucket.file(`videos/${fileName}`);
+    await bucket.upload(filePath, {
+        destination: `videos/${fileName}`,
+        metadata: { contentType: mimeType },
+    });
+    await file.makePublic();
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/videos/${fileName}`;
+    console.log(`✅ Uploaded to Storage: ${publicUrl}`);
     return publicUrl;
 }
 
@@ -80,90 +150,54 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
-        // Конвертируем изображение в base64
-        const base64Image = referenceBuffer.toString('base64');
-
-        // Промпты для разных типов видео
-        const prompts = {
-            standard: `Create a professional product showcase video of ${productName}. Smooth rotation, studio lighting, high quality, cinematic.`,
-            '360': `Create a 360-degree rotating product video of ${productName}. Smooth rotation showing all angles, premium quality.`,
-            slowmotion: `Create a slow-motion elegant product video of ${productName}. Smooth floating movement, soft lighting, luxurious feel.`
-        };
-
-        const finalPrompt = customPrompt || prompts[videoType] || prompts.standard;
-
-        console.log('🎬 Starting video generation with Veo 3.1...');
-
-        // ===== ИСПРАВЛЕННЫЙ КОД =====
-        // Правильный синтаксис согласно документации Google [citation:4][citation:8]
-        const operation = await ai.models.generateVideos({
-            model: "veo-3.1-generate-preview",
-            prompt: finalPrompt,
-            config: {
-                // Передаём изображение как reference_images
-                referenceImages: [{
-                    bytes: base64Image,
-                    mimeType: 'image/jpeg'
-                }],
-                aspectRatio: "9:16", // Вертикальный формат для соцсетей
-                durationSeconds: 8,
-                resolution: "1080p",
-                generateAudio: true,
-            }
-        });
-
-        console.log('⏳ Waiting for video generation to complete...');
-
-        // Polling для проверки статуса [citation:4]
-        let attempts = 0;
-        const maxAttempts = 30; // 5 минут с интервалом 10 секунд
-        let videoData = null;
-
-        while (!operation.done && attempts < maxAttempts) {
-            console.log(`Waiting for video generation... (${attempts + 1}/${maxAttempts})`);
-            await new Promise(resolve => setTimeout(resolve, 10000)); // Ждём 10 секунд [citation:4]
+        // Генерируем 8 кадров с разных ракурсов
+        const prompts = [];
+        for (let i = 0; i < 8; i++) {
+            let angle = i * 45; // Поворот на 45 градусов каждый кадр
+            let prompt = `Профессиональное фото товара "${productName}" с угла ${angle} градусов. Студийное освещение, белый фон, высокое качество, 8k. Товар занимает 80% кадра.`;
             
-            // Обновляем статус операции
-            const updatedOperation = await ai.operations.getVideosOperation({
-                operation: operation,
-            });
-            operation.done = updatedOperation.done;
-            
-            if (updatedOperation.done) {
-                if (updatedOperation.error) {
-                    throw new Error(`Video generation failed: ${updatedOperation.error.message}`);
-                }
-                // Получаем сгенерированное видео
-                if (updatedOperation.response?.generatedVideos?.length > 0) {
-                    const videoFile = updatedOperation.response.generatedVideos[0].video;
-                    
-                    // Скачиваем видео [citation:4]
-                    const downloadPath = `/tmp/video_${Date.now()}.mp4`;
-                    await ai.files.download({
-                        file: videoFile,
-                        downloadPath: downloadPath,
-                    });
-                    
-                    // Читаем скачанный файл
-                    videoData = fs.readFileSync(downloadPath);
-                    
-                    // Удаляем временный файл
-                    fs.unlinkSync(downloadPath);
-                    break;
-                }
+            if (videoType === '360') {
+                prompt = `Товар "${productName}", вид с угла ${angle} градусов. Полный оборот, студийная съемка, белый фон, высокая детализация.`;
+            } else if (videoType === 'slowmotion') {
+                prompt = `Элегантная демонстрация товара "${productName}" с угла ${angle} градусов. Мягкий свет, премиальный стиль, белый фон.`;
             }
-            attempts++;
+            
+            prompts.push(prompt);
         }
 
-        if (!videoData) {
-            throw new Error('Video generation timeout after 5 minutes');
+        console.log('🎬 Генерация кадров анимации...');
+        
+        // Генерируем все кадры параллельно
+        const frameBuffers = [];
+        for (let i = 0; i < prompts.length; i++) {
+            console.log(`Генерация кадра ${i+1}/${prompts.length}...`);
+            try {
+                const imageBuffer = await generateGeminiImage(prompts[i], referenceBuffer);
+                frameBuffers.push(imageBuffer);
+            } catch (err) {
+                console.error(`Ошибка генерации кадра ${i+1}:`, err);
+                // Если не удалось сгенерировать кадр, используем предыдущий
+                if (frameBuffers.length > 0) {
+                    frameBuffers.push(frameBuffers[frameBuffers.length - 1]);
+                }
+            }
         }
 
-        // Загружаем в Firebase Storage
-        const fileName = `video_${Date.now()}.mp4`;
-        const publicUrl = await uploadToStorage(videoData, fileName, 'video/mp4');
+        if (frameBuffers.length < 3) {
+            throw new Error('Не удалось сгенерировать достаточно кадров');
+        }
+
+        // Создаём GIF
+        console.log('🎨 Создание GIF анимации...');
+        const gifPath = `/tmp/animation_${Date.now()}.gif`;
+        await createGIF(frameBuffers, gifPath);
+
+        // Загружаем в Storage
+        const fileName = `animation_${Date.now()}.gif`;
+        const publicUrl = await uploadToStorage(gifPath, fileName, 'image/gif');
 
         // Удаляем временные файлы
+        fs.unlinkSync(gifPath);
         if (files.videoPhoto) {
             const photoArray = Array.isArray(files.videoPhoto) ? files.videoPhoto : [files.videoPhoto];
             photoArray.forEach(file => {
@@ -173,11 +207,11 @@ export default async function handler(req, res) {
             });
         }
 
-        console.log('✅ Video generated and uploaded successfully');
+        console.log('✅ Анимация создана и загружена');
         res.status(200).json({ videos: [publicUrl] });
 
     } catch (error) {
-        console.error('❌ Error in video generation:', error);
+        console.error('❌ Ошибка:', error);
         res.status(500).json({ error: error.message });
     }
 }
