@@ -1012,3 +1012,82 @@ section {
     color: var(--accent);
     margin: 10px 0;
 }
+/* Стили для социальных кнопок */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    margin: 20px 0;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+    margin: 0 15px;
+}
+
+.social-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.btn-google {
+    background: white;
+    color: #333;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-google:hover {
+    background: #f5f5f5;
+}
+
+.btn-phone {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-phone:hover {
+    background: var(--bg-input);
+}
+
+.social-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.btn-link:hover {
+    color: var(--accent-hover);
+}
+
+/* reCAPTCHA */
+#recaptcha-container {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+}
