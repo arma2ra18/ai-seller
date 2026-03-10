@@ -2,8 +2,6 @@ import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import admin from 'firebase-admin';
-import GIFEncoder from 'gifencoder';
-import { createCanvas, loadImage } from 'canvas';
 
 // Инициализация Firebase Admin
 if (!admin.apps.length) {
@@ -28,15 +26,12 @@ const bucket = admin.storage().bucket();
 export const config = {
     api: {
         bodyParser: false,
-        maxDuration: 60, // 60 секунд достаточно
+        maxDuration: 60,
     },
 };
 
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-/**
- * Генерация одного изображения через Gemini
- */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
         const base64Image = referenceImage.toString('base64');
@@ -73,44 +68,12 @@ async function generateGeminiImage(prompt, referenceImage) {
     }
 }
 
-/**
- * Создание GIF из массива буферов изображений
- */
-async function createGIF(imageBuffers, outputPath) {
-    const encoder = new GIFEncoder(1024, 1024);
-    const stream = encoder.createReadStream().pipe(fs.createWriteStream(outputPath));
-
-    encoder.start();
-    encoder.setRepeat(0); // Бесконечное повторение
-    encoder.setDelay(200); // 200 мс между кадрами (5 кадров в секунду)
-    encoder.setQuality(10); // Качество GIF
-
-    for (const buffer of imageBuffers) {
-        const image = await loadImage(buffer);
-        const canvas = createCanvas(1024, 1024);
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(image, 0, 0, 1024, 1024);
-        encoder.addFrame(ctx);
-    }
-
-    encoder.finish();
-    
-    return new Promise((resolve, reject) => {
-        stream.on('finish', resolve);
-        stream.on('error', reject);
-    });
-}
-
-/**
- * Загружает видео/GIF в Firebase Storage и возвращает публичный URL
- */
-async function uploadToStorage(filePath, fileName, mimeType = 'image/gif') {
+async function uploadToStorage(buffer, fileName, mimeType = 'image/jpeg') {
     const file = bucket.file(`videos/${fileName}`);
-    await bucket.upload(filePath, {
-        destination: `videos/${fileName}`,
+    await file.save(buffer, {
         metadata: { contentType: mimeType },
+        public: true,
     });
-    await file.makePublic();
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/videos/${fileName}`;
     console.log(`✅ Uploaded to Storage: ${publicUrl}`);
     return publicUrl;
@@ -150,54 +113,32 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
-        // Генерируем 8 кадров с разных ракурсов
-        const prompts = [];
-        for (let i = 0; i < 8; i++) {
-            let angle = i * 45; // Поворот на 45 градусов каждый кадр
-            let prompt = `Профессиональное фото товара "${productName}" с угла ${angle} градусов. Студийное освещение, белый фон, высокое качество, 8k. Товар занимает 80% кадра.`;
-            
-            if (videoType === '360') {
-                prompt = `Товар "${productName}", вид с угла ${angle} градусов. Полный оборот, студийная съемка, белый фон, высокая детализация.`;
-            } else if (videoType === 'slowmotion') {
-                prompt = `Элегантная демонстрация товара "${productName}" с угла ${angle} градусов. Мягкий свет, премиальный стиль, белый фон.`;
-            }
-            
-            prompts.push(prompt);
-        }
+        // Генерируем 3 кадра с разных ракурсов
+        const prompts = [
+            `Профессиональное фото товара "${productName}" с угла 0 градусов. Студийное освещение, белый фон, высокое качество.`,
+            `Профессиональное фото товара "${productName}" с угла 120 градусов. Студийное освещение, белый фон, высокое качество.`,
+            `Профессиональное фото товара "${productName}" с угла 240 градусов. Студийное освещение, белый фон, высокое качество.`
+        ];
 
-        console.log('🎬 Генерация кадров анимации...');
+        const imageUrls = [];
         
-        // Генерируем все кадры параллельно
-        const frameBuffers = [];
         for (let i = 0; i < prompts.length; i++) {
             console.log(`Генерация кадра ${i+1}/${prompts.length}...`);
             try {
                 const imageBuffer = await generateGeminiImage(prompts[i], referenceBuffer);
-                frameBuffers.push(imageBuffer);
+                const fileName = `frame_${Date.now()}_${i}.jpg`;
+                const url = await uploadToStorage(imageBuffer, fileName, 'image/jpeg');
+                imageUrls.push(url);
             } catch (err) {
                 console.error(`Ошибка генерации кадра ${i+1}:`, err);
-                // Если не удалось сгенерировать кадр, используем предыдущий
-                if (frameBuffers.length > 0) {
-                    frameBuffers.push(frameBuffers[frameBuffers.length - 1]);
-                }
             }
         }
 
-        if (frameBuffers.length < 3) {
-            throw new Error('Не удалось сгенерировать достаточно кадров');
+        if (imageUrls.length === 0) {
+            throw new Error('Не удалось сгенерировать ни одного кадра');
         }
 
-        // Создаём GIF
-        console.log('🎨 Создание GIF анимации...');
-        const gifPath = `/tmp/animation_${Date.now()}.gif`;
-        await createGIF(frameBuffers, gifPath);
-
-        // Загружаем в Storage
-        const fileName = `animation_${Date.now()}.gif`;
-        const publicUrl = await uploadToStorage(gifPath, fileName, 'image/gif');
-
         // Удаляем временные файлы
-        fs.unlinkSync(gifPath);
         if (files.videoPhoto) {
             const photoArray = Array.isArray(files.videoPhoto) ? files.videoPhoto : [files.videoPhoto];
             photoArray.forEach(file => {
@@ -207,8 +148,8 @@ export default async function handler(req, res) {
             });
         }
 
-        console.log('✅ Анимация создана и загружена');
-        res.status(200).json({ videos: [publicUrl] });
+        console.log('✅ Кадры сгенерированы и загружены');
+        res.status(200).json({ frames: imageUrls });
 
     } catch (error) {
         console.error('❌ Ошибка:', error);
