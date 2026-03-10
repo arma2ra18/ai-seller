@@ -12,7 +12,6 @@ let userData = null;
 let generationInterval;
 let generationStartTime;
 
-// Следим за состоянием авторизации
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = '/login.html';
@@ -22,7 +21,6 @@ onAuthStateChanged(auth, async (user) => {
     await loadUserData();
 });
 
-// Загрузка данных пользователя из Firestore
 async function loadUserData() {
     if (!currentUser) return;
     try {
@@ -48,7 +46,6 @@ async function loadUserData() {
     }
 }
 
-// Обновление интерфейса (баланс, тариф)
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
@@ -70,7 +67,6 @@ function updateUI() {
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
 }
 
-// Обновление плиток статистики
 function updateStats() {
     const statUser = document.getElementById('statUser');
     if (statUser) statUser.textContent = currentUser.email.split('@')[0];
@@ -90,7 +86,6 @@ function updateStats() {
     if (statBonus) statBonus.textContent = 0;
 }
 
-// Выход
 window.logout = async function() {
     try {
         await signOut(auth);
@@ -221,14 +216,22 @@ window.generateWBCard = async function() {
         const result = await response.json();
         displayCardResults(result, 'wb');
 
+        // Сохраняем в историю
         await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
             type: 'wb-card',
             productName,
             result,
             timestamp: new Date().toISOString()
         });
+
+        // Обновляем использованные генерации
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
-        userData.usedGenerations += 3;
+        
+        // Перезагружаем данные пользователя, чтобы баланс обновился
+        const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (updatedDoc.exists()) {
+            userData = updatedDoc.data();
+        }
         updateUI();
         loadHistory();
         showNotification('Карточка для WB создана!', 'success');
@@ -308,8 +311,13 @@ window.generateOzonCard = async function() {
             result,
             timestamp: new Date().toISOString()
         });
+
         await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
-        userData.usedGenerations += 3;
+
+        const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (updatedDoc.exists()) {
+            userData = updatedDoc.data();
+        }
         updateUI();
         loadHistory();
         showNotification('Карточка для Ozon создана!', 'success');
@@ -508,8 +516,11 @@ window.confirmPayment = function() {
                 balance: tokens,
                 usedGenerations: userData.usedGenerations || 0
             });
-            userData.plan = currentPlan;
-            userData.balance = tokens;
+            // Перезагружаем данные
+            const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (updatedDoc.exists()) {
+                userData = updatedDoc.data();
+            }
             updateUI();
             showNotification(`Тариф "${currentPlan}" активирован!`, 'success');
             closeModal();
@@ -535,7 +546,6 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Закрытие модального окна по клику вне его
 window.onclick = function(event) {
     const modal = document.getElementById('paymentModal');
     if (event.target === modal) closeModal();
