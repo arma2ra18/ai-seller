@@ -19,12 +19,18 @@ import {
 
 // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
 let currentAdmin = null;            // Текущий администратор
-let currentPage = 1;                // Текущая страница пагинации
+let currentPage = 1;                // Текущая страница пагинации для пользователей
 let usersList = [];                 // Кэш списка пользователей
 let generationsList = [];           // Кэш списка генераций
 let logsList = [];                  // Кэш списка логов
+let allAdminLogs = [];              // Все логи админов
+let filteredAdminLogs = [];          // Отфильтрованные логи
+let currentLogPage = 1;              // Текущая страница логов
 const pageSize = 20;                 // Количество элементов на странице
+const LOGS_PER_PAGE = 20;            // Логов на странице
 const ONLINE_TIMEOUT = 15 * 60 * 1000; // 15 минут для определения онлайн
+let logSortField = 'timestamp';       // Поле для сортировки логов
+let logSortDirection = 'desc';        // Направление сортировки логов
 
 // ========== АВТОРИЗАЦИЯ ==========
 
@@ -133,6 +139,7 @@ onAuthStateChanged(auth, async (user) => {
             await loadAdminLogs();
             await loadSystemLogs();
             await loadPayments();
+            initLogsFilters();
         } else if (path.includes('settings.html')) {
             await loadSettings();
         }
@@ -271,6 +278,12 @@ async function loadRecentActivity() {
  * Инициализирует графики на дашборде
  */
 async function initCharts() {
+    // Проверяем, загружена ли библиотека Chart.js
+    if (typeof Chart === 'undefined') {
+        console.warn('Chart.js не загружен');
+        return;
+    }
+    
     // Получаем реальные данные регистраций за последние 7 дней
     const usersSnapshot = await getDocs(collection(db, 'users'));
     const days = [];
@@ -298,7 +311,7 @@ async function initCharts() {
     
     // График регистраций
     const ctx1 = document.getElementById('regChart')?.getContext('2d');
-    if (ctx1 && typeof Chart !== 'undefined') {
+    if (ctx1) {
         new Chart(ctx1, {
             type: 'line',
             data: {
@@ -329,7 +342,7 @@ async function initCharts() {
     
     // График выручки (можно тоже сделать реальный)
     const ctx2 = document.getElementById('revenueChart')?.getContext('2d');
-    if (ctx2 && typeof Chart !== 'undefined') {
+    if (ctx2) {
         new Chart(ctx2, {
             type: 'bar',
             data: {
@@ -947,7 +960,7 @@ window.closePreviewModal = function() {
     document.getElementById('previewModal').classList.remove('show');
 };
 
-// ========== ЛОГИ ==========
+// ========== ЛОГИ (УЛУЧШЕННАЯ ВЕРСИЯ) ==========
 
 /**
  * Переключает вкладки логов
@@ -957,12 +970,207 @@ window.showLogTab = function(tab) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     
-    document.querySelector(`[onclick="showLogTab('${tab}')"]`).classList.add('active');
-    document.getElementById(`${tab}-tab`).classList.add('active');
+    const tabButton = document.querySelector(`[onclick="showLogTab('${tab}')"]`);
+    if (tabButton) tabButton.classList.add('active');
+    
+    const tabContent = document.getElementById(`${tab}-tab`);
+    if (tabContent) tabContent.classList.add('active');
+    
+    // Если переключились на вкладку админов, обновляем отображение
+    if (tab === 'admin') {
+        renderAdminLogs();
+    }
 };
 
 /**
- * Загружает логи админов
+ * Инициализирует обработчики для фильтров логов
+ */
+function initLogsFilters() {
+    const dateFilter = document.getElementById('logDateFilter');
+    if (dateFilter) {
+        dateFilter.addEventListener('change', function(e) {
+            const customDiv = document.getElementById('customDateRange');
+            if (customDiv) {
+                customDiv.style.display = e.target.value === 'custom' ? 'flex' : 'none';
+            }
+            if (e.target.value !== 'custom') {
+                applyLogFilters();
+            }
+        });
+    }
+}
+
+/**
+ * Применяет фильтры к логам
+ */
+window.applyLogFilters = function() {
+    if (!allAdminLogs.length) return;
+    
+    const dateFilter = document.getElementById('logDateFilter')?.value || 'all';
+    const searchTerm = document.getElementById('logSearch')?.value.toLowerCase() || '';
+    const actionFilter = document.getElementById('actionFilter')?.value || 'all';
+    
+    filteredAdminLogs = allAdminLogs.filter(log => {
+        // Фильтр по дате
+        if (dateFilter !== 'all' && dateFilter !== 'custom') {
+            const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+            const now = new Date();
+            
+            if (dateFilter === 'today') {
+                if (logDate.toDateString() !== now.toDateString()) return false;
+            } else if (dateFilter === 'yesterday') {
+                const yesterday = new Date(now);
+                yesterday.setDate(now.getDate() - 1);
+                if (logDate.toDateString() !== yesterday.toDateString()) return false;
+            } else if (dateFilter === 'week') {
+                const weekAgo = new Date(now);
+                weekAgo.setDate(now.getDate() - 7);
+                if (logDate < weekAgo) return false;
+            } else if (dateFilter === 'month') {
+                const monthAgo = new Date(now);
+                monthAgo.setMonth(now.getMonth() - 1);
+                if (logDate < monthAgo) return false;
+            } else if (dateFilter === 'year') {
+                const yearAgo = new Date(now);
+                yearAgo.setFullYear(now.getFullYear() - 1);
+                if (logDate < yearAgo) return false;
+            }
+        }
+        
+        // Произвольный период
+        if (dateFilter === 'custom') {
+            const start = document.getElementById('startDate')?.value;
+            const end = document.getElementById('endDate')?.value;
+            if (start && end) {
+                const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date(log.timestamp);
+                const startDate = new Date(start);
+                const endDate = new Date(end);
+                endDate.setHours(23, 59, 59, 999);
+                
+                if (logDate < startDate || logDate > endDate) return false;
+            }
+        }
+        
+        // Поиск по тексту
+        if (searchTerm) {
+            const actionText = getActionText(log.action).toLowerCase();
+            const admin = (log.performedBy || 'система').toLowerCase();
+            const target = (log.targetUser || log.targetUserId || '').toLowerCase();
+            
+            if (!actionText.includes(searchTerm) && 
+                !admin.includes(searchTerm) && 
+                !target.includes(searchTerm)) {
+                return false;
+            }
+        }
+        
+        // Фильтр по типу действия
+        if (actionFilter !== 'all') {
+            if (log.action !== actionFilter) return false;
+        }
+        
+        return true;
+    });
+    
+    // Сортируем
+    sortLogs(logSortField, false);
+    
+    const logsCountEl = document.getElementById('logsCount');
+    if (logsCountEl) logsCountEl.textContent = filteredAdminLogs.length;
+    
+    // Обновляем информацию о периоде
+    const periodSelect = document.getElementById('logDateFilter');
+    if (periodSelect) {
+        const selectedOption = periodSelect.options[periodSelect.selectedIndex];
+        const periodText = selectedOption ? selectedOption.textContent : 'всё время';
+        const logsPeriodEl = document.getElementById('logsPeriod');
+        if (logsPeriodEl) logsPeriodEl.textContent = periodText;
+    }
+    
+    currentLogPage = 1;
+    renderAdminLogs();
+    updateLogsPagination();
+};
+
+/**
+ * Применяет произвольный период дат
+ */
+window.applyCustomDate = function() {
+    applyLogFilters();
+};
+
+/**
+ * Сбрасывает фильтры логов
+ */
+window.resetLogFilters = function() {
+    const dateFilter = document.getElementById('logDateFilter');
+    if (dateFilter) dateFilter.value = 'all';
+    
+    const searchInput = document.getElementById('logSearch');
+    if (searchInput) searchInput.value = '';
+    
+    const actionFilter = document.getElementById('actionFilter');
+    if (actionFilter) actionFilter.value = 'all';
+    
+    const customDiv = document.getElementById('customDateRange');
+    if (customDiv) customDiv.style.display = 'none';
+    
+    const startDate = document.getElementById('startDate');
+    if (startDate) startDate.value = '';
+    
+    const endDate = document.getElementById('endDate');
+    if (endDate) endDate.value = '';
+    
+    applyLogFilters();
+};
+
+/**
+ * Сортирует логи
+ * @param {string} field - Поле для сортировки
+ * @param {boolean} toggle - Менять ли направление
+ */
+window.sortLogs = function(field, toggle = true) {
+    if (toggle) {
+        if (logSortField === field) {
+            logSortDirection = logSortDirection === 'desc' ? 'asc' : 'desc';
+        } else {
+            logSortField = field;
+            logSortDirection = 'desc';
+        }
+    }
+    
+    filteredAdminLogs.sort((a, b) => {
+        let valA, valB;
+        
+        if (field === 'timestamp') {
+            valA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
+            valB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+        } else if (field === 'performedBy') {
+            valA = a.performedBy || '';
+            valB = b.performedBy || '';
+        } else if (field === 'action') {
+            valA = getActionText(a.action);
+            valB = getActionText(b.action);
+        } else if (field === 'targetUser') {
+            valA = a.targetUser || a.targetUserId || '';
+            valB = b.targetUser || b.targetUserId || '';
+        } else {
+            valA = a[field] || '';
+            valB = b[field] || '';
+        }
+        
+        if (logSortDirection === 'desc') {
+            return valA > valB ? -1 : 1;
+        } else {
+            return valA < valB ? -1 : 1;
+        }
+    });
+    
+    renderAdminLogs();
+};
+
+/**
+ * Загружает все логи админов
  */
 async function loadAdminLogs() {
     try {
@@ -974,7 +1182,8 @@ async function loadAdminLogs() {
         // Проверяем, существует ли коллекция
         let logsSnapshot;
         try {
-            const logsQuery = query(collection(db, 'adminLogs'), orderBy('timestamp', 'desc'), limit(100));
+            // Загружаем все логи, без лимита
+            const logsQuery = query(collection(db, 'adminLogs'), orderBy('timestamp', 'desc'));
             logsSnapshot = await getDocs(logsQuery);
         } catch (e) {
             console.warn('Коллекция adminLogs не найдена');
@@ -987,21 +1196,22 @@ async function loadAdminLogs() {
             return;
         }
         
-        tbody.innerHTML = '';
+        // Сохраняем все логи
+        allAdminLogs = [];
         logsSnapshot.forEach(doc => {
-            const log = doc.data();
-            const date = log.timestamp?.toDate ? log.timestamp.toDate().toLocaleString('ru-RU') : '—';
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td>${date}</td>
-                    <td>${log.performedBy || 'система'}</td>
-                    <td>${log.action || '—'}</td>
-                    <td>${log.targetUser || log.targetUserId || '—'}</td>
-                    <td>${log.amount ? `${log.amount} ₽` : '—'}</td>
-                </tr>
-            `;
+            allAdminLogs.push({
+                id: doc.id,
+                ...doc.data()
+            });
         });
+        
+        filteredAdminLogs = [...allAdminLogs];
+        
+        const logsCountEl = document.getElementById('logsCount');
+        if (logsCountEl) logsCountEl.textContent = filteredAdminLogs.length;
+        
+        renderAdminLogs();
+        updateLogsPagination();
         
     } catch (error) {
         console.error('Ошибка загрузки логов:', error);
@@ -1009,6 +1219,176 @@ async function loadAdminLogs() {
         if (tbody) tbody.innerHTML = '<tr><td colspan="5">Ошибка загрузки</td></tr>';
     }
 }
+
+/**
+ * Отображает логи админов с пагинацией
+ */
+function renderAdminLogs() {
+    const tbody = document.getElementById('adminLogsTableBody');
+    if (!tbody) return;
+    
+    const start = (currentLogPage - 1) * LOGS_PER_PAGE;
+    const paginated = filteredAdminLogs.slice(start, start + LOGS_PER_PAGE);
+    
+    if (paginated.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Нет записей</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    paginated.forEach(log => {
+        const date = log.timestamp?.toDate ? 
+            log.timestamp.toDate().toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }) : (log.timestamp ? new Date(log.timestamp).toLocaleString('ru-RU') : '—');
+        
+        // Получаем читаемое название действия
+        const actionText = getActionText(log.action);
+        
+        // Формируем детали
+        let details = '';
+        if (log.amount) details += `Сумма: ${log.amount} ₽ `;
+        if (log.userCount) details += `Пользователей: ${log.userCount} `;
+        if (log.changes) {
+            const changes = Object.entries(log.changes)
+                .map(([key, val]) => `${key}: ${val}`)
+                .join(', ');
+            details += `Изменения: ${changes}`;
+        }
+        
+        tbody.innerHTML += `
+            <tr>
+                <td>${date}</td>
+                <td>${log.performedBy || 'система'}</td>
+                <td>${actionText}</td>
+                <td>${log.targetUser || log.targetUserId || '—'}</td>
+                <td>${details || '—'}</td>
+            </tr>
+        `;
+    });
+}
+
+/**
+ * Возвращает читаемое название действия
+ * @param {string} action - Код действия
+ * @returns {string} - Текст действия
+ */
+function getActionText(action) {
+    const actions = {
+        'edit_user': '✏️ Редактирование пользователя',
+        'delete_user': '🗑️ Удаление пользователя',
+        'add_funds': '💰 Начисление средств',
+        'bulk_add_funds': '📦 Массовое начисление',
+        'update_settings': '⚙️ Изменение настроек'
+    };
+    return actions[action] || action || '—';
+}
+
+/**
+ * Обновляет пагинацию для логов
+ */
+function updateLogsPagination() {
+    const pagination = document.getElementById('logsPagination');
+    if (!pagination) return;
+    
+    const totalPages = Math.ceil(filteredAdminLogs.length / LOGS_PER_PAGE);
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    for (let i = 1; i <= totalPages; i++) {
+        html += `<button onclick="goToLogPage(${i})" ${i === currentLogPage ? 'class="active"' : ''}>${i}</button>`;
+    }
+    pagination.innerHTML = html;
+}
+
+/**
+ * Переходит на указанную страницу логов
+ * @param {number} page - Номер страницы
+ */
+window.goToLogPage = function(page) {
+    currentLogPage = page;
+    renderAdminLogs();
+    updateLogsPagination();
+};
+
+/**
+ * Экспортирует логи в CSV
+ */
+window.exportLogsCSV = function() {
+    if (filteredAdminLogs.length === 0) {
+        showNotification('Нет данных для экспорта', 'warning');
+        return;
+    }
+    
+    let csv = "Дата,Админ,Действие,Цель,Детали\n";
+    
+    filteredAdminLogs.forEach(log => {
+        const date = log.timestamp?.toDate ? 
+            log.timestamp.toDate().toLocaleString('ru-RU') : 
+            (log.timestamp ? new Date(log.timestamp).toLocaleString('ru-RU') : '—');
+        
+        const actionText = getActionText(log.action);
+        const admin = (log.performedBy || 'система').replace(/"/g, '""');
+        const target = (log.targetUser || log.targetUserId || '—').replace(/"/g, '""');
+        
+        let details = '';
+        if (log.amount) details += `сумма:${log.amount}`;
+        if (log.userCount) details += ` пользователей:${log.userCount}`;
+        if (log.changes) {
+            const changes = Object.entries(log.changes)
+                .map(([key, val]) => `${key}:${val}`)
+                .join(' ');
+            details += ` изменения:${changes}`;
+        }
+        
+        csv += `"${date}","${admin}","${actionText}","${target}","${details}"\n`;
+    });
+    
+    const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `logs_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    showNotification(`Экспортировано ${filteredAdminLogs.length} записей`, 'success');
+};
+
+/**
+ * Добавляет запись в логи (для использования в других частях админки)
+ * @param {string} action - Действие
+ * @param {Object} data - Данные для логирования
+ */
+async function addAdminLog(action, data = {}) {
+    try {
+        const logData = {
+            action: action,
+            performedBy: currentAdmin?.uid,
+            timestamp: new Date().toISOString(),
+            ...data
+        };
+        
+        await addDoc(collection(db, 'adminLogs'), logData);
+        
+        // Если мы на странице логов, обновляем отображение
+        if (window.location.pathname.includes('logs.html')) {
+            await loadAdminLogs();
+        }
+    } catch (error) {
+        console.warn('Не удалось записать лог:', error);
+    }
+}
+
+// ========== СИСТЕМНЫЕ ЛОГИ И ПЛАТЕЖИ ==========
 
 /**
  * Загружает системные логи (заглушка)
@@ -1247,3 +1627,11 @@ window.confirmBulkAdd = async function() {
         showNotification('Ошибка: ' + error.message, 'error');
     }
 };
+
+// Инициализация обработчиков после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализируем фильтры логов, если мы на странице логов
+    if (window.location.pathname.includes('logs.html')) {
+        initLogsFilters();
+    }
+});
