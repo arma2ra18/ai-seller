@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генерации — Prodiger Admin</title>
+    <link rel="stylesheet" href="../styles/main.css">
+</head>
+<body>
+    <div class="admin-wrapper">
+        <!-- Боковое меню -->
+        <div class="admin-sidebar">
+            <div class="admin-sidebar-logo">Prodiger Admin</div>
+            <ul class="admin-sidebar-menu">
+                <li><a href="dashboard.html"><i>📊</i> Дашборд</a></li>
+                <li><a href="users.html"><i>👥</i> Пользователи</a></li>
+                <li><a href="generations.html" class="active"><i>🖼️</i> Генерации</a></li>
+                <li><a href="logs.html"><i>📝</i> Логи</a></li>
+                <li><a href="settings.html"><i>⚙️</i> Настройки</a></li>
+                <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
+            </ul>
+        </div>
+        
+        <!-- Основной контент -->
+        <div class="admin-content">
+            <div class="admin-header">
+                <h1>Все генерации</h1>
+            </div>
+            
+            <!-- Фильтры -->
+            <div class="filters">
+                <input type="text" id="searchGenInput" placeholder="Поиск по товару...">
+                
+                <select id="platformFilter">
+                    <option value="">Все платформы</option>
+                    <option value="wb">Wildberries</option>
+                    <option value="ozon">Ozon</option>
+                </select>
+                
+                <select id="dateGenFilter">
+                    <option value="">За всё время</option>
+                    <option value="today">Сегодня</option>
+                    <option value="week">Последние 7 дней</option>
+                    <option value="month">Последний месяц</option>
+                </select>
+                
+                <button class="btn btn-primary" onclick="applyGenFilters()">Поиск</button>
+            </div>
+            
+            <!-- Таблица генераций -->
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Дата</th>
+                        <th>Пользователь</th>
+                        <th>Товар</th>
+                        <th>Платформа</th>
+                        <th>Стоимость</th>
+                        <th>Превью</th>
+                    </tr>
+                </thead>
+                <tbody id="generationsTableBody">
+                    <tr><td colspan="6" style="text-align: center;">Загрузка...</td></tr>
+                </tbody>
+            </table>
+            
+            <!-- Пагинация -->
+            <div class="pagination" id="genPagination"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для превью -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content glass" style="max-width: 600px;">
+            <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+            <h2>Превью карточки</h2>
+            <img id="previewImage" src="" alt="Preview" style="width: 100%; border-radius: 8px;">
+            <div id="previewDescriptions"></div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/admin.js"></script>
+</body>
+</html>

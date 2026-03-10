@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Users — AI Seller Admin</title>
+    <title>Пользователи — Prodiger Admin</title>
     <link rel="stylesheet" href="../styles/main.css">
 </head>
 <body>
     <div class="admin-wrapper">
         <!-- Боковое меню -->
         <div class="admin-sidebar">
-            <div class="admin-sidebar-logo">AI Seller Admin</div>
+            <div class="admin-sidebar-logo">Prodiger Admin</div>
             <ul class="admin-sidebar-menu">
                 <li><a href="dashboard.html"><i>📊</i> Дашборд</a></li>
                 <li><a href="users.html" class="active"><i>👥</i> Пользователи</a></li>
+                <li><a href="generations.html"><i>🖼️</i> Генерации</a></li>
                 <li><a href="logs.html"><i>📝</i> Логи</a></li>
+                <li><a href="settings.html"><i>⚙️</i> Настройки</a></li>
                 <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
             </ul>
         </div>
@@ -25,44 +27,68 @@
                 <h1>Управление пользователями</h1>
             </div>
             
-            <!-- Поиск и фильтры -->
-            <div class="search-bar">
-                <input type="text" id="userSearch" placeholder="Поиск по email, имени, телефону...">
-                <button class="btn btn-primary" onclick="searchUsers()">Найти</button>
-                <button class="btn btn-outline" onclick="exportUsersCSV()">Экспорт CSV</button>
+            <!-- Фильтры и поиск -->
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="Поиск по email, имени, телефону...">
+                
+                <select id="balanceFilter">
+                    <option value="">Все балансы</option>
+                    <option value="positive">💰 Есть средства</option>
+                    <option value="zero">🪙 Пустой баланс</option>
+                    <option value="high">🔥 > 1000 ₽</option>
+                </select>
+                
+                <select id="dateFilter">
+                    <option value="">Все даты</option>
+                    <option value="today">Сегодня</option>
+                    <option value="week">Последние 7 дней</option>
+                    <option value="month">Последний месяц</option>
+                </select>
+                
+                <select id="sortFilter">
+                    <option value="date_desc">Сначала новые</option>
+                    <option value="date_asc">Сначала старые</option>
+                    <option value="balance_desc">По балансу (убыв.)</option>
+                    <option value="balance_asc">По балансу (возр.)</option>
+                </select>
+                
+                <button class="btn btn-primary" onclick="applyFilters()">Применить</button>
+                <button class="btn btn-outline" onclick="resetFilters()">Сбросить</button>
+                <button class="btn btn-gold" onclick="exportUsersCSV()">📥 Экспорт CSV</button>
+            </div>
+            
+            <!-- Статистика по фильтру -->
+            <div class="filter-stats">
+                Найдено: <span id="filteredCount">0</span> пользователей,
+                суммарный баланс: <span id="filteredBalance">0</span> ₽
             </div>
             
             <!-- Таблица пользователей -->
             <table class="users-table">
                 <thead>
                     <tr>
-                        <th>Email</th>
-                        <th>Имя</th>
-                        <th>Телефон</th>
-                        <th>Тариф</th>
-                        <th>Баланс</th>
-                        <th>Генераций</th>
-                        <th>Дата рег.</th>
+                        <th onclick="sortTable('email')">Email 🔽</th>
+                        <th onclick="sortTable('displayName')">Имя</th>
+                        <th onclick="sortTable('phoneNumber')">Телефон</th>
+                        <th onclick="sortTable('balance')">Баланс</th>
+                        <th onclick="sortTable('usedSpent')">Потрачено</th>
+                        <th onclick="sortTable('createdAt')">Дата рег.</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
-                    <!-- Данные будут загружены через JavaScript -->
+                    <tr><td colspan="7" style="text-align: center;">Загрузка...</td></tr>
                 </tbody>
             </table>
             
             <!-- Пагинация -->
-            <div class="pagination" id="pagination">
-                <button onclick="loadUsers(1)">1</button>
-                <button onclick="loadUsers(2)">2</button>
-                <button onclick="loadUsers(3)">3</button>
-            </div>
+            <div class="pagination" id="pagination"></div>
         </div>
     </div>
 
     <!-- Модальное окно редактирования пользователя -->
     <div id="userModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content glass">
             <button class="modal-close" onclick="closeUserModal()">&times;</button>
             <h2>Редактирование пользователя</h2>
             
@@ -82,16 +108,7 @@
             </div>
             
             <div class="form-group">
-                <label>Тариф</label>
-                <select id="editPlan">
-                    <option value="start">Старт</option>
-                    <option value="business">Бизнес</option>
-                    <option value="pro">Профи</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Баланс (токены)</label>
+                <label>Баланс (₽)</label>
                 <input type="number" id="editBalance" min="0">
             </div>
             
@@ -100,11 +117,28 @@
                 <input type="checkbox" id="editIsAdmin"> Дать права администратора
             </div>
             
+            <div class="form-group">
+                <label>Статус</label>
+                <select id="editStatus">
+                    <option value="active">Активен</option>
+                    <option value="blocked">Заблокирован</option>
+                </select>
+            </div>
+            
             <div style="display: flex; gap: 10px; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="saveUserChanges()">Сохранить</button>
                 <button class="btn btn-danger" onclick="deleteUser()">Удалить</button>
                 <button class="btn btn-outline" onclick="closeUserModal()">Отмена</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно истории пользователя -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content glass">
+            <button class="modal-close" onclick="closeHistoryModal()">&times;</button>
+            <h2>История пользователя</h2>
+            <div id="historyModalContent"></div>
         </div>
     </div>
 

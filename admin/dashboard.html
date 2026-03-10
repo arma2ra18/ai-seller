@@ -3,18 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard — AI Seller</title>
+    <title>Дашборд — Prodiger Admin</title>
     <link rel="stylesheet" href="../styles/main.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="admin-wrapper">
         <!-- Боковое меню -->
         <div class="admin-sidebar">
-            <div class="admin-sidebar-logo">AI Seller Admin</div>
+            <div class="admin-sidebar-logo">Prodiger Admin</div>
             <ul class="admin-sidebar-menu">
                 <li><a href="dashboard.html" class="active"><i>📊</i> Дашборд</a></li>
                 <li><a href="users.html"><i>👥</i> Пользователи</a></li>
+                <li><a href="generations.html"><i>🖼️</i> Генерации</a></li>
                 <li><a href="logs.html"><i>📝</i> Логи</a></li>
+                <li><a href="settings.html"><i>⚙️</i> Настройки</a></li>
                 <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
             </ul>
         </div>
@@ -34,27 +37,73 @@
                 <div class="stat-card">
                     <div class="stat-title">Пользователи</div>
                     <div class="stat-value" id="totalUsers">0</div>
+                    <div class="stat-trend" id="usersTrend">+0%</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-title">Выручка</div>
+                    <div class="stat-title">Выручка (всего)</div>
                     <div class="stat-value" id="totalRevenue">0 ₽</div>
+                    <div class="stat-trend" id="revenueTrend">+0%</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-title">Генераций</div>
                     <div class="stat-value" id="totalGenerations">0</div>
+                    <div class="stat-trend" id="generationsTrend">+0%</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-title">Админы</div>
-                    <div class="stat-value" id="adminCount">0</div>
+                    <div class="stat-title">Сейчас онлайн</div>
+                    <div class="stat-value" id="onlineUsers">0</div>
+                    <div class="stat-trend online-badge">🟢 активно</div>
                 </div>
             </div>
             
-            <!-- Последние действия -->
+            <!-- Графики -->
+            <div class="charts-grid">
+                <div class="chart-card glass">
+                    <h3>Регистрации</h3>
+                    <canvas id="regChart"></canvas>
+                </div>
+                <div class="chart-card glass">
+                    <h3>Выручка</h3>
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Последние события -->
             <div class="recent-activity">
-                <h2>Последние действия</h2>
+                <h2>Последние события</h2>
                 <ul class="activity-list" id="activityList">
                     <li class="activity-item"><span>Загрузка...</span></li>
                 </ul>
+            </div>
+            
+            <!-- Быстрые действия -->
+            <div class="quick-actions">
+                <h3>Быстрые действия</h3>
+                <div class="actions-grid">
+                    <button class="btn btn-primary" onclick="showAddFundsModal()">💰 Начислить всем</button>
+                    <button class="btn btn-outline" onclick="exportStats()">📊 Экспорт статистики</button>
+                    <button class="btn btn-outline" onclick="clearCache()">🔄 Очистить кэш</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для массового начисления -->
+    <div id="addFundsModal" class="modal">
+        <div class="modal-content glass">
+            <button class="modal-close" onclick="closeAddFundsModal()">&times;</button>
+            <h2>Начислить всем пользователям</h2>
+            <div class="form-group">
+                <label>Сумма (₽)</label>
+                <input type="number" id="bulkAmount" min="1" value="100">
+            </div>
+            <div class="form-group">
+                <label>Сообщение (необязательно)</label>
+                <input type="text" id="bulkMessage" placeholder="Подарок от администрации">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="confirmBulkAdd()">Начислить</button>
+                <button class="btn btn-outline" onclick="closeAddFundsModal()">Отмена</button>
             </div>
         </div>
     </div>

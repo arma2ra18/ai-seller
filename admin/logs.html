@@ -3,18 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logs — AI Seller Admin</title>
+    <title>Логи — Prodiger Admin</title>
     <link rel="stylesheet" href="../styles/main.css">
 </head>
 <body>
     <div class="admin-wrapper">
         <!-- Боковое меню -->
         <div class="admin-sidebar">
-            <div class="admin-sidebar-logo">AI Seller Admin</div>
+            <div class="admin-sidebar-logo">Prodiger Admin</div>
             <ul class="admin-sidebar-menu">
                 <li><a href="dashboard.html"><i>📊</i> Дашборд</a></li>
                 <li><a href="users.html"><i>👥</i> Пользователи</a></li>
+                <li><a href="generations.html"><i>🖼️</i> Генерации</a></li>
                 <li><a href="logs.html" class="active"><i>📝</i> Логи</a></li>
+                <li><a href="settings.html"><i>⚙️</i> Настройки</a></li>
                 <li style="margin-top: 30px;"><a href="#" onclick="logout()"><i>🚪</i> Выйти</a></li>
             </ul>
         </div>
@@ -22,54 +24,29 @@
         <!-- Основной контент -->
         <div class="admin-content">
             <div class="admin-header">
-                <h1>Логи</h1>
+                <h1>Логи действий</h1>
             </div>
             
             <!-- Вкладки логов -->
             <div class="tabs">
-                <button class="tab active" onclick="showLogTab('payments')">💰 Платежи</button>
-                <button class="tab" onclick="showLogTab('generations')">🖼️ Генерации</button>
-                <button class="tab" onclick="showLogTab('admin')">🔐 Действия админов</button>
+                <button class="tab active" onclick="showLogTab('admin')">🔐 Действия админов</button>
+                <button class="tab" onclick="showLogTab('system')">⚙️ Системные</button>
+                <button class="tab" onclick="showLogTab('payments')">💰 Платежи</button>
             </div>
             
-            <!-- Таблица платежей -->
-            <div id="payments-tab" class="tab-content active">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Дата</th>
-                            <th>Пользователь</th>
-                            <th>Сумма</th>
-                            <th>Токенов</th>
-                            <th>Статус</th>
-                        </tr>
-                    </thead>
-                    <tbody id="paymentsTableBody">
-                        <tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>
-                    </tbody>
-                </table>
+            <!-- Фильтры -->
+            <div class="filters">
+                <input type="text" id="logSearch" placeholder="Поиск...">
+                <select id="logDateFilter">
+                    <option value="">Все даты</option>
+                    <option value="today">Сегодня</option>
+                    <option value="week">Неделя</option>
+                    <option value="month">Месяц</option>
+                </select>
             </div>
             
-            <!-- Таблица генераций -->
-            <div id="generations-tab" class="tab-content">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Дата</th>
-                            <th>Пользователь</th>
-                            <th>Товар</th>
-                            <th>Тип</th>
-                            <th>Токенов</th>
-                        </tr>
-                    </thead>
-                    <tbody id="generationsTableBody">
-                        <tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <!-- Таблица действий админов -->
-            <div id="admin-tab" class="tab-content">
+            <!-- Таблица логов админов -->
+            <div id="admin-tab" class="tab-content active">
                 <table class="users-table">
                     <thead>
                         <tr>
@@ -77,10 +54,45 @@
                             <th>Админ</th>
                             <th>Действие</th>
                             <th>Цель</th>
+                            <th>Детали</th>
                         </tr>
                     </thead>
                     <tbody id="adminLogsTableBody">
-                        <tr><td colspan="4" style="text-align: center;">Загрузка...</td></tr>
+                        <tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Таблица системных логов -->
+            <div id="system-tab" class="tab-content">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Уровень</th>
+                            <th>Сообщение</th>
+                        </tr>
+                    </thead>
+                    <tbody id="systemLogsTableBody">
+                        <tr><td colspan="3" style="text-align: center;">Загрузка...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Таблица платежей -->
+            <div id="payments-tab" class="tab-content">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th>Пользователь</th>
+                            <th>Сумма</th>
+                            <th>Способ</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>
                     </tbody>
                 </table>
             </div>
