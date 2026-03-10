@@ -168,36 +168,36 @@
             </div>
         </section>
 
-<!-- Примеры работ: премиум-карусель -->
-<section id="examples" class="examples">
-    <div class="container">
-        <h2 class="gradient-text">Примеры готовых карточек</h2>
-        
-        <div class="premium-carousel">
-            <button class="carousel-arrow prev" onclick="premiumMove(-1)">←</button>
-            
-            <div class="premium-track" id="premiumTrack">
-                <div class="premium-slide">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg" alt="Lamborghini Urus">
-                </div>
-                <div class="premium-slide">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
-                </div>
-                <div class="premium-slide">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg" alt="Waka Blast">
-                </div>
-                <div class="premium-slide">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg" alt="ASUS ROG Strix">
-                </div>
-                <div class="premium-slide">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg" alt="iPhone 17 Pro">
+        <!-- Примеры работ: премиум-карусель -->
+        <section id="examples" class="examples">
+            <div class="container">
+                <h2 class="gradient-text">Примеры готовых карточек</h2>
+                
+                <div class="premium-carousel">
+                    <button class="carousel-arrow prev" onclick="premiumMove(-1)">←</button>
+                    
+                    <div class="premium-track" id="premiumTrack">
+                        <div class="premium-slide">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg" alt="Lamborghini Urus">
+                        </div>
+                        <div class="premium-slide">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
+                        </div>
+                        <div class="premium-slide">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg" alt="Waka Blast">
+                        </div>
+                        <div class="premium-slide">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg" alt="ASUS ROG Strix">
+                        </div>
+                        <div class="premium-slide">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg" alt="iPhone 17 Pro">
+                        </div>
+                    </div>
+                    
+                    <button class="carousel-arrow next" onclick="premiumMove(1)">→</button>
                 </div>
             </div>
-            
-            <button class="carousel-arrow next" onclick="premiumMove(1)">→</button>
-        </div>
-    </div>
-</section>
+        </section>
 
         <!-- Тарифы с переключателем месяц/год -->
         <section id="pricing" class="pricing">
@@ -369,78 +369,39 @@
             document.querySelectorAll('.price.yearly').forEach(el => el.style.display = isYearly ? 'block' : 'none');
         });
 
-        // Карусель
-        let currentSlide = 0;
-        const slides = document.querySelectorAll('.carousel-slide');
-        const totalSlides = slides.length;
-        const track = document.getElementById('carouselTrack');
-        const dotsContainer = document.getElementById('carouselDots');
+        // Премиум-карусель
+        let premiumIndex = 2; // начинаем с центрального слайда (индекс 2 из 5)
+        const premiumSlides = document.querySelectorAll('.premium-slide');
+        const premiumTrack = document.getElementById('premiumTrack');
+        const premiumTotal = premiumSlides.length;
 
-        for (let i = 0; i < totalSlides; i++) {
-            const dot = document.createElement('span');
-            dot.className = 'dot' + (i === 0 ? ' active' : '');
-            dot.onclick = () => goToSlide(i);
-            dotsContainer.appendChild(dot);
-        }
-
-        function updateDots() {
-            document.querySelectorAll('.dot').forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentSlide);
+        function updateActiveSlide() {
+            premiumSlides.forEach((slide, i) => {
+                if (i === premiumIndex) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
             });
+            
+            // Сдвигаем трек так, чтобы активный слайд был в центре
+            if (premiumSlides.length > 0) {
+                const slideWidth = premiumSlides[0].offsetWidth + 20; // ширина + gap
+                const trackWidth = premiumTrack.offsetWidth;
+                const centerOffset = (trackWidth / 2) - (slideWidth / 2);
+                const shift = (premiumIndex * slideWidth) - centerOffset;
+                
+                premiumTrack.style.transform = `translateX(-${shift}px)`;
+            }
         }
 
-        function goToSlide(n) {
-            currentSlide = n;
-            track.style.transform = `translateX(-${currentSlide * 100}%)`;
-            updateDots();
-        }
-
-        window.moveSlide = function(direction) {
-            currentSlide = (currentSlide + direction + totalSlides) % totalSlides;
-            track.style.transform = `translateX(-${currentSlide * 100}%)`;
-            updateDots();
+        window.premiumMove = function(direction) {
+            premiumIndex = (premiumIndex + direction + premiumTotal) % premiumTotal;
+            updateActiveSlide();
         };
-// Премиум-карусель
-let premiumIndex = 2; // начинаем с центрального слайда (индекс 2 из 5)
-const premiumSlides = document.querySelectorAll('.premium-slide');
-const premiumTrack = document.getElementById('premiumTrack');
-const premiumTotal = premiumSlides.length;
 
-// Функция обновления активного класса
-function updateActiveSlide() {
-    premiumSlides.forEach((slide, i) => {
-        if (i === premiumIndex) {
-            slide.classList.add('active');
-        } else {
-            slide.classList.remove('active');
-        }
-    });
-    
-    // Сдвигаем трек так, чтобы активный слайд был в центре
-    // Для 5 слайдов активный центральный, считаем смещение
-    const slideWidth = premiumSlides[0].offsetWidth + 20; // ширина + gap
-    const trackWidth = premiumTrack.offsetWidth;
-    const centerOffset = (trackWidth / 2) - (slideWidth / 2);
-    const shift = (premiumIndex * slideWidth) - centerOffset;
-    
-    premiumTrack.style.transform = `translateX(-${shift}px)`;
-}
-
-// Функция переключения
-window.premiumMove = function(direction) {
-    premiumIndex = (premiumIndex + direction + premiumTotal) % premiumTotal;
-    updateActiveSlide();
-};
-
-// Инициализация при загрузке
-window.addEventListener('load', () => {
-    updateActiveSlide();
-});
-
-// Обновление при изменении размера окна
-window.addEventListener('resize', () => {
-    updateActiveSlide();
-});
+        window.addEventListener('load', updateActiveSlide);
+        window.addEventListener('resize', updateActiveSlide);
     </script>
 </body>
 </html>
