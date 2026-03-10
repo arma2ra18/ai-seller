@@ -21,9 +21,8 @@ let userData = null;
 let generationInterval;
 let generationStartTime;
 
-// Переменные для пополнения
-let selectedTokens = 0;
-let selectedPrice = 0;
+// Переменные для пополнения (в рублях)
+let selectedRubles = 0;
 
 // Следим за состоянием авторизации
 onAuthStateChanged(auth, async (user) => {
@@ -50,9 +49,8 @@ async function loadUserData() {
                 email: currentUser.email || '',
                 displayName: currentUser.displayName || '',
                 phoneNumber: currentUser.phoneNumber || '',
-                plan: 'start',
-                balance: 30,
-                usedGenerations: 0,
+                balance: 500, // Стартовый баланс в рублях
+                usedSpent: 0,  // Сколько потрачено всего
                 createdAt: new Date().toISOString()
             });
             await loadUserData();
@@ -67,7 +65,7 @@ async function loadUserData() {
 function updateUI() {
     if (!userData) return;
     
-    // Баланс в рублях из Firestore (поле balance)
+    // Баланс в рублях из Firestore
     const currentBalance = userData.balance || 0;
 
     // Обновляем баланс везде
@@ -90,12 +88,6 @@ function updateUI() {
     }
 }
 
-    // Тариф
-    const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
-    const userPlanEl = document.getElementById('userPlan');
-    if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
-}
-
 // Обновление плиток статистики
 function updateStats() {
     const statUser = document.getElementById('statUser');
@@ -111,19 +103,19 @@ function updateStats() {
     }
     
     const statCards = document.getElementById('statCards');
-    if (statCards) statCards.textContent = userData?.usedGenerations || 0;
+    if (statCards) statCards.textContent = userData?.usedSpent || 0;
     
     const statVideos = document.getElementById('statVideos');
     if (statVideos) statVideos.textContent = 0;
     
     const statDescriptions = document.getElementById('statDescriptions');
-    if (statDescriptions) statDescriptions.textContent = userData?.usedGenerations || 0;
+    if (statDescriptions) statDescriptions.textContent = userData?.usedSpent || 0;
     
     const statHistory = document.getElementById('statHistory');
     if (statHistory) statHistory.textContent = 0;
     
     const statBalance = document.getElementById('statBalance');
-    if (statBalance) statBalance.textContent = userData?.balance || 5;
+    if (statBalance) statBalance.textContent = userData?.balance || 0;
     
     const statNews = document.getElementById('statNews');
     if (statNews) statNews.textContent = 5;
@@ -236,9 +228,10 @@ window.generateWBCard = async function() {
         return;
     }
 
-    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
-    if ((userData.usedGenerations || 0) + 3 > maxGen) {
-        showNotification('Недостаточно токенов (требуется 3)', 'error');
+    // Проверяем баланс (должно быть не меньше 100 ₽)
+    const currentBalance = userData.balance || 0;
+    if (currentBalance < 100) {
+        showNotification('Недостаточно средств. Требуется 100 ₽', 'error');
         return;
     }
 
@@ -275,7 +268,11 @@ window.generateWBCard = async function() {
             timestamp: new Date().toISOString()
         });
 
-        await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
+        // Списываем 100 рублей
+        await updateDoc(doc(db, 'users', currentUser.uid), { 
+            balance: increment(-100),
+            usedSpent: increment(100)
+        });
         
         const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (updatedDoc.exists()) {
@@ -291,7 +288,7 @@ window.generateWBCard = async function() {
         hideGenerationModal();
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '✨ Создать карточку для WB';
+            btn.innerHTML = '✨ Создать карточку для WB (100 ₽)';
         }
     }
 };
@@ -322,9 +319,9 @@ window.generateOzonCard = async function() {
         return;
     }
 
-    const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
-    if ((userData.usedGenerations || 0) + 3 > maxGen) {
-        showNotification('Недостаточно токенов (требуется 3)', 'error');
+    const currentBalance = userData.balance || 0;
+    if (currentBalance < 100) {
+        showNotification('Недостаточно средств. Требуется 100 ₽', 'error');
         return;
     }
 
@@ -361,7 +358,10 @@ window.generateOzonCard = async function() {
             timestamp: new Date().toISOString()
         });
 
-        await updateDoc(doc(db, 'users', currentUser.uid), { usedGenerations: increment(3) });
+        await updateDoc(doc(db, 'users', currentUser.uid), { 
+            balance: increment(-100),
+            usedSpent: increment(100)
+        });
 
         const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (updatedDoc.exists()) {
@@ -377,7 +377,7 @@ window.generateOzonCard = async function() {
         hideGenerationModal();
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '✨ Создать карточку для Ozon';
+            btn.innerHTML = '✨ Создать карточку для Ozon (100 ₽)';
         }
     }
 };
@@ -513,73 +513,46 @@ window.viewHistoryItem = async function(docId) {
     }
 };
 
-// ----- ПОПОЛНЕНИЕ БАЛАНСА -----
+// ----- ПОПОЛНЕНИЕ БАЛАНСА (в рублях) -----
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) {
         modal.classList.add('show');
-        selectedTokens = 0;
-        selectedPrice = 0;
+        selectedRubles = 0;
         document.getElementById('selectedPackageName').textContent = '—';
         document.getElementById('modalAmount').textContent = '0 ₽';
-        const customInput = document.getElementById('customTokens');
+        const customInput = document.getElementById('customRubles');
         if (customInput) {
-            customInput.value = 50;
-            calculateCustomPrice();
+            customInput.value = 500;
+            calculatePrice();
         }
-        document.querySelectorAll('.package-card').forEach(card => {
-            card.classList.remove('selected');
-        });
     }
 };
 
-window.selectPackage = function(tokens, price) {
-    selectedTokens = tokens;
-    selectedPrice = price;
-    document.getElementById('selectedPackageName').textContent = `${tokens} токенов за ${price} ₽`;
-    document.getElementById('modalAmount').textContent = `${price} ₽`;
-    
-    document.querySelectorAll('.package-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('selected');
-    }
-};
-
-window.calculateCustomPrice = function() {
-    const tokens = parseInt(document.getElementById('customTokens').value) || 0;
-    const pricePerToken = 50;
-    const price = tokens * pricePerToken;
-    document.getElementById('customPrice').value = `${price} ₽`;
-    
-    document.getElementById('selectedPackageName').textContent = `${tokens} токенов за ${price} ₽ (своё)`;
-    document.getElementById('modalAmount').textContent = `${price} ₽`;
-    selectedTokens = tokens;
-    selectedPrice = price;
-    
-    document.querySelectorAll('.package-card').forEach(card => {
-        card.classList.remove('selected');
-    });
+window.calculatePrice = function() {
+    const rubles = parseInt(document.getElementById('customRubles').value) || 0;
+    document.getElementById('selectedPackageName').textContent = `${rubles} ₽`;
+    document.getElementById('modalAmount').textContent = `${rubles} ₽`;
+    selectedRubles = rubles;
 };
 
 window.confirmPayment = function() {
-    if (selectedTokens <= 0 || selectedPrice <= 0) {
-        showNotification('Выберите количество токенов', 'warning');
+    if (selectedRubles <= 0) {
+        showNotification('Введите сумму пополнения', 'warning');
         return;
     }
 
     (async () => {
         try {
-            const newBalance = (userData.balance || 0) + selectedTokens;
+            const newBalance = (userData.balance || 0) + selectedRubles;
             await updateDoc(doc(db, 'users', currentUser.uid), {
                 balance: newBalance,
             });
             
             userData.balance = newBalance;
-            updateUI(); // ← обновляем все элементы с балансом
+            updateUI();
             
-            showNotification(`Баланс пополнен на ${selectedTokens} токенов!`, 'success');
+            showNotification(`Баланс пополнен на ${selectedRubles} ₽!`, 'success');
             closeModal();
         } catch (error) {
             console.error('Ошибка при пополнении:', error);
@@ -591,8 +564,7 @@ window.confirmPayment = function() {
 window.closeModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) modal.classList.remove('show');
-    selectedTokens = 0;
-    selectedPrice = 0;
+    selectedRubles = 0;
 };
 
 // ========== НАСТРОЙКИ ПРОФИЛЯ ==========
@@ -622,13 +594,7 @@ function loadSettingsData() {
     
     const totalGenEl = document.getElementById('totalGenerations');
     if (totalGenEl) {
-        totalGenEl.textContent = userData.usedGenerations || 0;
-    }
-    
-    const planEl = document.getElementById('currentPlan');
-    if (planEl) {
-        const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
-        planEl.textContent = planNames[userData.plan] || 'Старт';
+        totalGenEl.textContent = userData.usedSpent || 0;
     }
     
     if (currentUser.metadata && currentUser.metadata.lastSignInTime) {
