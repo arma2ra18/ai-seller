@@ -400,6 +400,47 @@
             track.style.transform = `translateX(-${currentSlide * 100}%)`;
             updateDots();
         };
+// Премиум-карусель
+let premiumIndex = 2; // начинаем с центрального слайда (индекс 2 из 5)
+const premiumSlides = document.querySelectorAll('.premium-slide');
+const premiumTrack = document.getElementById('premiumTrack');
+const premiumTotal = premiumSlides.length;
+
+// Функция обновления активного класса
+function updateActiveSlide() {
+    premiumSlides.forEach((slide, i) => {
+        if (i === premiumIndex) {
+            slide.classList.add('active');
+        } else {
+            slide.classList.remove('active');
+        }
+    });
+    
+    // Сдвигаем трек так, чтобы активный слайд был в центре
+    // Для 5 слайдов активный центральный, считаем смещение
+    const slideWidth = premiumSlides[0].offsetWidth + 20; // ширина + gap
+    const trackWidth = premiumTrack.offsetWidth;
+    const centerOffset = (trackWidth / 2) - (slideWidth / 2);
+    const shift = (premiumIndex * slideWidth) - centerOffset;
+    
+    premiumTrack.style.transform = `translateX(-${shift}px)`;
+}
+
+// Функция переключения
+window.premiumMove = function(direction) {
+    premiumIndex = (premiumIndex + direction + premiumTotal) % premiumTotal;
+    updateActiveSlide();
+};
+
+// Инициализация при загрузке
+window.addEventListener('load', () => {
+    updateActiveSlide();
+});
+
+// Обновление при изменении размера окна
+window.addEventListener('resize', () => {
+    updateActiveSlide();
+});
     </script>
 </body>
 </html>
