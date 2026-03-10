@@ -11,7 +11,7 @@ export const config = {
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Генерация одного изображения через Gemini (упрощённый промпт)
+ * Генерация одного изображения через Gemini (минимальный промпт)
  */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
@@ -65,54 +65,41 @@ export default async function handler(req, res) {
             });
         });
 
-        const productName = fields.productName?.[0] || '';
-        const brand = fields.brand?.[0] || '';
+        const productName = fields.productName?.[0] || 'товар';
+        const brand = fields.brand?.[0] || 'бренд';
         const price = fields.price?.[0] || '1990';
         const features = (fields.features?.[0] || '').split(',').map(f => f.trim()).filter(Boolean);
-        const platform = fields.platform?.[0] || 'wb';
-
-        if (!productName) {
-            return res.status(400).json({ error: 'Product name is required' });
-        }
 
         let referenceBuffer = null;
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             if (photoArray.length) {
                 referenceBuffer = fs.readFileSync(photoArray[0].filepath);
-                console.log(`Loaded reference image: ${photoArray[0].originalFilename}`);
             }
         }
         if (!referenceBuffer) {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
-        // Упрощённый, но эффективный промпт
-        const basePrompt = `Create a premium product image for Wildberries. The product is "${productName}" by brand ${brand}. Price: ${price} ₽. Features: ${features.join(', ')}. The image should have the product in the center, with large 3D text elements: product name at the top, price at the bottom, and small icons/badges for features around it. Background: soft studio gradient. Style: modern, luxurious, photorealistic. Square, 1024x1024, no white background.`;
+        // Максимально простой промпт
+        const prompt = `Create a product image for ${productName} by ${brand}. Price ${price}. Features: ${features.join(', ')}. Square, high quality.`;
 
         const images = [];
-        for (let i = 0; i < 3; i++) {
-            const variation = ` Variation ${i+1}: slightly different composition.`;
-            try {
-                console.log(`Generating image ${i+1}...`);
-                const imageDataUrl = await generateGeminiImage(basePrompt + variation, referenceBuffer);
-                images.push(imageDataUrl);
-                console.log(`Image ${i+1} generated successfully`);
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            } catch (err) {
-                console.error(`❌ Ошибка при генерации изображения ${i+1}:`, err);
-                // Продолжаем со следующим
-            }
+        // Пробуем сгенерировать 1 изображение (для начала)
+        try {
+            console.log('Generating image...');
+            const imageDataUrl = await generateGeminiImage(prompt, referenceBuffer);
+            images.push(imageDataUrl);
+        } catch (err) {
+            console.error('Generation failed:', err);
         }
 
         if (images.length === 0) {
-            throw new Error('Не удалось сгенерировать ни одного изображения');
+            throw new Error('Не удалось сгенерировать изображение');
         }
 
         const descriptions = [
-            `✨ Превосходный ${productName} от бренда ${brand}. Особенности: ${features.join(', ')}. Цена: ${price} ₽. Закажите сейчас!`,
-            `💎 ${brand} ${productName} – высокое качество. Всего ${price} ₽. Быстрая доставка.`,
-            `🔥 Купите ${productName} по лучшей цене – ${price} ₽! Только оригинал.`
+            `✨ ${productName} от ${brand}. Цена: ${price} ₽.`
         ];
 
         // Удаляем временные файлы
@@ -125,10 +112,9 @@ export default async function handler(req, res) {
             });
         }
 
-        console.log('✅ Успешно сгенерировано изображений:', images.length);
         res.status(200).json({ images, descriptions });
     } catch (error) {
-        console.error('❌ Ошибка в handler:', error);
+        console.error('❌ Handler error:', error);
         res.status(500).json({ error: error.message });
     }
 }
