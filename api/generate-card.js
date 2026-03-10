@@ -215,11 +215,7 @@ export default async function handler(req, res) {
         const publicUrl = await uploadToStorage(imageDataUrl, fileName);
         
         // Генерируем описания (можно варьировать в зависимости от попытки)
-        const descriptions = [
-            `✨ ${productName} от ${brand}. ${userFeatures.slice(0,3).join(', ')}. Премиальное качество по цене ${price} ₽.`,
-            `💎 Ваш идеальный выбор: ${productName}. Всего ${price} ₽. Особенности: ${userFeatures.join(', ')}. Закажи сейчас!`,
-            `🔥 Хит продаж! ${productName} — это ${userFeatures[0] || 'непревзойденное качество'}. Успей купить за ${price} ₽.`
-        ];
+        const descriptions = []; // Больше не генерируем описания
 
         // Удаляем временные файлы
         if (files.photos) {
