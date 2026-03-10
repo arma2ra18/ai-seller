@@ -63,7 +63,7 @@ async function loadUserData() {
     }
 }
 
-// Обновление интерфейса (баланс, тариф)
+// Обновление интерфейса (баланс, тариф) – обновляет ВСЕ элементы с балансом
 function updateUI() {
     if (!userData) return;
     const maxGen = { 'start': 30, 'business': 200, 'pro': 999999 }[userData.plan] || 30;
@@ -71,28 +71,42 @@ function updateUI() {
     const remaining = Math.max(0, maxGen - used);
 
     // Обновляем баланс везде
-    const balanceSelectors = ['#remainingGenerations', '#remainingGenerationsDetail', '#sidebarBalance'];
+    const balanceSelectors = [
+        '#remainingGenerations',        // в шапке
+        '#remainingGenerationsDetail',  // в деталях
+        '#sidebarBalance'               // в сайдбаре
+    ];
+    
     balanceSelectors.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => {
             if (el) el.textContent = remaining;
         });
     });
 
-    const maxSelectors = ['#maxGenerations', '#maxGenerationsDetail', '#sidebarMaxGen'];
+    // Обновляем максимум везде
+    const maxSelectors = [
+        '#maxGenerations',
+        '#maxGenerationsDetail',
+        '#sidebarMaxGen'
+    ];
+    
     maxSelectors.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => {
             if (el) el.textContent = maxGen;
         });
     });
 
+    // Использовано
     const usedDetail = document.getElementById('usedGenerationsDetail');
     if (usedDetail) usedDetail.textContent = used;
 
+    // Email в шапке и сайдбаре
     const userEmailEl = document.getElementById('userEmail');
     if (userEmailEl) {
         userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
     }
 
+    // Тариф
     const planNames = { 'start': 'Старт', 'business': 'Бизнес', 'pro': 'Профи' };
     const userPlanEl = document.getElementById('userPlan');
     if (userPlanEl) userPlanEl.textContent = planNames[userData.plan] || 'Старт';
@@ -515,7 +529,7 @@ window.viewHistoryItem = async function(docId) {
     }
 };
 
-// ----- ПОПОЛНЕНИЕ БАЛАНСА (мгновенное) -----
+// ----- ПОПОЛНЕНИЕ БАЛАНСА -----
 window.showPaymentModal = function() {
     const modal = document.getElementById('paymentModal');
     if (modal) {
@@ -579,7 +593,7 @@ window.confirmPayment = function() {
             });
             
             userData.balance = newBalance;
-            updateUI();
+            updateUI(); // ← обновляем все элементы с балансом
             
             showNotification(`Баланс пополнен на ${selectedTokens} токенов!`, 'success');
             closeModal();
