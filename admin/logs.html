@@ -34,15 +34,54 @@
                 <button class="tab" onclick="showLogTab('payments')">💰 Платежи</button>
             </div>
             
-            <!-- Фильтры -->
+            <!-- Фильтры по дате и поиск -->
             <div class="filters">
-                <input type="text" id="logSearch" placeholder="Поиск...">
-                <select id="logDateFilter">
-                    <option value="">Все даты</option>
-                    <option value="today">Сегодня</option>
-                    <option value="week">Неделя</option>
-                    <option value="month">Месяц</option>
-                </select>
+                <div class="filter-group">
+                    <label>Период:</label>
+                    <select id="logDateFilter" onchange="applyLogFilters()">
+                        <option value="all">За всё время</option>
+                        <option value="today">Сегодня</option>
+                        <option value="yesterday">Вчера</option>
+                        <option value="week">Последние 7 дней</option>
+                        <option value="month">Последние 30 дней</option>
+                        <option value="year">Последний год</option>
+                        <option value="custom">Произвольный период</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group custom-date" id="customDateRange" style="display: none;">
+                    <label>С:</label>
+                    <input type="date" id="startDate">
+                    <label>по:</label>
+                    <input type="date" id="endDate">
+                    <button class="btn btn-small btn-primary" onclick="applyCustomDate()">Применить</button>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Поиск:</label>
+                    <input type="text" id="logSearch" placeholder="Поиск по действию, админу..." oninput="applyLogFilters()">
+                </div>
+                
+                <div class="filter-group">
+                    <label>Тип действия:</label>
+                    <select id="actionFilter" onchange="applyLogFilters()">
+                        <option value="all">Все действия</option>
+                        <option value="edit_user">✏️ Редактирование</option>
+                        <option value="delete_user">🗑️ Удаление</option>
+                        <option value="add_funds">💰 Начисление средств</option>
+                        <option value="bulk_add_funds">📦 Массовое начисление</option>
+                        <option value="update_settings">⚙️ Изменение настроек</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-outline" onclick="resetLogFilters()">Сбросить</button>
+                <button class="btn btn-gold" onclick="exportLogsCSV()">📥 Экспорт CSV</button>
+            </div>
+            
+            <!-- Статистика по логам -->
+            <div class="filter-stats">
+                Найдено: <span id="logsCount">0</span> записей,
+                за период: <span id="logsPeriod">всё время</span>
             </div>
             
             <!-- Таблица логов админов -->
@@ -50,11 +89,11 @@
                 <table class="users-table">
                     <thead>
                         <tr>
-                            <th>Дата</th>
-                            <th>Админ</th>
-                            <th>Действие</th>
-                            <th>Цель</th>
-                            <th>Детали</th>
+                            <th onclick="sortLogs('timestamp')">📅 Дата</th>
+                            <th onclick="sortLogs('performedBy')">👤 Админ</th>
+                            <th onclick="sortLogs('action')">🔧 Действие</th>
+                            <th onclick="sortLogs('targetUser')">🎯 Цель</th>
+                            <th>📋 Детали</th>
                         </tr>
                     </thead>
                     <tbody id="adminLogsTableBody">
@@ -63,39 +102,42 @@
                 </table>
             </div>
             
-            <!-- Таблица системных логов -->
+            <!-- Таблица системных логов (заглушка) -->
             <div id="system-tab" class="tab-content">
                 <table class="users-table">
                     <thead>
                         <tr>
-                            <th>Дата</th>
-                            <th>Уровень</th>
-                            <th>Сообщение</th>
+                            <th>📅 Дата</th>
+                            <th>⚠️ Уровень</th>
+                            <th>📄 Сообщение</th>
                         </tr>
                     </thead>
                     <tbody id="systemLogsTableBody">
-                        <tr><td colspan="3" style="text-align: center;">Загрузка...</td></tr>
+                        <tr><td colspan="3" style="text-align: center;">Системные логи в разработке</td></tr>
                     </tbody>
                 </table>
             </div>
             
-            <!-- Таблица платежей -->
+            <!-- Таблица платежей (заглушка) -->
             <div id="payments-tab" class="tab-content">
                 <table class="users-table">
                     <thead>
                         <tr>
-                            <th>Дата</th>
-                            <th>Пользователь</th>
-                            <th>Сумма</th>
-                            <th>Способ</th>
-                            <th>Статус</th>
+                            <th>📅 Дата</th>
+                            <th>👤 Пользователь</th>
+                            <th>💰 Сумма</th>
+                            <th>💳 Способ</th>
+                            <th>📊 Статус</th>
                         </tr>
                     </thead>
                     <tbody id="paymentsTableBody">
-                        <tr><td colspan="5" style="text-align: center;">Загрузка...</td></tr>
+                        <tr><td colspan="5" style="text-align: center;">Платежи будут доступны после подключения ЮKassa</td></tr>
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Пагинация -->
+            <div class="pagination" id="logsPagination"></div>
         </div>
     </div>
 
