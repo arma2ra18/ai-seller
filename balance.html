@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+import { cacheBalance } from './js/cache.js';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Баланс — Prodiger</title>
@@ -630,13 +631,22 @@ async function debugGenerations() {
             await loadTransactions();
         });
 
-        // Загрузка данных пользователя из Firestore
-async function loadUserData() {
+        // Загрузка данных пользователя из Firestore с кэшированием
+async function loadUserData(forceRefresh = false) {
     try {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-            
+        // Функция для получения данных из Firebase
+        const fetchUserData = async () => {
+            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (userDoc.exists()) {
+                return userDoc.data();
+            }
+            return null;
+        };
+        
+        // Получаем данные с кэшированием
+        const userData = await cacheBalance(currentUser.uid, fetchUserData, forceRefresh);
+        
+        if (userData) {
             // Баланс
             const balance = userData.balance || 0;
             document.getElementById('balanceAmount').textContent = balance.toLocaleString();
@@ -646,25 +656,23 @@ async function loadUserData() {
             const spent = userData.usedSpent || 0;
             document.getElementById('totalSpent').textContent = spent.toLocaleString();
             
-            // Количество генераций - принудительно извлекаем число
-let totalGenerations = 0;
-try {
-    const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
-    sessionsSnapshot.forEach(doc => {
-        totalGenerations += doc.data().attempts || 0;
-    });
-} catch (e) {
-    console.log('Коллекция generationSessions не найдена');
-}
-
-// ЕСЛИ ПОЧЕМУ-ТО ПРИШЛА СТРОКА - ОЧИЩАЕМ
-if (typeof totalGenerations === 'string') {
-    // Извлекаем только цифры из строки
-    const matches = totalGenerations.match(/\d+/);
-    totalGenerations = matches ? parseInt(matches[0]) : 0;
-}
-
-document.getElementById('totalGenerations').textContent = totalGenerations;
+            // Количество генераций
+            let totalGenerations = 0;
+            try {
+                const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
+                sessionsSnapshot.forEach(doc => {
+                    totalGenerations += doc.data().attempts || 0;
+                });
+            } catch (e) {
+                console.log('Коллекция generationSessions не найдена');
+            }
+            
+            if (typeof totalGenerations === 'string') {
+                const matches = totalGenerations.match(/\d+/);
+                totalGenerations = matches ? parseInt(matches[0]) : 0;
+            }
+            
+            document.getElementById('totalGenerations').textContent = totalGenerations;
             
             // Бонусы
             const bonus = userData.bonusBalance || 0;
@@ -673,7 +681,6 @@ document.getElementById('totalGenerations').textContent = totalGenerations;
             // Email
             document.getElementById('userEmail').textContent = userData.email || userData.phoneNumber || 'Пользователь';
             
-            // Отладка в консоль
             console.log('✅ Баланс загружен:', {
                 balance: balance,
                 spent: spent,

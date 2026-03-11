@@ -7,6 +7,27 @@
     <link rel="stylesheet" href="styles/main.css">
     <!-- Подключаем отдельный файл для истории -->
     <link rel="stylesheet" href="styles/17-dashboard-history.css">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
+            });
+        }
+    </script>
 </head>
 <body>
     <!-- Видеофон -->
@@ -53,7 +74,7 @@
                     <li class="menu-item" data-section="description-history">
                         <a href="/description-history.html">📚 История описаний</a>
                     </li>
-<li class="menu-item active" data-section="history">
+                    <li class="menu-item active" data-section="history">
                         <a href="/history.html">📜 История фото</a>
                     </li>
                     <li class="menu-item" data-section="settings">
@@ -95,7 +116,7 @@
                 </div>
             </div>
 
-            <!-- Фильтры -->
+            <!-- Фильтры и кнопка обновления -->
             <div class="history-filters">
                 <div class="filter-group">
                     <input type="text" id="searchInput" placeholder="Поиск по названию товара...">
@@ -108,6 +129,12 @@
                     <option value="cost_asc">По стоимости (дешевле)</option>
                     <option value="photos_desc">По количеству фото</option>
                 </select>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px;">
+                <button class="btn btn-small btn-outline" onclick="refreshSessions()">
+                    🔄 Обновить
+                </button>
             </div>
 
             <!-- Список сессий -->
@@ -138,6 +165,7 @@
         import { 
             doc, getDoc, collection, query, orderBy, getDocs, limit, startAfter, deleteDoc 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { cacheSessions, clearCache } from './js/cache.js';
 
         let currentUser = null;
         let allSessions = [];
@@ -173,44 +201,57 @@
             }
         }
 
-        // Загрузка сессий
-        async function loadSessions(isFirstLoad = false) {
+        // Загрузка сессий с кэшированием
+        async function loadSessions(isFirstLoad = false, forceRefresh = false) {
             if (isLoading || (!hasMore && !isFirstLoad)) return;
             
             isLoading = true;
 
             try {
-                const sessionsRef = collection(db, 'users', currentUser.uid, 'generationSessions');
-                let q;
-                
-                if (isFirstLoad) {
-                    q = query(sessionsRef, orderBy('createdAt', 'desc'), limit(SESSIONS_PER_PAGE));
-                } else {
-                    if (!lastVisible) {
-                        isLoading = false;
-                        return;
+                // Функция для загрузки из Firebase
+                const fetchSessions = async () => {
+                    const sessionsRef = collection(db, 'users', currentUser.uid, 'generationSessions');
+                    let q;
+                    
+                    if (isFirstLoad) {
+                        q = query(sessionsRef, orderBy('createdAt', 'desc'), limit(SESSIONS_PER_PAGE));
+                    } else {
+                        if (!lastVisible) return [];
+                        q = query(sessionsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(SESSIONS_PER_PAGE));
                     }
-                    q = query(sessionsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(SESSIONS_PER_PAGE));
-                }
 
-                const snapshot = await getDocs(q);
+                    const snapshot = await getDocs(q);
+                    
+                    if (snapshot.docs.length > 0 && isFirstLoad) {
+                        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+                    }
+                    
+                    hasMore = snapshot.docs.length === SESSIONS_PER_PAGE;
+                    
+                    return snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                };
                 
+                // Получаем данные с кэшированием (только для первой страницы)
+                let newSessions;
                 if (isFirstLoad) {
-                    allSessions = [];
+                    newSessions = await cacheSessions(
+                        currentUser.uid, 
+                        currentPage, 
+                        fetchSessions, 
+                        forceRefresh
+                    ) || [];
+                    
+                    if (newSessions.length > 0) {
+                        allSessions = newSessions;
+                    }
+                } else {
+                    // Для следующих страниц не кэшируем
+                    newSessions = await fetchSessions();
+                    allSessions = [...allSessions, ...newSessions];
                 }
-
-                const newSessions = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                allSessions = [...allSessions, ...newSessions];
-                
-                if (snapshot.docs.length > 0) {
-                    lastVisible = snapshot.docs[snapshot.docs.length - 1];
-                }
-                
-                hasMore = snapshot.docs.length === SESSIONS_PER_PAGE;
 
                 // Обновляем статистику
                 updateStats();
@@ -225,6 +266,11 @@
                 isLoading = false;
             }
         }
+
+        // Функция для принудительного обновления
+        window.refreshSessions = function() {
+            loadSessions(true, true);
+        };
 
         // Обновление статистики
         function updateStats() {
@@ -323,7 +369,7 @@
                         <div class="session-gallery">
                             ${previewImages.map((url, idx) => `
                                 <div class="gallery-item" onclick="event.stopPropagation(); openLightbox('${url}')">
-                                    <img src="${url}" alt="Фото ${idx + 1}">
+                                    <img src="${url}" alt="Фото ${idx + 1}" loading="lazy">
                                     <div class="gallery-overlay">
                                         <span class="gallery-number">#${idx + 1}</span>
                                     </div>
@@ -384,49 +430,47 @@
             }
         };
 
-        // Просмотр сессии - ИСПРАВЛЕНО (для одного фото)
-window.viewSession = async function(sessionId) {
-    const session = allSessions.find(s => s.id === sessionId);
-    if (!session) return;
-    
-    document.getElementById('selectedSessionTitle').textContent = session.productName || 'Результаты сессии';
-    
-    const gallery = document.getElementById('resultImages');
-    const images = session.images || [];
-    
-    // Если только одно фото - показываем его в уменьшенном размере
-    if (images.length === 1) {
-        gallery.innerHTML = `
-            <div style="display: flex; justify-content: center; align-items: center; padding: 20px;">
-                <div class="result-image" style="width: 300px; height: 300px; margin: 0 auto;" onclick="openLightbox('${images[0]}')">
-                    <img src="${images[0]}" alt="Фото" style="width: 100%; height: 100%; object-fit: cover;">
-                    <div class="result-overlay">
-                        <span class="result-label">Фото</span>
+        // Просмотр сессии
+        window.viewSession = async function(sessionId) {
+            const session = allSessions.find(s => s.id === sessionId);
+            if (!session) return;
+            
+            document.getElementById('selectedSessionTitle').textContent = session.productName || 'Результаты сессии';
+            
+            const gallery = document.getElementById('resultImages');
+            const images = session.images || [];
+            
+            if (images.length === 1) {
+                gallery.innerHTML = `
+                    <div style="display: flex; justify-content: center; align-items: center; padding: 20px;">
+                        <div class="result-image" style="width: 300px; height: 300px; margin: 0 auto;" onclick="openLightbox('${images[0]}')">
+                            <img src="${images[0]}" alt="Фото" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div class="result-overlay">
+                                <span class="result-label">Фото</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-        `;
-    } else {
-        // Если несколько фото - показываем сеткой
-        gallery.innerHTML = images.map((url, index) => `
-            <div class="result-image" onclick="openLightbox('${url}')">
-                <img src="${url}" alt="Фото ${index + 1}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
-                <div class="result-overlay">
-                    <span class="result-label">Фото ${index + 1}</span>
-                </div>
-            </div>
-        `).join('');
-    }
-    
-    document.getElementById('cardResults').style.display = 'block';
-    
-    setTimeout(() => {
-        document.getElementById('cardResults').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
-    }, 100);
-};
+                `;
+            } else {
+                gallery.innerHTML = images.map((url, index) => `
+                    <div class="result-image" onclick="openLightbox('${url}')">
+                        <img src="${url}" alt="Фото ${index + 1}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                        <div class="result-overlay">
+                            <span class="result-label">Фото ${index + 1}</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('cardResults').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('cardResults').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+        };
 
         // Удаление сессии
         window.deleteSession = async function(sessionId) {
@@ -456,81 +500,75 @@ window.viewSession = async function(sessionId) {
             document.getElementById('cardResults').style.display = 'none';
         };
 
-   // Открыть лайтбокс - ИСПРАВЛЕНО
-window.openLightbox = function(url) {
-    // Создаем затемненный фон
-    const overlay = document.createElement('div');
-    overlay.className = 'lightbox show';
-    overlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.95);
-        backdrop-filter: blur(20px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-        cursor: pointer;
-    `;
-    
-    // Создаем контейнер для изображения
-    const container = document.createElement('div');
-    container.style.cssText = `
-        max-width: 90vw;
-        max-height: 90vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    `;
-    
-    // Создаем изображение с ограничением размеров
-    const img = document.createElement('img');
-    img.src = url;
-    img.style.cssText = `
-        max-width: 90vw;
-        max-height: 90vh;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-        border-radius: 12px;
-        box-shadow: 0 0 50px rgba(255,255,255,0.2);
-    `;
-    
-    // Создаем кнопку закрытия
-    const close = document.createElement('span');
-    close.innerHTML = '&times;';
-    close.style.cssText = `
-        position: absolute;
-        top: 20px;
-        right: 40px;
-        font-size: 40px;
-        color: white;
-        cursor: pointer;
-        transition: transform 0.2s;
-        z-index: 2001;
-    `;
-    close.onmouseover = () => close.style.transform = 'rotate(90deg)';
-    close.onmouseout = () => close.style.transform = 'rotate(0deg)';
-    
-    // Собираем всё вместе
-    container.appendChild(img);
-    overlay.appendChild(container);
-    overlay.appendChild(close);
-    
-    // Добавляем обработчик закрытия
-    overlay.onclick = (e) => {
-        if (e.target === overlay) overlay.remove();
-    };
-    close.onclick = (e) => {
-        e.stopPropagation();
-        overlay.remove();
-    };
-    
-    document.body.appendChild(overlay);
-};
+        // Открыть лайтбокс
+        window.openLightbox = function(url) {
+            const overlay = document.createElement('div');
+            overlay.className = 'lightbox show';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.95);
+                backdrop-filter: blur(20px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 2000;
+                cursor: pointer;
+            `;
+            
+            const container = document.createElement('div');
+            container.style.cssText = `
+                max-width: 90vw;
+                max-height: 90vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.cssText = `
+                max-width: 90vw;
+                max-height: 90vh;
+                width: auto;
+                height: auto;
+                object-fit: contain;
+                border-radius: 12px;
+                box-shadow: 0 0 50px rgba(255,255,255,0.2);
+            `;
+            
+            const close = document.createElement('span');
+            close.innerHTML = '&times;';
+            close.style.cssText = `
+                position: absolute;
+                top: 20px;
+                right: 40px;
+                font-size: 40px;
+                color: white;
+                cursor: pointer;
+                transition: transform 0.2s;
+                z-index: 2001;
+            `;
+            close.onmouseover = () => close.style.transform = 'rotate(90deg)';
+            close.onmouseout = () => close.style.transform = 'rotate(0deg)';
+            
+            container.appendChild(img);
+            overlay.appendChild(container);
+            overlay.appendChild(close);
+            
+            overlay.onclick = (e) => {
+                if (e.target === overlay) overlay.remove();
+            };
+            close.onclick = (e) => {
+                e.stopPropagation();
+                overlay.remove();
+            };
+            
+            document.body.appendChild(overlay);
+        };
 
         // Экранирование HTML
         function escapeHtml(text) {

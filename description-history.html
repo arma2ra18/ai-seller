@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>История описаний — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
+            });
+        }
+    </script>
+    
     <style>
         .history-header {
             display: flex;
@@ -383,39 +405,25 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item" data-section="news">
-                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📰 Новости
-                        </a>
+                        <a href="/news.html">📰 Новости</a>
                     </li>
                     <li class="menu-item" data-section="balance">
-                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            💰 Баланс
-                        </a>
+                        <a href="/balance.html">💰 Баланс</a>
                     </li>
                     <li class="menu-item" data-section="generate">
-                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ✨ Генерация фото
-                        </a>
+                        <a href="/generate.html">✨ Генерация фото</a>
                     </li>
                     <li class="menu-item" data-section="description">
-                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📝 Описание товара
-                        </a>
+                        <a href="/description.html">📝 Описание товара</a>
                     </li>
                     <li class="menu-item active" data-section="description-history">
-                        <a href="/description-history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📚 История описаний
-                        </a>
+                        <a href="/description-history.html">📚 История описаний</a>
                     </li>
                     <li class="menu-item" data-section="history">
-                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📜 История фото
-                        </a>
+                        <a href="/history.html">📜 История фото</a>
                     </li>
                     <li class="menu-item" data-section="settings">
-                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ⚙️ Настройки
-                        </a>
+                        <a href="/settings.html">⚙️ Настройки</a>
                     </li>
                 </ul>
             </nav>
@@ -452,7 +460,7 @@
                 </div>
             </div>
 
-            <!-- Фильтры -->
+            <!-- Фильтры и кнопка обновления -->
             <div class="history-header">
                 <h2>Все генерации</h2>
                 <div class="history-filters">
@@ -463,6 +471,12 @@
                     </select>
                     <input type="text" id="searchInput" placeholder="🔍 Поиск по названию товара...">
                 </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px;">
+                <button class="btn btn-small btn-outline" onclick="refreshDescriptions()">
+                    🔄 Обновить
+                </button>
             </div>
 
             <!-- Список описаний -->
@@ -504,15 +518,16 @@
         import { 
             doc, getDoc, collection, query, orderBy, getDocs, limit, startAfter 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { cacheDescriptions, clearCache } from './js/cache.js';
 
         // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         let currentUser = null;
-        let allDescriptions = [];           // Все загруженные описания
-        let filteredDescriptions = [];       // Отфильтрованные для отображения
-        let lastVisible = null;               // Последний загруженный документ для пагинации
-        let isLoading = false;                // Флаг загрузки
-        let hasMore = true;                   // Есть ли еще данные для загрузки
-        const PAGE_SIZE = 10;                  // Сколько загружать за раз
+        let allDescriptions = [];
+        let filteredDescriptions = [];
+        let lastVisible = null;
+        let isLoading = false;
+        let hasMore = true;
+        const PAGE_SIZE = 10;
 
         // ========== АВТОРИЗАЦИЯ ==========
         onAuthStateChanged(auth, async (user) => {
@@ -522,7 +537,7 @@
             }
             currentUser = user;
             await loadUserData();
-            await loadNextPage(); // Загружаем первую страницу
+            await loadNextPage();
         });
 
         // ========== ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ ==========
@@ -540,46 +555,53 @@
         }
 
         // ========== ЗАГРУЗКА СЛЕДУЮЩЕЙ СТРАНИЦЫ ==========
-        async function loadNextPage() {
+        async function loadNextPage(forceRefresh = false) {
             if (!currentUser || isLoading || !hasMore) return;
             
             isLoading = true;
-            
+
             try {
-                const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
-                let q;
+                // Функция для загрузки из Firebase
+                const fetchDescriptions = async () => {
+                    const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
+                    let q;
+                    
+                    if (!lastVisible) {
+                        q = query(descriptionsRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
+                    } else {
+                        q = query(descriptionsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(PAGE_SIZE));
+                    }
+
+                    const snapshot = await getDocs(q);
+                    
+                    if (snapshot.docs.length > 0) {
+                        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+                    }
+                    
+                    hasMore = snapshot.docs.length === PAGE_SIZE;
+                    
+                    return snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                };
                 
+                // Получаем данные с кэшированием (только для первой страницы)
+                let newDescriptions;
                 if (!lastVisible) {
-                    // Первая загрузка
-                    q = query(descriptionsRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
+                    newDescriptions = await cacheDescriptions(
+                        currentUser.uid, 
+                        1, 
+                        fetchDescriptions, 
+                        forceRefresh
+                    ) || [];
                 } else {
-                    // Следующие страницы
-                    q = query(descriptionsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(PAGE_SIZE));
+                    newDescriptions = await fetchDescriptions();
                 }
 
-                const snapshot = await getDocs(q);
-                
-                // Обновляем курсор
-                if (snapshot.docs.length > 0) {
-                    lastVisible = snapshot.docs[snapshot.docs.length - 1];
-                }
-                
-                // Проверяем, есть ли еще данные
-                hasMore = snapshot.docs.length === PAGE_SIZE;
-
-                // Преобразуем документы в объекты
-                const newDescriptions = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                // Добавляем к общему массиву
                 allDescriptions = [...allDescriptions, ...newDescriptions];
                 
-                // Обновляем статистику
                 updateStats();
-                
-                // Применяем фильтры
                 applyFilters();
 
             } catch (error) {
@@ -589,6 +611,14 @@
                 isLoading = false;
             }
         }
+
+        // Функция для принудительного обновления
+        window.refreshDescriptions = function() {
+            lastVisible = null;
+            hasMore = true;
+            allDescriptions = [];
+            loadNextPage(true);
+        };
 
         // ========== ПРИМЕНЕНИЕ ФИЛЬТРОВ ==========
         window.applyFilters = function() {
@@ -824,7 +854,7 @@
             });
         });
 
-        // Бесконечный скролл (опционально)
+        // Бесконечный скролл
         window.addEventListener('scroll', () => {
             if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
                 if (!isLoading && hasMore) {

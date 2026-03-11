@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Настройки профиля — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
+            });
+        }
+    </script>
+    
     <style>
         .settings-container {
             max-width: 900px;
@@ -184,39 +206,25 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item" data-section="news">
-                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📰 Новости
-                        </a>
+                        <a href="/news.html">📰 Новости</a>
                     </li>
                     <li class="menu-item" data-section="balance">
-                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            💰 Баланс
-                        </a>
+                        <a href="/balance.html">💰 Баланс</a>
                     </li>
-                     <li class="menu-item" data-section="generate">
-                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ✨ Генерация
-                        </a>
+                    <li class="menu-item" data-section="generate">
+                        <a href="/generate.html">✨ Генерация</a>
                     </li>
- <li class="menu-item" data-section="description">
-                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📝 Описание товара
-                        </a>
+                    <li class="menu-item" data-section="description">
+                        <a href="/description.html">📝 Описание товара</a>
                     </li>
-<li class="menu-item" data-section="description-history">
-                        <a href="/description-history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📚 История описаний
-                        </a>
+                    <li class="menu-item" data-section="description-history">
+                        <a href="/description-history.html">📚 История описаний</a>
                     </li>
                     <li class="menu-item" data-section="history">
-                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📜 История фото
-                        </a>
+                        <a href="/history.html">📜 История фото</a>
                     </li>
                     <li class="menu-item active" data-section="settings">
-                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ⚙️ Настройки
-                        </a>
+                        <a href="/settings.html">⚙️ Настройки</a>
                     </li>
                 </ul>
             </nav>
@@ -238,6 +246,13 @@
             <div class="welcome-block">
                 <h1 class="gradient-text">⚙️ Настройки профиля</h1>
                 <p>Управляйте личными данными и безопасностью аккаунта</p>
+            </div>
+
+            <!-- Кнопка обновления -->
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px;">
+                <button class="btn btn-small btn-outline" onclick="refreshSettings()">
+                    🔄 Обновить данные
+                </button>
             </div>
 
             <div class="settings-container">
@@ -350,6 +365,7 @@
             updateProfile, updateEmail, updatePassword, deleteUser,
             reauthenticateWithCredential, EmailAuthProvider 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { cacheUserData, clearCache } from './js/cache.js';
 
         let currentUser = null;
         let userData = null;
@@ -364,13 +380,19 @@
             await loadUserData();
         });
 
-        // Загрузка данных пользователя из Firestore
-        async function loadUserData() {
+        // Загрузка данных пользователя с кэшированием
+        async function loadUserData(forceRefresh = false) {
             try {
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (userDoc.exists()) {
-                    userData = userDoc.data();
-                    
+                // Функция для получения данных из Firebase
+                const fetchUserData = async () => {
+                    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    return userDoc.exists() ? userDoc.data() : null;
+                };
+                
+                // Получаем данные с кэшированием
+                const userData = await cacheUserData(currentUser.uid, fetchUserData, forceRefresh);
+                
+                if (userData) {
                     // Заполняем поля формы
                     document.getElementById('displayName').value = userData.displayName || '';
                     document.getElementById('userEmailSettings').value = userData.email || currentUser.email || '';
@@ -421,6 +443,11 @@
             }
         }
 
+        // Функция для принудительного обновления
+        window.refreshSettings = function() {
+            loadUserData(true);
+        };
+
         // Показать уведомление
         function showSettingsMessage(text, isSuccess = true) {
             const msgEl = document.getElementById('settingsSuccessMessage');
@@ -451,6 +478,10 @@
                 await updateDoc(doc(db, 'users', currentUser.uid), {
                     displayName: newName
                 });
+                
+                // Очищаем кэш после обновления
+                clearCache('userData', currentUser.uid);
+                
                 showSettingsMessage('Имя обновлено!');
             } catch (error) {
                 console.error('Ошибка обновления имени:', error);
@@ -486,6 +517,9 @@
                     email: newEmail
                 });
                 
+                // Очищаем кэш после обновления
+                clearCache('userData', currentUser.uid);
+                
                 showSettingsMessage('Email успешно изменён!');
                 closeEmailModal();
                 document.getElementById('userEmailSettings').value = newEmail;
@@ -508,6 +542,10 @@
                 await updateDoc(doc(db, 'users', currentUser.uid), {
                     phoneNumber: newPhone
                 });
+                
+                // Очищаем кэш после обновления
+                clearCache('userData', currentUser.uid);
+                
                 showSettingsMessage('Номер телефона обновлён!');
             } catch (error) {
                 console.error('Ошибка обновления телефона:', error);
@@ -566,6 +604,8 @@
                 'news': '/news.html',
                 'balance': '/balance.html',
                 'generate': '/generate.html',
+                'description': '/description.html',
+                'description-history': '/description-history.html',
                 'history': '/history.html',
                 'settings': '/settings.html'
             };
