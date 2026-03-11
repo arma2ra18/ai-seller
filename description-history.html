@@ -226,38 +226,50 @@
             border-radius: 30px;
         }
         
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 40px;
-            flex-wrap: wrap;
+        .load-more-container {
+            text-align: center;
+            margin: 30px 0;
         }
         
-        .pagination button {
-            padding: 10px 18px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: var(--text-secondary);
+        .load-more-btn {
+            background: linear-gradient(135deg, var(--accent), #9b5ef0);
+            color: white;
+            border: none;
+            padding: 14px 40px;
+            border-radius: 60px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            min-width: 45px;
-            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0,113,227,0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .pagination button:hover {
-            background: rgba(0,113,227,0.2);
-            border-color: var(--accent);
-            color: white;
-            transform: translateY(-2px);
+        .load-more-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,113,227,0.5);
         }
         
-        .pagination button.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
-            box-shadow: 0 5px 15px rgba(0,113,227,0.3);
+        .load-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loading-spinner .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0,113,227,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
         
         .empty-state {
@@ -286,21 +298,6 @@
             color: var(--text-secondary);
             margin-bottom: 30px;
             font-size: 16px;
-        }
-        
-        .loading-spinner {
-            text-align: center;
-            padding: 60px 20px;
-        }
-        
-        .loading-spinner .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(0,113,227,0.1);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
         }
         
         @keyframes spin {
@@ -476,8 +473,8 @@
                 </div>
             </div>
 
-            <!-- Пагинация -->
-            <div class="pagination" id="pagination"></div>
+            <!-- Контейнер для кнопки "Загрузить ещё" -->
+            <div id="loadMoreContainer" class="load-more-container"></div>
         </main>
     </div>
 
@@ -508,16 +505,16 @@
             doc, getDoc, collection, query, orderBy, getDocs, limit, startAfter 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
+        // ========== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==========
         let currentUser = null;
-        let allDescriptions = [];
-        let filteredDescriptions = [];
-        let currentPage = 1;
-        const DESCRIPTIONS_PER_PAGE = 10;
-        let lastVisible = null;
-        let loading = false;
-        let hasMore = true;
+        let allDescriptions = [];           // Все загруженные описания
+        let filteredDescriptions = [];       // Отфильтрованные для отображения
+        let lastVisible = null;               // Последний загруженный документ для пагинации
+        let isLoading = false;                // Флаг загрузки
+        let hasMore = true;                   // Есть ли еще данные для загрузки
+        const PAGE_SIZE = 10;                  // Сколько загружать за раз
 
-        // Проверка авторизации
+        // ========== АВТОРИЗАЦИЯ ==========
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = '/login.html';
@@ -525,10 +522,10 @@
             }
             currentUser = user;
             await loadUserData();
-            await loadDescriptions(true); // true = первая загрузка
+            await loadNextPage(); // Загружаем первую страницу
         });
 
-        // Загрузка данных пользователя
+        // ========== ЗАГРУЗКА ДАННЫХ ПОЛЬЗОВАТЕЛЯ ==========
         async function loadUserData() {
             try {
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
@@ -542,44 +539,43 @@
             }
         }
 
-        // Загрузка описаний из Firebase с пагинацией
-        async function loadDescriptions(isFirstLoad = false) {
-            if (loading) return;
-            loading = true;
-
+        // ========== ЗАГРУЗКА СЛЕДУЮЩЕЙ СТРАНИЦЫ ==========
+        async function loadNextPage() {
+            if (!currentUser || isLoading || !hasMore) return;
+            
+            isLoading = true;
+            
             try {
                 const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
                 let q;
                 
-                if (isFirstLoad) {
-                    q = query(descriptionsRef, orderBy('createdAt', 'desc'), limit(DESCRIPTIONS_PER_PAGE));
+                if (!lastVisible) {
+                    // Первая загрузка
+                    q = query(descriptionsRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZE));
                 } else {
-                    if (!lastVisible || !hasMore) {
-                        loading = false;
-                        return;
-                    }
-                    q = query(descriptionsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(DESCRIPTIONS_PER_PAGE));
+                    // Следующие страницы
+                    q = query(descriptionsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(PAGE_SIZE));
                 }
 
                 const snapshot = await getDocs(q);
                 
-                if (isFirstLoad) {
-                    allDescriptions = [];
+                // Обновляем курсор
+                if (snapshot.docs.length > 0) {
+                    lastVisible = snapshot.docs[snapshot.docs.length - 1];
                 }
+                
+                // Проверяем, есть ли еще данные
+                hasMore = snapshot.docs.length === PAGE_SIZE;
 
+                // Преобразуем документы в объекты
                 const newDescriptions = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
 
+                // Добавляем к общему массиву
                 allDescriptions = [...allDescriptions, ...newDescriptions];
                 
-                if (snapshot.docs.length > 0) {
-                    lastVisible = snapshot.docs[snapshot.docs.length - 1];
-                }
-                
-                hasMore = snapshot.docs.length === DESCRIPTIONS_PER_PAGE;
-
                 // Обновляем статистику
                 updateStats();
                 
@@ -588,42 +584,13 @@
 
             } catch (error) {
                 console.error('Ошибка загрузки описаний:', error);
-                document.getElementById('descriptionsList').innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">⚠️</div>
-                        <h3>Ошибка загрузки</h3>
-                        <p>${error.message}</p>
-                        <button class="btn btn-primary" onclick="location.reload()">🔄 Повторить</button>
-                    </div>
-                `;
+                showNotification('Ошибка загрузки: ' + error.message, 'error');
             } finally {
-                loading = false;
+                isLoading = false;
             }
         }
 
-        // Загрузка следующих страниц
-        window.loadMore = function() {
-            if (!loading && hasMore) {
-                loadDescriptions(false);
-            }
-        };
-
-        // Обновление статистики
-        function updateStats() {
-            // Для статистики используем только загруженные данные
-            // В реальном проекте можно сделать отдельный запрос для подсчета общего количества
-            const total = allDescriptions.length;
-            const totalSpent = allDescriptions.reduce((sum, desc) => sum + (desc.cost || 50), 0);
-            const lastDate = allDescriptions.length > 0 && allDescriptions[0].createdAt
-                ? new Date(allDescriptions[0].createdAt).toLocaleDateString('ru-RU')
-                : '—';
-
-            document.getElementById('totalDescriptions').textContent = total;
-            document.getElementById('totalSpent').textContent = totalSpent;
-            document.getElementById('lastDate').textContent = lastDate;
-        }
-
-        // Применение фильтров
+        // ========== ПРИМЕНЕНИЕ ФИЛЬТРОВ ==========
         window.applyFilters = function() {
             const platform = document.getElementById('platformFilter').value;
             const search = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -634,39 +601,37 @@
                 return true;
             });
 
-            currentPage = 1;
             displayDescriptions();
+            updateLoadMoreButton();
         };
 
-        // Экранирование HTML
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Отображение описаний
+        // ========== ОТОБРАЖЕНИЕ ОПИСАНИЙ ==========
         function displayDescriptions() {
             const list = document.getElementById('descriptionsList');
             
             if (filteredDescriptions.length === 0) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">🔍</div>
-                        <h3>Ничего не найдено</h3>
-                        <p>Попробуйте изменить параметры поиска</p>
-                        <a href="/description.html" class="btn btn-primary">✨ Создать описание</a>
-                    </div>
-                `;
-                document.getElementById('pagination').innerHTML = '';
+                if (allDescriptions.length === 0 && !isLoading) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📝</div>
+                            <h3>История пуста</h3>
+                            <p>Сгенерируйте первое описание товара</p>
+                            <a href="/description.html" class="btn btn-primary">✨ Создать описание</a>
+                        </div>
+                    `;
+                } else {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">🔍</div>
+                            <h3>Ничего не найдено</h3>
+                            <p>Попробуйте изменить параметры поиска</p>
+                        </div>
+                    `;
+                }
                 return;
             }
 
-            const start = (currentPage - 1) * DESCRIPTIONS_PER_PAGE;
-            const paginated = filteredDescriptions.slice(start, start + DESCRIPTIONS_PER_PAGE);
-
-            list.innerHTML = paginated.map(desc => {
+            list.innerHTML = filteredDescriptions.map(desc => {
                 const date = desc.createdAt 
                     ? new Date(desc.createdAt).toLocaleString('ru-RU', {
                         day: '2-digit', month: '2-digit', year: 'numeric',
@@ -715,47 +680,53 @@
                     </div>
                 `;
             }).join('');
-
-            // Добавляем кнопку "Загрузить ещё" если есть ещё данные
-            if (hasMore && filteredDescriptions.length >= DESCRIPTIONS_PER_PAGE * currentPage) {
-                list.innerHTML += `
-                    <div style="text-align: center; margin: 30px 0;">
-                        <button class="btn btn-outline" onclick="loadMore()" ${loading ? 'disabled' : ''}>
-                            ${loading ? 'Загрузка...' : '📥 Загрузить ещё'}
-                        </button>
-                    </div>
-                `;
-            }
-
-            updatePagination();
         }
 
-        // Обновление пагинации
-        function updatePagination() {
-            const totalPages = Math.ceil(filteredDescriptions.length / DESCRIPTIONS_PER_PAGE);
-            const pagination = document.getElementById('pagination');
+        // ========== ОБНОВЛЕНИЕ КНОПКИ "ЗАГРУЗИТЬ ЕЩЁ" ==========
+        function updateLoadMoreButton() {
+            const container = document.getElementById('loadMoreContainer');
             
-            if (totalPages <= 1) {
-                pagination.innerHTML = '';
+            if (!hasMore) {
+                container.innerHTML = '';
                 return;
             }
 
-            let buttons = '';
-            for (let i = 1; i <= totalPages; i++) {
-                buttons += `<button onclick="goToPage(${i})" ${i === currentPage ? 'class="active"' : ''}>${i}</button>`;
-            }
-            
-            pagination.innerHTML = buttons;
+            container.innerHTML = `
+                <button class="load-more-btn" onclick="loadMore()" ${isLoading ? 'disabled' : ''}>
+                    ${isLoading ? '⏳ Загрузка...' : '📥 Загрузить ещё'}
+                </button>
+            `;
         }
 
-        // Переход на страницу
-        window.goToPage = function(page) {
-            currentPage = page;
-            displayDescriptions();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        // ========== ЗАГРУЗИТЬ ЕЩЁ ==========
+        window.loadMore = function() {
+            if (!isLoading && hasMore) {
+                loadNextPage();
+            }
         };
 
-        // Копирование описания
+        // ========== ОБНОВЛЕНИЕ СТАТИСТИКИ ==========
+        function updateStats() {
+            const total = allDescriptions.length;
+            const totalSpent = allDescriptions.reduce((sum, desc) => sum + (desc.cost || 50), 0);
+            const lastDate = allDescriptions.length > 0 && allDescriptions[0].createdAt
+                ? new Date(allDescriptions[0].createdAt).toLocaleDateString('ru-RU')
+                : '—';
+
+            document.getElementById('totalDescriptions').textContent = total;
+            document.getElementById('totalSpent').textContent = totalSpent;
+            document.getElementById('lastDate').textContent = lastDate;
+        }
+
+        // ========== ЭКРАНИРОВАНИЕ HTML ==========
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== КОПИРОВАНИЕ ОПИСАНИЯ ==========
         window.copyDescription = async function(id) {
             const desc = allDescriptions.find(d => d.id === id);
             if (desc && desc.description) {
@@ -764,7 +735,7 @@
             }
         };
 
-        // Открытие модального окна
+        // ========== ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ==========
         window.openDescription = function(id) {
             const desc = allDescriptions.find(d => d.id === id);
             if (desc) {
@@ -787,7 +758,7 @@
             }
         };
 
-        // Копирование из модального окна
+        // ========== КОПИРОВАНИЕ ИЗ МОДАЛЬНОГО ОКНА ==========
         window.copyModalDescription = async function() {
             const text = document.getElementById('modalDescription').textContent;
             if (text) {
@@ -796,13 +767,13 @@
             }
         };
 
-        // Закрытие модального окна
+        // ========== ЗАКРЫТИЕ МОДАЛЬНОГО ОКНА ==========
         window.closeModal = function() {
             document.getElementById('descriptionModal').classList.remove('show');
             document.body.style.overflow = '';
         };
 
-        // Уведомления
+        // ========== УВЕДОМЛЕНИЯ ==========
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
@@ -811,7 +782,7 @@
             setTimeout(() => notification.remove(), 3000);
         }
 
-        // Навигация
+        // ========== НАВИГАЦИЯ ==========
         window.navigateTo = function(section) {
             const paths = {
                 'news': '/news.html',
@@ -832,7 +803,7 @@
             window.location.href = '/login.html';
         };
 
-        // Обработчики событий
+        // ========== ОБРАБОТЧИКИ СОБЫТИЙ ==========
         document.getElementById('platformFilter').addEventListener('change', applyFilters);
         document.getElementById('searchInput').addEventListener('input', applyFilters);
 
@@ -851,6 +822,15 @@
                     navigateTo(section);
                 });
             });
+        });
+
+        // Бесконечный скролл (опционально)
+        window.addEventListener('scroll', () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+                if (!isLoading && hasMore) {
+                    loadNextPage();
+                }
+            }
         });
     </script>
 </body>
