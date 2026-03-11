@@ -616,15 +616,15 @@
                     const spent = userData.usedSpent || 0;
                     document.getElementById('totalSpent').textContent = spent.toLocaleString();
                     
-                    // Количество генераций (сумма attempts из всех сессий)
-                    let totalGenerations = 0;
-                    try {
-                        const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
-                        totalGenerations = sessionsSnapshot.docs.reduce((sum, doc) => sum + (doc.data().attempts || 0), 0);
-                    } catch (e) {
-                        console.log('Коллекция generationSessions не найдена');
-                    }
-                    document.getElementById('totalGenerations').textContent = totalGenerations;
+                    // Загрузка количества генераций
+let totalGenerations = 0;
+try {
+    const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
+    totalGenerations = sessionsSnapshot.docs.reduce((sum, doc) => sum + (doc.data().attempts || 0), 0);
+} catch (e) {
+    console.log('Коллекция generationSessions не найдена');
+}
+document.getElementById('totalGenerations').textContent = totalGenerations;  // Просто число
                     
                     // Бонусы
                     const bonus = userData.bonusBalance || 0;
