@@ -202,6 +202,14 @@
                     <div class="image-gallery" id="resultImages"></div>
                 </div>
             </div>
+
+            <!-- История -->
+            <div class="history-section glass" style="margin-top: 40px;">
+                <h2>Последние генерации</h2>
+                <div class="history-list" id="historyList">
+                    <p class="text-muted">Загрузка...</p>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -261,13 +269,34 @@
     <script type="module">
         import { auth, db } from './js/firebase.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-        import { doc, getDoc, collection, addDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { TEMPLATES, applyTemplateToResults } from './js/templates.js';
+        import { 
+            doc, getDoc, collection, addDoc, query, orderBy, 
+            getDocs, updateDoc, increment, limit 
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { TEMPLATES } from './js/templates.js';
 
         let currentUser = null;
         let userData = null;
         let activeTemplate = null;
         let currentDescription = '';
+
+        // Переменные для модального окна загрузки
+        let generationInterval;
+        let generationStartTime;
+
+        // Текущая сессия генерации
+        let currentGenerationSession = {
+            sessionId: null,
+            productName: null,
+            brand: null,
+            category: null,
+            price: null,
+            features: [],
+            originalImageId: null,
+            attemptsMade: 0,
+            maxAttempts: 5,
+            generatedImages: []
+        };
 
         // Проверка авторизации
         onAuthStateChanged(auth, async (user) => {
@@ -278,6 +307,7 @@
             currentUser = user;
             await loadUserData();
             loadActiveTemplate();
+            await loadHistory();
         });
 
         // Загрузка данных пользователя
@@ -310,16 +340,12 @@
                     activeTemplate = TEMPLATES.premium;
                 }
                 
-                // Показываем индикатор
                 const indicator = document.getElementById('templateIndicator');
                 const indicatorText = document.getElementById('templateIndicatorText');
                 
                 if (activeTemplate) {
                     indicator.style.display = 'flex';
                     indicatorText.innerHTML = `🎨 Активный шаблон: <strong>${activeTemplate.name}</strong>`;
-                    
-                    // Применяем стили шаблона
-                    applyTemplateToResults(activeTemplate);
                 }
                 
                 console.log('🎨 Активный шаблон загружен:', activeTemplate.name);
@@ -328,31 +354,85 @@
             }
         }
 
-// Функция для обновления информации о файлах
-window.updateFileInfo = function(inputId, infoId) {
-    const input = document.getElementById(inputId);
-    const info = document.getElementById(infoId);
-    if (!input || !info) return;
-    if (input.files.length === 0) {
-        info.textContent = input.multiple ? 'Файлы не выбраны' : 'Файл не выбран';
-    } else {
-        const names = Array.from(input.files).map(f => f.name).join(', ');
-        info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
-    }
-};
-
-        // Выбор платформы
-        window.selectPlatform = function(platform) {
-            selectedPlatform = platform;
-            document.getElementById('platformWB').classList.toggle('active', platform === 'wb');
-            document.getElementById('platformOzon').classList.toggle('active', platform === 'ozon');
+        // Функция для обновления информации о файлах
+        window.updateFileInfo = function(inputId, infoId) {
+            const input = document.getElementById(inputId);
+            const info = document.getElementById(infoId);
+            if (!input || !info) return;
+            if (input.files.length === 0) {
+                info.textContent = input.multiple ? 'Файлы не выбраны' : 'Файл не выбран';
+            } else {
+                const names = Array.from(input.files).map(f => f.name).join(', ');
+                info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
+            }
         };
 
-        // Счётчик символов
-        window.updateCharCount = function() {
-            const input = document.getElementById('productName');
-            const count = input.value.length;
-            document.getElementById('charCount').textContent = count;
+        // Загрузка истории
+        async function loadHistory() {
+            if (!currentUser) return;
+            try {
+                const historyList = document.getElementById('historyList');
+                if (!historyList) return;
+                
+                const q = query(
+                    collection(db, 'users', currentUser.uid, 'generations'), 
+                    orderBy('timestamp', 'desc'), 
+                    limit(10)
+                );
+                const snapshot = await getDocs(q);
+                
+                if (snapshot.empty) {
+                    historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+                    return;
+                }
+                
+                historyList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const date = new Date(item.timestamp).toLocaleString('ru-RU', { 
+                        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+                    });
+                    const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : 'Фото';
+                    historyList.innerHTML += `
+                        <div class="history-item">
+                            <div>
+                                <strong>${item.productName || 'Без названия'}</strong>
+                                <span class="history-type">${typeLabel}</span>
+                                <div class="history-date">${date}</div>
+                            </div>
+                            <button class="btn btn-small btn-outline" onclick="viewHistoryItem('${doc.id}')">👁️</button>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+                const historyList = document.getElementById('historyList');
+                if (historyList) {
+                    historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
+                }
+            }
+        }
+
+        // Просмотр истории
+        window.viewHistoryItem = async function(docId) {
+            if (!currentUser) return;
+            try {
+                const docSnap = await getDoc(doc(db, 'users', currentUser.uid, 'generations', docId));
+                if (docSnap.exists()) {
+                    const item = docSnap.data();
+                    if (item.result && item.result.images) {
+                        displayCardResults(item.result, item.type || 'wb-card');
+                        document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        showNotification('Не удалось загрузить результат', 'error');
+                    }
+                } else {
+                    showNotification('Запись не найдена', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+                showNotification('Ошибка загрузки', 'error');
+            }
         };
 
         // Показать модальное окно
@@ -361,21 +441,21 @@ window.updateFileInfo = function(inputId, infoId) {
             modal.classList.add('show');
             document.getElementById('generationProgress').style.width = '0%';
             document.getElementById('generationTimer').textContent = '0 сек.';
-            window.generationStartTime = Date.now();
-            if (window.generationInterval) clearInterval(window.generationInterval);
-            window.generationInterval = setInterval(updateGenerationTimer, 1000);
+            generationStartTime = Date.now();
+            if (generationInterval) clearInterval(generationInterval);
+            generationInterval = setInterval(updateGenerationTimer, 1000);
         }
 
         function hideGenerationModal() {
             document.getElementById('generationModal').classList.remove('show');
-            if (window.generationInterval) {
-                clearInterval(window.generationInterval);
-                window.generationInterval = null;
+            if (generationInterval) {
+                clearInterval(generationInterval);
+                generationInterval = null;
             }
         }
 
         function updateGenerationTimer() {
-            const elapsed = Math.floor((Date.now() - window.generationStartTime) / 1000);
+            const elapsed = Math.floor((Date.now() - generationStartTime) / 1000);
             document.getElementById('generationTimer').textContent = `${elapsed} сек.`;
             const progress = document.getElementById('generationProgress');
             const percent = Math.min(100, (elapsed / 30) * 100);
@@ -395,6 +475,22 @@ window.updateFileInfo = function(inputId, infoId) {
             setTimeout(() => {
                 notification.remove();
             }, 3000);
+        }
+
+        // Сброс сессии для новой карточки
+        function resetGenerationSession() {
+            currentGenerationSession = {
+                sessionId: null,
+                productName: null,
+                brand: null,
+                category: null,
+                price: null,
+                features: [],
+                originalImageId: null,
+                attemptsMade: 0,
+                maxAttempts: 5,
+                generatedImages: []
+            };
         }
 
         // Генерация карточки
@@ -424,14 +520,51 @@ window.updateFileInfo = function(inputId, infoId) {
                 return;
             }
 
-            // Проверяем баланс
             const currentBalance = userData.balance || 0;
             if (currentBalance < 100) {
                 showNotification('Недостаточно средств. Требуется 100 ₽', 'error');
                 return;
             }
 
+            resetGenerationSession();
+            currentGenerationSession.productName = productName;
+            currentGenerationSession.brand = brand;
+            currentGenerationSession.category = category;
+            currentGenerationSession.price = price;
+            currentGenerationSession.features = features;
+
+            await performGeneration(files, 0);
+        };
+
+        // Повторная генерация
+        window.regeneratePhoto = async function() {
+            if (!currentUser || !userData) return;
+            if (!currentGenerationSession.originalImageId) {
+                showNotification('Ошибка: нет исходного изображения для повторной генерации', 'error');
+                return;
+            }
+
+            const nextAttempt = currentGenerationSession.attemptsMade;
+            if (nextAttempt >= currentGenerationSession.maxAttempts) {
+                showNotification('Достигнут лимит повторных генераций (максимум 5 фото)', 'warning');
+                return;
+            }
+
+            const cost = 15;
+            const currentBalance = userData.balance || 0;
+            if (currentBalance < cost) {
+                showNotification(`Недостаточно средств. Требуется ${cost} ₽`, 'error');
+                return;
+            }
+
+            await performGeneration(null, nextAttempt);
+        };
+
+        // Общая функция генерации
+        async function performGeneration(files, attempt) {
+            const cost = attempt === 0 ? 100 : 15;
             const btn = document.getElementById('generateWBBtn');
+
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="loading"></span> Генерация...';
@@ -441,19 +574,30 @@ window.updateFileInfo = function(inputId, infoId) {
 
             try {
                 const formData = new FormData();
-                for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
-                formData.append('productName', productName);
-                formData.append('brand', brand);
-                formData.append('category', category);
-                formData.append('price', price);
-                formData.append('features', JSON.stringify(features));
-                formData.append('platform', 'wb');
-                formData.append('attempt', 0);
+                if (files) {
+                    for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
+                }
+                formData.append('productName', currentGenerationSession.productName || document.getElementById('wbProductName').value.trim());
+                formData.append('brand', currentGenerationSession.brand || document.getElementById('wbBrand').value.trim());
+                formData.append('category', currentGenerationSession.category || document.getElementById('wbCategory').value);
+                formData.append('price', currentGenerationSession.price || document.getElementById('wbPrice').value.trim() || '1990');
                 
-                // Добавляем шаблон, если он есть
+                const featuresInput = document.getElementById('wbFeatures')?.value;
+                const features = currentGenerationSession.features.length > 0 
+                    ? currentGenerationSession.features 
+                    : (featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : []);
+                
+                formData.append('features', features.join(','));
+                formData.append('platform', 'wb');
+                formData.append('attempt', attempt);
+                
+                if (currentGenerationSession.originalImageId) {
+                    formData.append('originalImageId', currentGenerationSession.originalImageId);
+                }
+                
+                // Добавляем шаблон
                 if (activeTemplate) {
                     formData.append('template', JSON.stringify(activeTemplate));
-                    console.log('🎨 Отправляем шаблон:', activeTemplate.name);
                 }
 
                 const response = await fetch('/api/generate-card', {
@@ -467,35 +611,79 @@ window.updateFileInfo = function(inputId, infoId) {
                 }
                 
                 const result = await response.json();
-                
-                // Отображаем результат
-                displayCardResults(result, 'wb');
 
-                await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
-                    type: 'wb-card',
-                    productName,
-                    result,
-                    template: activeTemplate?.name,
-                    timestamp: new Date().toISOString()
-                });
+                if (result.originalImageId) {
+                    currentGenerationSession.originalImageId = result.originalImageId;
+                }
+
+                if (result.images && result.images.length) {
+                    currentGenerationSession.generatedImages.push(result.images[0]);
+                }
+                
+                const newAttemptCount = attempt + 1;
+                currentGenerationSession.attemptsMade = newAttemptCount;
+
+                // Сохраняем в Firestore
+                if (attempt === 0) {
+                    // Первая генерация - создаем новую сессию
+                    const sessionData = {
+                        type: 'product-session',
+                        productName: currentGenerationSession.productName || document.getElementById('wbProductName').value.trim(),
+                        brand: currentGenerationSession.brand || document.getElementById('wbBrand').value.trim(),
+                        category: currentGenerationSession.category || document.getElementById('wbCategory').value,
+                        price: currentGenerationSession.price || document.getElementById('wbPrice').value.trim() || '1990',
+                        features: features,
+                        attempts: 1,
+                        totalSpent: cost,
+                        images: [result.images[0]],
+                        imageIds: [`generated/${result.images[0].split('/').pop()}`],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        template: activeTemplate?.name
+                    };
+                    
+                    const sessionRef = await addDoc(collection(db, 'users', currentUser.uid, 'generationSessions'), sessionData);
+                    currentGenerationSession.sessionId = sessionRef.id;
+                    currentGenerationSession.productName = sessionData.productName;
+                    currentGenerationSession.brand = sessionData.brand;
+                    currentGenerationSession.category = sessionData.category;
+                    currentGenerationSession.price = sessionData.price;
+                    currentGenerationSession.features = features;
+                } 
+                else if (currentGenerationSession.sessionId) {
+                    // Повторная генерация - обновляем сессию
+                    const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
+                    await updateDoc(sessionRef, {
+                        attempts: newAttemptCount,
+                        totalSpent: increment(cost),
+                        images: currentGenerationSession.generatedImages,
+                        updatedAt: new Date().toISOString()
+                    });
+                }
 
                 // Списываем деньги
                 await updateDoc(doc(db, 'users', currentUser.uid), { 
-                    balance: increment(-100),
-                    usedSpent: increment(100)
+                    balance: increment(-cost),
+                    usedSpent: increment(cost)
                 });
-                
+
                 const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (updatedDoc.exists()) {
                     userData = updatedDoc.data();
+                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
                 }
-                updateUI();
-                loadHistory();
-                showNotification('Карточка для WB создана!', 'success');
-            } catch (error) {
-                console.error('Ошибка генерации:', error);
                 
-                // Парсим ошибку
+                displayCardResults(result);
+                await loadHistory();
+                
+                const message = attempt === 0 
+                    ? '✅ Первое фото готово! Можете сгенерировать ещё за 15 ₽' 
+                    : `✅ Фото №${attempt + 1} готово! Списано ${cost} ₽`;
+                showNotification(message, 'success');
+
+            } catch (error) {
+                console.error('❌ Ошибка генерации:', error);
+                
                 let errorMessage = 'Неизвестная ошибка';
                 try {
                     if (error.message) {
@@ -508,15 +696,12 @@ window.updateFileInfo = function(inputId, infoId) {
                     errorMessage = error.message || 'Ошибка соединения';
                 }
                 
-                // Показываем понятное сообщение
                 if (errorMessage.includes('API key')) {
                     showNotification('❌ Ошибка API ключа', 'error');
                 } else if (errorMessage.includes('model')) {
                     showNotification('❌ Ошибка модели Gemini', 'error');
                 } else if (errorMessage.includes('balance')) {
                     showNotification('❌ Недостаточно средств', 'error');
-                } else if (errorMessage.includes('500')) {
-                    showNotification('❌ Ошибка сервера. Попробуйте позже.', 'error');
                 } else {
                     showNotification('❌ ' + errorMessage.substring(0, 100), 'error');
                 }
@@ -524,125 +709,97 @@ window.updateFileInfo = function(inputId, infoId) {
                 hideGenerationModal();
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '✨ Создать первое фото (100 ₽)';
+                    btn.innerHTML = attempt === 0 
+                        ? '✨ Создать первое фото (100 ₽)' 
+                        : '🔄 Сделать ещё (15 ₽)';
                 }
+                updateRegenerationUI();
             }
-        };
+        }
 
         // Отображение результатов
-        function displayCardResults(result, platform) {
+        function displayCardResults(result) {
             const container = document.getElementById('cardResults');
             if (!container) return;
             container.style.display = 'block';
 
-            const gallery = document.getElementById('resultImages');
-            if (gallery) {
-                gallery.innerHTML = '';
-                if (result.images && result.images.length) {
-                    result.images.forEach(url => {
+            let gallery = document.getElementById('resultImages');
+            if (!gallery) {
+                gallery = document.createElement('div');
+                gallery.id = 'resultImages';
+                gallery.className = 'image-gallery';
+                container.appendChild(gallery);
+            }
+
+            if (result.images && result.images.length) {
+                result.images.forEach(url => {
+                    const existingImages = Array.from(gallery.children).map(img => img.src);
+                    if (!existingImages.includes(url)) {
                         const img = document.createElement('img');
                         img.src = url;
-                        img.alt = 'Generated';
-                        img.onclick = () => window.openLightbox(url);
+                        img.alt = `Фото товара`;
+                        img.onclick = () => openLightbox(url);
                         gallery.appendChild(img);
-                    });
-                    
-                    // Применяем шаблон к результатам
-                    if (activeTemplate) {
-                        setTimeout(() => {
-                            applyTemplateToResults(activeTemplate);
-                        }, 100);
                     }
-                } else {
-                    gallery.innerHTML = '<p class="text-muted">Изображения не сгенерированы</p>';
-                }
-            }
-        }
-
-        // Обновление UI
-        function updateUI() {
-            if (!userData) return;
-            
-            const currentBalance = userData.balance || 0;
-            const balanceSelectors = [
-                '#remainingGenerations',
-                '#remainingGenerationsDetail',
-                '#sidebarBalance'
-            ];
-            
-            balanceSelectors.forEach(selector => {
-                document.querySelectorAll(selector).forEach(el => {
-                    if (el) el.textContent = currentBalance;
                 });
-            });
+            }
 
-            const userEmailEl = document.getElementById('userEmail');
-            if (userEmailEl) {
-                userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
+            updateRegenerationUI();
+        }
+
+        // Обновление UI повторных генераций
+        function updateRegenerationUI() {
+            const container = document.getElementById('cardResults');
+            if (!container) return;
+
+            let infoBlock = document.getElementById('regenerationInfo');
+            if (!infoBlock) {
+                infoBlock = document.createElement('div');
+                infoBlock.id = 'regenerationInfo';
+                infoBlock.className = 'regeneration-info glass';
+                container.insertBefore(infoBlock, container.firstChild);
+            }
+
+            const remaining = currentGenerationSession.maxAttempts - currentGenerationSession.attemptsMade;
+            const nextCost = 15;
+
+            infoBlock.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <strong>${currentGenerationSession.productName}</strong> · 
+                        ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
+                    </div>
+                    <div>
+                        Следующая: ${nextCost} ₽ · осталось ${remaining}
+                    </div>
+                </div>
+            `;
+
+            let regenBtn = document.getElementById('regenerateBtn');
+            if (!regenBtn) {
+                regenBtn = document.createElement('button');
+                regenBtn.id = 'regenerateBtn';
+                regenBtn.className = 'btn btn-primary';
+                regenBtn.style.marginTop = '15px';
+                regenBtn.onclick = window.regeneratePhoto;
+                container.appendChild(regenBtn);
+            }
+
+            if (remaining > 0) {
+                regenBtn.style.display = 'inline-block';
+                regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
+                regenBtn.disabled = false;
+            } else {
+                regenBtn.style.display = 'none';
             }
         }
 
-        // Загрузка истории
-        async function loadHistory() {
-            if (!currentUser) return;
-            try {
-                const q = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
-                const snapshot = await getDocs(q);
-                const historyList = document.getElementById('historyList');
-                if (!historyList) return;
-                if (snapshot.empty) {
-                    historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
-                    return;
-                }
-                historyList.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    const date = new Date(item.timestamp).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-                    const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : 'Фото';
-                    historyList.innerHTML += `
-                        <div class="history-item">
-                            <div>
-                                <strong>${item.productName || 'Без названия'}</strong>
-                                <span class="history-type">${typeLabel}</span>
-                                <div class="history-date">${date}</div>
-                            </div>
-                            <button class="btn btn-small btn-outline" onclick="viewHistoryItem('${doc.id}')">👁️</button>
-                        </div>
-                    `;
-                });
-            } catch (error) {
-                console.error('Ошибка загрузки истории:', error);
-            }
-        }
-
-        // Просмотр истории
-        window.viewHistoryItem = async function(docId) {
-            if (!currentUser) return;
-            try {
-                const docSnap = await getDoc(doc(db, 'users', currentUser.uid, 'generations', docId));
-                if (docSnap.exists()) {
-                    const item = docSnap.data();
-                    if (item.result && item.result.images) {
-                        displayCardResults(item.result, item.type || 'wb-card');
-                        document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
-                    } else {
-                        showNotification('Не удалось загрузить результат', 'error');
-                    }
-                } else {
-                    showNotification('Запись не найдена', 'error');
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки истории:', error);
-                showNotification('Ошибка загрузки', 'error');
-            }
-        };
-
-        // Функции для лайтбокса
-        window.openLightbox = function(imageUrl) {
+        // Лайтбокс
+        window.openLightbox = function(url) {
             const lightbox = document.getElementById('lightbox');
             const lightboxImg = document.getElementById('lightbox-img');
             if (!lightbox || !lightboxImg) return;
-            lightboxImg.src = imageUrl;
+            lightboxImg.src = url;
             lightbox.classList.add('show');
             document.body.style.overflow = 'hidden';
         };
@@ -663,53 +820,4 @@ window.updateFileInfo = function(inputId, infoId) {
             document.getElementById('paymentModal').classList.remove('show');
         };
 
-        window.calculatePrice = function() {
-            const rubles = parseInt(document.getElementById('customRubles').value) || 0;
-            document.getElementById('selectedPackageName').textContent = `${rubles} ₽`;
-            document.getElementById('modalAmount').textContent = `${rubles} ₽`;
-        };
-
-        window.confirmPayment = function() {
-            const rubles = parseInt(document.getElementById('customRubles').value) || 0;
-            if (rubles < 100) {
-                alert('Минимальная сумма пополнения — 100 ₽');
-                return;
-            }
-            alert(`Перенаправление на оплату ${rubles} ₽...`);
-            closeModal();
-        };
-
-        // Функции для навигации
-        window.navigateTo = function(section) {
-            const paths = {
-                'news': '/news.html',
-                'balance': '/balance.html',
-                'generate': '/generate.html',
-                'description': '/description.html',
-                'templates': '/templates.html',
-                'description-history': '/description-history.html',
-                'history': '/history.html',
-                'settings': '/settings.html'
-            };
-            if (paths[section]) {
-                window.location.href = paths[section];
-            }
-        };
-
-        window.logout = async function() {
-            await auth.signOut();
-            window.location.href = '/login.html';
-        };
-
-        // Обработчики меню
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    const section = this.dataset.section;
-                    navigateTo(section);
-                });
-            });
-        });
-    </script>
-</body>
-</html>
+        window.calculatePrice
