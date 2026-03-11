@@ -63,7 +63,6 @@ self.addEventListener('install', event => {
         console.log('Кэширование ресурсов');
         return cache.addAll(urlsToCache).catch(error => {
           console.error('Ошибка кэширования ресурсов:', error);
-          // Продолжаем, даже если некоторые ресурсы не закешировались
         });
       })
   );
@@ -107,23 +106,24 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Для API запросов - Network First
+  // Для API запросов - Network First (ИСПРАВЛЕНО)
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Кэшируем только успешные GET запросы и только если тело ответа еще не использовано
-          if (event.request.method === 'GET' && response.ok && response.body) {
-            try {
-              const responseClone = response.clone();
-              caches.open(API_CACHE_NAME).then(cache => {
-                cache.put(event.request, responseClone).catch(err => {
-                  console.log('Не удалось закэшировать API ответ');
+          // Кэшируем только успешные GET запросы
+          // ВАЖНО: проверяем, что response можно клонировать
+          if (event.request.method === 'GET' && response.ok) {
+            // Клонируем ответ ДО того, как он будет использован
+            const responseToCache = response.clone();
+            
+            caches.open(API_CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache).catch(err => {
+                  // Тихая ошибка - не критично
                 });
-              });
-            } catch (e) {
-              console.log('Ошибка клонирования ответа:', e);
-            }
+              })
+              .catch(() => {});
           }
           return response;
         })
@@ -147,24 +147,23 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         if (cachedResponse) {
-          // Обновляем кэш в фоне (только если тело ответа еще не использовано)
-          fetch(event.request).then(response => {
-            if (response.ok && response.body) {
-              caches.open(CACHE_NAME).then(cache => {
-                try {
-                  cache.put(event.request, response.clone()).catch(err => {});
-                } catch (e) {}
-              });
-            }
-          }).catch(() => {});
+          // Обновляем кэш в фоне (НЕ блокируем ответ)
+          fetch(event.request)
+            .then(response => {
+              if (response.ok) {
+                caches.open(CACHE_NAME).then(cache => {
+                  cache.put(event.request, response).catch(() => {});
+                });
+              }
+            })
+            .catch(() => {});
           return cachedResponse;
         }
         return fetch(event.request).then(response => {
-          if (response.ok && response.body) {
+          if (response.ok) {
+            const responseToCache = response.clone();
             caches.open(CACHE_NAME).then(cache => {
-              try {
-                cache.put(event.request, response.clone()).catch(err => {});
-              } catch (e) {}
+              cache.put(event.request, responseToCache).catch(() => {});
             });
           }
           return response;
@@ -182,11 +181,10 @@ self.addEventListener('fetch', event => {
       caches.match(event.request).then(cachedResponse => {
         const fetchPromise = fetch(event.request)
           .then(networkResponse => {
-            if (networkResponse.ok && networkResponse.body) {
+            if (networkResponse.ok) {
+              const responseToCache = networkResponse.clone();
               caches.open(CACHE_NAME).then(cache => {
-                try {
-                  cache.put(event.request, networkResponse.clone()).catch(err => {});
-                } catch (e) {}
+                cache.put(event.request, responseToCache).catch(() => {});
               });
             }
             return networkResponse;
@@ -205,11 +203,10 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        if (event.request.method === 'GET' && response.ok && response.body) {
+        if (event.request.method === 'GET' && response.ok) {
+          const responseToCache = response.clone();
           caches.open(CACHE_NAME).then(cache => {
-            try {
-              cache.put(event.request, response.clone()).catch(err => {});
-            } catch (e) {}
+            cache.put(event.request, responseToCache).catch(() => {});
           });
         }
         return response;
