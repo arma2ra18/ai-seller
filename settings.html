@@ -285,11 +285,11 @@
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Всего потрачено:</span>
-                            <span class="stat-value" id="totalGenerations">0 ₽</span>
+                            <span class="stat-value" id="totalSpent">0 ₽</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Всего генераций:</span>
-                            <span class="stat-value" id="totalSessions">0</span>
+                            <span class="stat-value" id="totalGenerations">0</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-label">Последний вход:</span>
@@ -330,25 +330,88 @@
         </div>
     </div>
 
-    <script type="module" src="js/dashboard.js"></script>
-    <script>
-        // Загрузка данных пользователя
-        async function loadUserSettings() {
+    <script type="module">
+        import { auth, db } from './js/firebase.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { 
+            doc, getDoc, collection, getDocs, updateDoc 
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { 
+            updateProfile, updateEmail, updatePassword, deleteUser,
+            reauthenticateWithCredential, EmailAuthProvider 
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+
+        let currentUser = null;
+        let userData = null;
+
+        // Проверка авторизации
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
+            }
+            currentUser = user;
+            await loadUserData();
+        });
+
+        // Загрузка данных пользователя из Firestore
+        async function loadUserData() {
             try {
-                document.getElementById('displayName').value = 'Алексей';
-                document.getElementById('userEmailSettings').value = 'alex@example.com';
-                document.getElementById('phoneNumber').value = '+7 999 123-45-67';
-                document.getElementById('accountCreated').textContent = '11.03.2026';
-                document.getElementById('totalGenerations').textContent = '1 250 ₽';
-                document.getElementById('totalSessions').textContent = '8';
-                document.getElementById('lastLogin').textContent = '11.03.2026, 14:30';
-                document.getElementById('sidebarBalance').textContent = '1 250';
-                document.getElementById('userEmail').textContent = 'alex@example.com';
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    
+                    // Заполняем поля формы
+                    document.getElementById('displayName').value = userData.displayName || '';
+                    document.getElementById('userEmailSettings').value = userData.email || currentUser.email || '';
+                    document.getElementById('phoneNumber').value = userData.phoneNumber || '';
+                    
+                    // Баланс в сайдбаре
+                    const balance = parseInt(userData.balance) || 0;
+                    document.getElementById('sidebarBalance').textContent = balance;
+                    document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
+                    
+                    // Дата регистрации
+                    if (userData.createdAt) {
+                        const date = new Date(userData.createdAt);
+                        document.getElementById('accountCreated').textContent = date.toLocaleDateString('ru-RU');
+                    }
+                    
+                    // Всего потрачено
+                    const spent = parseInt(userData.usedSpent) || 0;
+                    document.getElementById('totalSpent').textContent = spent.toLocaleString() + ' ₽';
+                    
+                    // Количество генераций
+                    let totalGenerations = 0;
+                    try {
+                        const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
+                        sessionsSnapshot.forEach(doc => {
+                            totalGenerations += parseInt(doc.data().attempts) || 0;
+                        });
+                    } catch (e) {
+                        console.log('Коллекция generationSessions не найдена');
+                    }
+                    document.getElementById('totalGenerations').textContent = totalGenerations;
+                    
+                    // Последний вход
+                    if (currentUser.metadata?.lastSignInTime) {
+                        const lastLogin = new Date(currentUser.metadata.lastSignInTime);
+                        document.getElementById('lastLogin').textContent = lastLogin.toLocaleString('ru-RU');
+                    }
+                    
+                    console.log('✅ Настройки загружены:', {
+                        balance: balance,
+                        spent: spent,
+                        generations: totalGenerations
+                    });
+                }
             } catch (error) {
-                console.error('Ошибка загрузки настроек:', error);
+                console.error('❌ Ошибка загрузки данных:', error);
+                showSettingsMessage('Ошибка загрузки данных', false);
             }
         }
 
+        // Показать уведомление
         function showSettingsMessage(text, isSuccess = true) {
             const msgEl = document.getElementById('settingsSuccessMessage');
             msgEl.textContent = text;
@@ -365,15 +428,27 @@
             setTimeout(() => msgEl.classList.remove('show'), 3000);
         }
 
-        window.updateDisplayName = function() {
+        // Обновление имени
+        window.updateDisplayName = async function() {
             const newName = document.getElementById('displayName').value.trim();
             if (!newName) {
                 showSettingsMessage('Введите имя', false);
                 return;
             }
-            showSettingsMessage('Имя обновлено!');
+            
+            try {
+                await updateProfile(currentUser, { displayName: newName });
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    displayName: newName
+                });
+                showSettingsMessage('Имя обновлено!');
+            } catch (error) {
+                console.error('Ошибка обновления имени:', error);
+                showSettingsMessage('Ошибка: ' + error.message, false);
+            }
         };
 
+        // Смена email
         window.changeEmail = function() {
             document.getElementById('emailModal').classList.add('show');
         };
@@ -384,7 +459,7 @@
             document.getElementById('emailConfirmPassword').value = '';
         };
 
-        window.confirmEmailChange = function() {
+        window.confirmEmailChange = async function() {
             const newEmail = document.getElementById('newEmail').value.trim();
             const password = document.getElementById('emailConfirmPassword').value;
             
@@ -393,21 +468,45 @@
                 return;
             }
             
-            showSettingsMessage('Email успешно изменён!');
-            closeEmailModal();
-            document.getElementById('userEmailSettings').value = newEmail;
+            try {
+                const credential = EmailAuthProvider.credential(currentUser.email, password);
+                await reauthenticateWithCredential(currentUser, credential);
+                await updateEmail(currentUser, newEmail);
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    email: newEmail
+                });
+                
+                showSettingsMessage('Email успешно изменён!');
+                closeEmailModal();
+                document.getElementById('userEmailSettings').value = newEmail;
+                document.getElementById('userEmail').textContent = newEmail;
+            } catch (error) {
+                console.error('Ошибка смены email:', error);
+                showSettingsMessage('Ошибка: ' + error.message, false);
+            }
         };
 
-        window.updatePhoneNumber = function() {
+        // Обновление телефона
+        window.updatePhoneNumber = async function() {
             const newPhone = document.getElementById('phoneNumber').value.trim();
             if (!newPhone) {
                 showSettingsMessage('Введите номер телефона', false);
                 return;
             }
-            showSettingsMessage('Номер телефона обновлён!');
+            
+            try {
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    phoneNumber: newPhone
+                });
+                showSettingsMessage('Номер телефона обновлён!');
+            } catch (error) {
+                console.error('Ошибка обновления телефона:', error);
+                showSettingsMessage('Ошибка: ' + error.message, false);
+            }
         };
 
-        window.changePassword = function() {
+        // Смена пароля
+        window.changePassword = async function() {
             const newPassword = document.getElementById('newPassword').value;
             
             if (!newPassword) {
@@ -420,41 +519,58 @@
                 return;
             }
             
-            showSettingsMessage('Пароль успешно изменён!');
-            document.getElementById('newPassword').value = '';
+            try {
+                await updatePassword(currentUser, newPassword);
+                showSettingsMessage('Пароль успешно изменён!');
+                document.getElementById('newPassword').value = '';
+            } catch (error) {
+                console.error('Ошибка смены пароля:', error);
+                if (error.code === 'auth/requires-recent-login') {
+                    showSettingsMessage('Требуется повторный вход', false);
+                } else {
+                    showSettingsMessage('Ошибка: ' + error.message, false);
+                }
+            }
         };
 
-        window.deleteAccount = function() {
+        // Удаление аккаунта
+        window.deleteAccount = async function() {
             if (!confirm('Вы уверены, что хотите удалить аккаунт? Это действие необратимо.')) {
                 return;
             }
-            alert('Аккаунт будет удалён. Перенаправление...');
-            window.location.href = '/';
+            
+            try {
+                await deleteDoc(doc(db, 'users', currentUser.uid));
+                await deleteUser(currentUser);
+                alert('Аккаунт удалён. Перенаправление...');
+                window.location.href = '/';
+            } catch (error) {
+                console.error('Ошибка удаления:', error);
+                showSettingsMessage('Ошибка: ' + error.message, false);
+            }
         };
 
         // Навигация
-        function navigateTo(section) {
-            if (section === 'news') {
-                window.location.href = '/news.html';
-            } else if (section === 'balance') {
-                window.location.href = '/balance.html';
-            } else if (section === 'wb') {
-                window.location.href = '/dashboard.html';
-            } else if (section === 'history') {
-                window.location.href = '/history.html';
-            } else if (section === 'settings') {
-                window.location.href = '/settings.html';
+        window.navigateTo = function(section) {
+            const paths = {
+                'news': '/news.html',
+                'balance': '/balance.html',
+                'generate': '/generate.html',
+                'history': '/history.html',
+                'settings': '/settings.html'
+            };
+            if (paths[section]) {
+                window.location.href = paths[section];
             }
-        }
+        };
 
         // Выход
-        window.logout = function() {
+        window.logout = async function() {
+            await auth.signOut();
             window.location.href = '/login.html';
         };
 
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserSettings();
-            
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.addEventListener('click', function(e) {
                     const section = this.dataset.section;
