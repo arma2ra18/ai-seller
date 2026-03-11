@@ -503,65 +503,91 @@ async function loadDescriptions() {
             displayDescriptions();
         };
 
-        // Отображение описаний с пагинацией
-        function displayDescriptions() {
-            const list = document.getElementById('descriptionsList');
-            
-            if (filteredDescriptions.length === 0) {
-                list.innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">📝</div>
-                        <h3>История пуста</h3>
-                        <p>Сгенерируйте первое описание товара</p>
-                        <a href="/description.html" class="btn btn-primary">✨ Создать описание</a>
-                    </div>
-                `;
-                document.getElementById('pagination').innerHTML = '';
-                return;
-            }
+       // Отображение описаний (ИСПРАВЛЕННАЯ)
+function displayDescriptions() {
+    const list = document.getElementById('descriptionsList');
+    
+    if (filteredDescriptions.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">🔍</div>
+                <h3>Ничего не найдено</h3>
+                <p>Попробуйте изменить параметры поиска</p>
+            </div>
+        `;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+    }
 
-            const start = (currentPage - 1) * DESCRIPTIONS_PER_PAGE;
-            const paginated = filteredDescriptions.slice(start, start + DESCRIPTIONS_PER_PAGE);
+    const start = (currentPage - 1) * DESCRIPTIONS_PER_PAGE;
+    const paginated = filteredDescriptions.slice(start, start + DESCRIPTIONS_PER_PAGE);
 
-            list.innerHTML = paginated.map(desc => {
-                const date = new Date(desc.createdAt).toLocaleString('ru-RU', {
-                    day: '2-digit', month: '2-digit', year: 'numeric',
-                    hour: '2-digit', minute: '2-digit'
-                });
-                
-                const preview = desc.description.substring(0, 300) + '...';
-                
-                return `
-                    <div class="description-item" onclick="openDescription('${desc.id}')">
-                        <div class="description-header">
-                            <div class="description-title">
-                                <h3>${desc.productName || 'Без названия'}</h3>
-                                <span class="platform-badge ${desc.platform === 'wb' ? 'wb' : 'ozon'}">
-                                    ${desc.platform === 'wb' ? 'Wildberries' : 'Ozon'}
-                                </span>
-                            </div>
-                            <div class="description-meta">
-                                <span>📅 ${date}</span>
-                                <span>💰 50 ₽</span>
-                            </div>
-                        </div>
-                        
-                        <div class="description-preview">
-                            ${preview}
-                        </div>
-                        
-                        <div class="description-footer">
-                            <div class="description-actions">
-                                <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); copyDescription('${desc.id}')">📋 Копировать</button>
-                                <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); openDescription('${desc.id}')">🔍 Подробнее</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            updatePagination();
+    list.innerHTML = paginated.map(desc => {
+        const date = desc.createdAt 
+            ? new Date(desc.createdAt).toLocaleString('ru-RU', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+              })
+            : 'Дата неизвестна';
+        
+        // Безопасное получение preview с проверкой на undefined
+        let preview = 'Описание отсутствует';
+        if (desc.description && typeof desc.description === 'string') {
+            preview = desc.description.length > 300 
+                ? desc.description.substring(0, 300) + '...' 
+                : desc.description;
         }
+        
+        // Безопасное получение названия товара
+        const productName = desc.productName || 'Без названия';
+        
+        // Безопасное получение платформы
+        const platform = desc.platform || 'wb';
+        const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
+        const platformClass = platform === 'wb' ? 'wb' : 'ozon';
+        
+        // Безопасное получение стоимости
+        const cost = desc.cost || 50;
+        
+        return `
+            <div class="description-item" onclick="openDescription('${desc.id}')">
+                <div class="description-header">
+                    <div class="description-title">
+                        <h3>${escapeHtml(productName)}</h3>
+                        <span class="platform-badge ${platformClass}">
+                            ${platformName}
+                        </span>
+                    </div>
+                    <div class="description-meta">
+                        <span>📅 ${date}</span>
+                        <span>💰 ${cost} ₽</span>
+                    </div>
+                </div>
+                
+                <div class="description-preview">
+                    ${escapeHtml(preview)}
+                </div>
+                
+                <div class="description-footer">
+                    <div class="description-actions">
+                        <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); copyDescription('${desc.id}')">📋 Копировать</button>
+                        <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); openDescription('${desc.id}')">🔍 Подробнее</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    updatePagination();
+}
+
+// Добавьте функцию для экранирования HTML (безопасность)
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
         // Обновление пагинации
         function updatePagination() {
