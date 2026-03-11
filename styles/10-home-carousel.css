@@ -1,0 +1,212 @@
+.examples {
+    padding: 80px 0;
+}
+
+/* Обычная карусель */
+.carousel-container {
+    position: relative;
+    max-width: 800px;
+    margin: 0 auto;
+    overflow: hidden;
+    border-radius: 24px;
+}
+.carousel-track {
+    display: flex;
+    transition: transform 0.5s ease;
+}
+.carousel-slide {
+    min-width: 100%;
+    position: relative;
+}
+.carousel-slide img {
+    width: 100%;
+    display: block;
+    border-radius: 24px;
+}
+.slide-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 30px 20px 20px;
+    color: white;
+    border-radius: 0 0 24px 24px;
+}
+.slide-caption h4 {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+.slide-caption p {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 5px;
+}
+.slide-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent-gold);
+}
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    transition: var(--transition);
+    z-index: 2;
+}
+.carousel-btn:hover {
+    background: rgba(0,113,227,0.8);
+}
+.carousel-btn.prev {
+    left: 20px;
+}
+.carousel-btn.next {
+    right: 20px;
+}
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+.dot {
+    width: 12px;
+    height: 12px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+}
+.dot.active {
+    background: var(--accent);
+    transform: scale(1.2);
+}
+
+/* Премиум-карусель */
+.premium-carousel {
+    position: relative;
+    max-width: 1000px;
+    margin: 0 auto;
+    overflow: hidden;
+    padding: 30px 0;
+}
+.premium-track {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+    gap: 20px;
+    padding: 0 20px;
+}
+.premium-slide {
+    flex: 0 0 calc(33.333% - 14px);
+    transition: all 0.5s ease;
+    filter: brightness(0.5) blur(2px);
+    transform: scale(0.85);
+    opacity: 0.7;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+.premium-slide.active {
+    filter: brightness(1) blur(0);
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 20px 40px rgba(0,113,227,0.4);
+    z-index: 10;
+}
+.premium-slide img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 20px;
+    transition: transform 0.3s;
+}
+.premium-slide.active img {
+    transform: scale(1.02);
+}
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    font-size: 24px;
+    cursor: pointer;
+    z-index: 20;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.carousel-arrow:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 0 20px rgba(0,113,227,0.5);
+}
+.carousel-arrow.prev {
+    left: 10px;
+}
+.carousel-arrow.next {
+    right: 10px;
+}
+
+/* Улучшенная карусель с центрированием */
+.examples .carousel-container {
+    position: relative;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 30px 0;
+}
+.examples .carousel-wrapper {
+    overflow: hidden;
+    margin: 0 60px;
+    border-radius: 24px;
+}
+.examples .carousel-track {
+    display: flex;
+    transition: transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+    gap: 0;
+}
+.examples .carousel-slide {
+    flex: 0 0 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0;
+    background: transparent;
+    box-shadow: none;
+}
+.examples .carousel-slide img {
+    max-width: 90%;
+    max-height: 450px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 24px;
+    box-shadow: 0 0 30px rgba(0, 113, 227, 0.4);
+    transition: box-shadow 0.4s ease, transform 0.4s ease;
+    margin: 0 auto;
+    display: block;
+}
+.examples .carousel-slide img:hover {
+    box-shadow: 0 0 50px rgba(0, 113, 227, 0.8);
+    transform: scale(1.02);
+}
+.examples .carousel-slide::before,
+.examples .carousel-slide::after {
+    display: none;
+    box-shadow: none;
+}
