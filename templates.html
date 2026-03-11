@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Шаблоны карточек — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/23-templates.css">
     
     <!-- Подключаем шрифты -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
@@ -29,6 +30,221 @@
             });
         }
     </script>
+    
+    <style>
+        /* Временные стили для предпросмотра */
+        .preview-card {
+            background: var(--card-cardbg);
+            color: var(--card-text);
+            padding: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .preview-image {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, var(--card-primary), var(--card-secondary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            color: white;
+        }
+        
+        .preview-content {
+            padding: 25px;
+        }
+        
+        .preview-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--card-primary);
+        }
+        
+        .preview-price {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: var(--card-secondary);
+        }
+        
+        .preview-features {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .preview-features li {
+            margin: 8px 0;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Layout классы */
+        .layout-centered {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .layout-left {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+        }
+        
+        .layout-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+        }
+        
+        .layout-asymmetric {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .layout-asymmetric .preview-image {
+            grid-column: 1;
+            height: 100%;
+        }
+        
+        .layout-asymmetric .preview-content {
+            grid-column: 2;
+        }
+        
+        @media (max-width: 768px) {
+            .layout-asymmetric {
+                grid-template-columns: 1fr;
+            }
+            .layout-asymmetric .preview-content {
+                grid-column: 1;
+            }
+        }
+        
+        /* Анимации */
+        @keyframes cardFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes cardSlide {
+            from { 
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes cardScale {
+            from { 
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to { 
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        @keyframes cardPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes cardGlitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(2px, -2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(2px, 2px); }
+            100% { transform: translate(0); }
+        }
+        
+        @keyframes cardRotate {
+            from { 
+                opacity: 0;
+                transform: rotate(-5deg) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: rotate(0) scale(1);
+            }
+        }
+        
+        .card-animation-fade {
+            animation: cardFade 0.5s ease;
+        }
+        
+        .card-animation-slide {
+            animation: cardSlide 0.5s ease;
+        }
+        
+        .card-animation-scale {
+            animation: cardScale 0.5s ease;
+        }
+        
+        .card-animation-pulse {
+            animation: cardPulse 2s infinite;
+        }
+        
+        .card-animation-glitch {
+            animation: cardGlitch 0.3s infinite;
+        }
+        
+        .card-animation-rotate {
+            animation: cardRotate 0.5s ease;
+        }
+        
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: rgba(28,28,30,0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 60px;
+            color: white;
+            z-index: 1000;
+            box-shadow: var(--shadow-lg);
+            animation: slideInRight 0.4s ease;
+        }
+        
+        .notification.success {
+            background: rgba(48,209,88,0.95);
+        }
+        
+        .notification.error {
+            background: rgba(255,59,48,0.95);
+        }
+        
+        .notification.info {
+            background: rgba(0,113,227,0.95);
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Видеофон -->
@@ -149,7 +365,7 @@
                     <div class="preview-header">
                         <h2>Предпросмотр карточки</h2>
                         <div>
-                            <span style="color: var(--text-secondary);">Ваш товар будет выглядеть так</span>
+                            <span style="color: var(--text-secondary);">Все изменения видны сразу</span>
                         </div>
                     </div>
                     
@@ -197,7 +413,8 @@
             LAYOUTS,
             saveUserTemplate,
             loadUserTemplate,
-            generateTemplateCSS 
+            applyTemplateToElement,
+            generateTemplateCSS
         } from './js/templates.js';
 
         let currentUser = null;
@@ -211,7 +428,7 @@
             }
             currentUser = user;
             await loadUserData();
-            await loadTemplate();
+            loadTemplate();
             renderAll();
         });
 
@@ -281,21 +498,21 @@
             const settings = document.getElementById('colorSettings');
             settings.innerHTML = `
                 <div class="color-setting">
-                    <label>Основной цвет</label>
+                    <label>Основной цвет (заголовок)</label>
                     <div class="color-input-group">
                         <input type="color" id="colorPrimary" value="${currentTemplate.colors.primary}" onchange="updateColor('primary', this.value)">
                         <input type="text" value="${currentTemplate.colors.primary}" onchange="updateColor('primary', this.value)">
                     </div>
                 </div>
                 <div class="color-setting">
-                    <label>Вторичный цвет</label>
+                    <label>Вторичный цвет (цена)</label>
                     <div class="color-input-group">
                         <input type="color" id="colorSecondary" value="${currentTemplate.colors.secondary}" onchange="updateColor('secondary', this.value)">
                         <input type="text" value="${currentTemplate.colors.secondary}" onchange="updateColor('secondary', this.value)">
                     </div>
                 </div>
                 <div class="color-setting">
-                    <label>Акцентный цвет</label>
+                    <label>Акцентный цвет (иконки)</label>
                     <div class="color-input-group">
                         <input type="color" id="colorAccent" value="${currentTemplate.colors.accent}" onchange="updateColor('accent', this.value)">
                         <input type="text" value="${currentTemplate.colors.accent}" onchange="updateColor('accent', this.value)">
@@ -306,6 +523,13 @@
                     <div class="color-input-group">
                         <input type="color" id="colorBackground" value="${currentTemplate.colors.background}" onchange="updateColor('background', this.value)">
                         <input type="text" value="${currentTemplate.colors.background}" onchange="updateColor('background', this.value)">
+                    </div>
+                </div>
+                <div class="color-setting">
+                    <label>Цвет карточки</label>
+                    <div class="color-input-group">
+                        <input type="color" id="colorCardBg" value="${currentTemplate.colors.cardBg || currentTemplate.colors.background}" onchange="updateColor('cardBg', this.value)">
+                        <input type="text" value="${currentTemplate.colors.cardBg || currentTemplate.colors.background}" onchange="updateColor('cardBg', this.value)">
                     </div>
                 </div>
                 <div class="color-setting">
@@ -322,21 +546,25 @@
         function renderFonts() {
             const fontsSection = document.getElementById('fontsSection');
             
-            const createFontSelect = (type, label, currentFont) => `
-                <div class="font-select">
-                    <label>${label}</label>
-                    <select onchange="updateFont('${type}', this.value)">
-                        ${FONTS.map(f => `
-                            <option value="${f.value}" ${f.value === currentFont ? 'selected' : ''}>
-                                ${f.name}
-                            </option>
-                        `).join('')}
-                    </select>
-                    <div class="font-preview" style="font-family: ${currentFont}">
-                        Пример текста
+            const createFontSelect = (type, label, currentFont) => {
+                const options = FONTS.map(f => 
+                    `<option value="${f.value}" ${f.value === currentFont ? 'selected' : ''}>${f.name}</option>`
+                ).join('');
+                
+                const previewText = FONTS.find(f => f.value === currentFont)?.preview || 'Пример текста';
+                
+                return `
+                    <div class="font-select">
+                        <label>${label}</label>
+                        <select onchange="updateFont('${type}', this.value)">
+                            ${options}
+                        </select>
+                        <div class="font-preview" style="font-family: ${currentFont}">
+                            ${previewText}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            };
             
             fontsSection.innerHTML = `
                 <div class="font-selector">
@@ -392,29 +620,22 @@
         // Обновление предпросмотра
         function updatePreview() {
             const card = document.getElementById('previewCard');
-            card.style.setProperty('--card-primary', currentTemplate.colors.primary);
-            card.style.setProperty('--card-secondary', currentTemplate.colors.secondary);
-            card.style.setProperty('--card-accent', currentTemplate.colors.accent);
-            card.style.setProperty('--card-bg', currentTemplate.colors.background);
-            card.style.setProperty('--card-text', currentTemplate.colors.text);
             
-            document.getElementById('previewTitle').style.color = currentTemplate.colors.primary;
-            document.getElementById('previewTitle').style.fontFamily = currentTemplate.fonts.title;
-            document.getElementById('previewPrice').style.color = currentTemplate.colors.secondary;
-            document.getElementById('previewPrice').style.fontFamily = currentTemplate.fonts.price;
-            document.getElementById('previewFeatures').style.fontFamily = currentTemplate.fonts.features;
+            // Убираем старые классы анимации
+            card.className = card.className.replace(/card-animation-\S+/g, '').trim();
             
-            // Применяем анимацию
-            card.style.animation = 'none';
-            card.offsetHeight; // Trigger reflow
-            card.style.animation = null;
-            card.classList.add(`animation-${currentTemplate.animation}`);
+            // Применяем шаблон
+            applyTemplateToElement(card, currentTemplate);
+            
+            // Добавляем класс анимации
+            card.classList.add(`card-animation-${currentTemplate.animation}`);
         }
 
         // Выбор шаблона
         window.selectTemplate = function(templateId) {
-            currentTemplate = { ...TEMPLATES[templateId] };
+            currentTemplate = JSON.parse(JSON.stringify(TEMPLATES[templateId])); // Глубокое копирование
             renderAll();
+            showNotification(`Шаблон "${currentTemplate.name}" выбран`, 'info');
         };
 
         // Выбор цвета из палитры
@@ -427,6 +648,9 @@
 
         // Обновление цвета
         window.updateColor = function(type, value) {
+            if (type === 'cardBg' && !currentTemplate.colors.cardBg) {
+                currentTemplate.colors.cardBg = currentTemplate.colors.background;
+            }
             currentTemplate.colors[type] = value;
             renderColorSettings();
             updatePreview();
@@ -457,7 +681,7 @@
         window.saveTemplate = async function() {
             const success = await saveUserTemplate(currentUser.uid, currentTemplate);
             if (success) {
-                showNotification('✅ Шаблон сохранен!', 'success');
+                showNotification('✅ Шаблон успешно сохранен!', 'success');
             } else {
                 showNotification('❌ Ошибка при сохранении', 'error');
             }
@@ -465,15 +689,21 @@
 
         // Сброс шаблона
         window.resetTemplate = function() {
-            currentTemplate = { ...TEMPLATES.premium };
+            currentTemplate = JSON.parse(JSON.stringify(TEMPLATES.premium));
             renderAll();
-            showNotification('🔄 Шаблон сброшен', 'info');
+            showNotification('🔄 Шаблон сброшен до премиум', 'info');
         };
 
         // Применить к генерации
         window.applyToGenerator = function() {
+            // Сохраняем шаблон
+            saveUserTemplate(currentUser.uid, currentTemplate);
+            
+            // Сохраняем активный шаблон для генерации
             localStorage.setItem('activeTemplate', JSON.stringify(currentTemplate));
-            showNotification('✨ Шаблон применен к генерации', 'success');
+            
+            showNotification('✨ Шаблон применен к генерации! Переходим...', 'success');
+            
             setTimeout(() => {
                 window.location.href = '/generate.html';
             }, 1500);
