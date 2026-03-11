@@ -40,6 +40,11 @@ let currentGenerationSession = {
     imageIds: []               // Массив ID изображений в Storage
 };
 
+// Для страницы истории (все сессии)
+let allSessions = [];
+let currentHistoryPage = 1;
+const HISTORY_PER_PAGE = 10;
+
 // Следим за состоянием авторизации
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -58,7 +63,15 @@ async function loadUserData() {
         if (userDoc.exists()) {
             userData = userDoc.data();
             updateUI();
-            loadHistory();
+            
+            // Проверяем, на какой мы странице
+            const path = window.location.pathname;
+            if (path.includes('history.html')) {
+                await loadAllHistory(); // Загружаем все сессии для страницы истории
+            } else {
+                await loadRecentHistory(); // Загружаем последние 10 для дашборда
+            }
+            
             updateStats();
         } else {
             await setDoc(doc(db, 'users', currentUser.uid), {
@@ -125,7 +138,7 @@ function updateStats() {
     if (statDescriptions) statDescriptions.textContent = 0;
     
     const statHistory = document.getElementById('statHistory');
-    if (statHistory) statHistory.textContent = 0;
+    if (statHistory) statHistory.textContent = allSessions.length || 0;
     
     const statBalance = document.getElementById('statBalance');
     if (statBalance) statBalance.textContent = userData?.balance || 0;
@@ -159,6 +172,9 @@ document.querySelectorAll('.menu-item').forEach(item => {
             target.classList.add('active');
             if (section === 'settings') {
                 loadSettingsData();
+            } else if (section === 'history') {
+                // При переходе на историю загружаем все сессии
+                loadAllHistory();
             }
         }
     });
@@ -442,7 +458,14 @@ async function performGeneration(files, attempt) {
             userData = updatedDoc.data();
         }
         updateUI();
-        loadHistory();
+        
+        // Обновляем историю в зависимости от страницы
+        const path = window.location.pathname;
+        if (path.includes('history.html')) {
+            await loadAllHistory();
+        } else {
+            await loadRecentHistory();
+        }
         
         displayCardResults(result, attempt);
         
@@ -466,7 +489,7 @@ async function performGeneration(files, attempt) {
     }
 }
 
-// ----- ИСПРАВЛЕННАЯ функция отображения результатов -----
+// ----- Отображение результатов -----
 function displayCardResults(result, attempt) {
     const container = document.getElementById('cardResults');
     if (!container) return;
@@ -511,8 +534,8 @@ function displayCardResults(result, attempt) {
     updateRegenerationUI();
 }
 
-// ----- Загрузка сгруппированной истории -----
-async function loadHistory() {
+// ----- Загрузка последних 10 сессий для дашборда -----
+async function loadRecentHistory() {
     if (!currentUser) return;
     try {
         const historyList = document.getElementById('historyList');
@@ -523,12 +546,12 @@ async function loadHistory() {
             const sessionsQuery = query(
                 collection(db, 'users', currentUser.uid, 'generationSessions'), 
                 orderBy('createdAt', 'desc'), 
-                limit(20)
+                limit(10)
             );
             sessionsSnapshot = await getDocs(sessionsQuery);
         } catch (e) {
             console.warn('Коллекция generationSessions не найдена, используем старую историю');
-            const oldQuery = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(20));
+            const oldQuery = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
             const oldSnapshot = await getDocs(oldQuery);
             
             if (oldSnapshot.empty) {
@@ -542,6 +565,7 @@ async function loadHistory() {
                 const key = item.productName || 'Без названия';
                 if (!groupedByProduct[key]) {
                     groupedByProduct[key] = {
+                        id: doc.id,
                         productName: item.productName,
                         attempts: 1,
                         images: item.result?.images || [],
@@ -555,7 +579,7 @@ async function loadHistory() {
                 }
             });
             
-            displayGroupedHistory(Object.values(groupedByProduct));
+            displayHistory(Object.values(groupedByProduct), true);
             return;
         }
 
@@ -569,7 +593,7 @@ async function loadHistory() {
             sessions.push({ id: doc.id, ...doc.data() });
         });
         
-        displayGroupedHistory(sessions);
+        displayHistory(sessions, true);
 
     } catch (error) {
         console.error('Ошибка загрузки истории:', error);
@@ -578,19 +602,99 @@ async function loadHistory() {
     }
 }
 
-// ----- Отображение сгруппированной истории -----
-function displayGroupedHistory(sessions) {
-    const historyList = document.getElementById('historyList');
-    historyList.innerHTML = '';
+// ----- Загрузка ВСЕХ сессий для страницы истории -----
+async function loadAllHistory() {
+    if (!currentUser) return;
+    try {
+        const historyList = document.getElementById('historyList');
+        if (!historyList) return;
 
-    sessions.forEach(session => {
+        let sessionsSnapshot;
+        try {
+            const sessionsQuery = query(
+                collection(db, 'users', currentUser.uid, 'generationSessions'), 
+                orderBy('createdAt', 'desc')
+            );
+            sessionsSnapshot = await getDocs(sessionsQuery);
+        } catch (e) {
+            console.warn('Коллекция generationSessions не найдена, используем старую историю');
+            const oldQuery = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'));
+            const oldSnapshot = await getDocs(oldQuery);
+            
+            if (oldSnapshot.empty) {
+                historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+                return;
+            }
+            
+            const groupedByProduct = {};
+            oldSnapshot.forEach(doc => {
+                const item = doc.data();
+                const key = item.productName || 'Без названия';
+                if (!groupedByProduct[key]) {
+                    groupedByProduct[key] = {
+                        id: doc.id,
+                        productName: item.productName,
+                        attempts: 1,
+                        images: item.result?.images || [],
+                        timestamp: item.timestamp,
+                        oldFormat: true
+                    };
+                } else {
+                    groupedByProduct[key].attempts++;
+                    if (item.result?.images) {
+                        groupedByProduct[key].images.push(...item.result.images);
+                    }
+                }
+            });
+            
+            allSessions = Object.values(groupedByProduct);
+            displayAllHistory();
+            return;
+        }
+
+        if (sessionsSnapshot.empty) {
+            historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+            return;
+        }
+
+        allSessions = [];
+        sessionsSnapshot.forEach(doc => {
+            allSessions.push({ id: doc.id, ...doc.data() });
+        });
+        
+        displayAllHistory();
+
+    } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+        const historyList = document.getElementById('historyList');
+        if (historyList) historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
+    }
+}
+
+// ----- Отображение истории с пагинацией (для страницы истории) -----
+function displayAllHistory() {
+    const historyList = document.getElementById('historyList');
+    if (!historyList) return;
+
+    if (allSessions.length === 0) {
+        historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+        return;
+    }
+
+    // Пагинация
+    const start = (currentHistoryPage - 1) * HISTORY_PER_PAGE;
+    const paginatedSessions = allSessions.slice(start, start + HISTORY_PER_PAGE);
+
+    historyList.innerHTML = '';
+    
+    paginatedSessions.forEach(session => {
         const date = new Date(session.createdAt || session.timestamp).toLocaleString('ru-RU', { 
-            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
         });
         
         const images = session.images || [];
-        const previewImages = images.slice(0, 3).map(url => 
-            `<img src="${url}" class="history-thumb" onclick="event.stopPropagation(); viewHistorySession('${session.id}')" title="Фото ${images.indexOf(url) + 1}">`
+        const previewImages = images.slice(0, 3).map((url, idx) => 
+            `<img src="${url}" class="history-thumb" onclick="event.stopPropagation(); viewHistorySession('${session.id}')" title="Фото ${idx + 1}">`
         ).join('');
         
         const moreBadge = images.length > 3 ? `<span class="more-badge">+${images.length - 3}</span>` : '';
@@ -603,7 +707,59 @@ function displayGroupedHistory(sessions) {
                         <span class="history-type">${session.attempts || 1} фото</span>
                         <div class="history-date">${date}</div>
                     </div>
-                    <div class="history-cost">${session.totalSpent || session.attempts * 100} ₽</div>
+                    <div class="history-actions">
+                        <span class="history-cost">${session.totalSpent || session.attempts * 100} ₽</span>
+                        <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deleteHistorySession('${session.id}')" title="Удалить">🗑️</button>
+                    </div>
+                </div>
+                <div class="history-thumbnails">
+                    ${previewImages}
+                    ${moreBadge}
+                </div>
+            </div>
+        `;
+    });
+
+    // Добавляем пагинацию
+    updateHistoryPagination();
+}
+
+// ----- Отображение последних 10 (для дашборда) -----
+function displayHistory(sessions, isRecent = true) {
+    const historyList = document.getElementById('historyList');
+    if (!historyList) return;
+
+    if (sessions.length === 0) {
+        historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+        return;
+    }
+
+    historyList.innerHTML = '';
+    
+    sessions.forEach(session => {
+        const date = new Date(session.createdAt || session.timestamp).toLocaleString('ru-RU', { 
+            day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+        });
+        
+        const images = session.images || [];
+        const previewImages = images.slice(0, 3).map((url, idx) => 
+            `<img src="${url}" class="history-thumb" onclick="event.stopPropagation(); viewHistorySession('${session.id}')" title="Фото ${idx + 1}">`
+        ).join('');
+        
+        const moreBadge = images.length > 3 ? `<span class="more-badge">+${images.length - 3}</span>` : '';
+
+        historyList.innerHTML += `
+            <div class="history-item" onclick="viewHistorySession('${session.id}')">
+                <div class="history-item-header">
+                    <div>
+                        <strong>${session.productName || 'Без названия'}</strong>
+                        <span class="history-type">${session.attempts || 1} фото</span>
+                        <div class="history-date">${date}</div>
+                    </div>
+                    <div class="history-actions">
+                        <span class="history-cost">${session.totalSpent || session.attempts * 100} ₽</span>
+                        ${!isRecent ? `<button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deleteHistorySession('${session.id}')" title="Удалить">🗑️</button>` : ''}
+                    </div>
                 </div>
                 <div class="history-thumbnails">
                     ${previewImages}
@@ -613,6 +769,73 @@ function displayGroupedHistory(sessions) {
         `;
     });
 }
+
+// ----- Пагинация для истории -----
+function updateHistoryPagination() {
+    const paginationDiv = document.getElementById('historyPagination');
+    if (!paginationDiv) return;
+
+    const totalPages = Math.ceil(allSessions.length / HISTORY_PER_PAGE);
+    if (totalPages <= 1) {
+        paginationDiv.innerHTML = '';
+        return;
+    }
+
+    let paginationHtml = '';
+    for (let i = 1; i <= totalPages; i++) {
+        paginationHtml += `<button onclick="goToHistoryPage(${i})" class="${i === currentHistoryPage ? 'active' : ''}">${i}</button>`;
+    }
+    
+    paginationDiv.innerHTML = paginationHtml;
+}
+
+// ----- Переход на страницу истории -----
+window.goToHistoryPage = function(page) {
+    currentHistoryPage = page;
+    displayAllHistory();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ----- Удаление сессии из истории -----
+window.deleteHistorySession = async function(sessionId) {
+    if (!currentUser) return;
+    
+    if (!confirm('Вы уверены, что хотите удалить эту сессию генерации? Это действие необратимо.')) {
+        return;
+    }
+    
+    try {
+        // Удаляем документ сессии
+        await deleteDoc(doc(db, 'users', currentUser.uid, 'generationSessions', sessionId));
+        
+        // Обновляем списки
+        allSessions = allSessions.filter(s => s.id !== sessionId);
+        
+        // Перенаправляем на первую страницу, если текущая страница стала пустой
+        if (allSessions.length > 0) {
+            const start = (currentHistoryPage - 1) * HISTORY_PER_PAGE;
+            if (start >= allSessions.length) {
+                currentHistoryPage = Math.max(1, Math.ceil(allSessions.length / HISTORY_PER_PAGE));
+            }
+        } else {
+            currentHistoryPage = 1;
+        }
+        
+        // Обновляем отображение
+        const path = window.location.pathname;
+        if (path.includes('history.html')) {
+            displayAllHistory();
+        } else {
+            await loadRecentHistory();
+        }
+        
+        showNotification('Сессия удалена', 'success');
+        
+    } catch (error) {
+        console.error('Ошибка удаления сессии:', error);
+        showNotification('Ошибка при удалении: ' + error.message, 'error');
+    }
+};
 
 // ----- Просмотр сессии из истории -----
 window.viewHistorySession = async function(sessionId) {
