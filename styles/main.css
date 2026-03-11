@@ -2746,3 +2746,11 @@ input:checked + .slider:before {
         height: 50px;
     }
 }
+.sidebar-nav a {
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
