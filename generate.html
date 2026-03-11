@@ -327,6 +327,19 @@
             }
         }
 
+// Функция для обновления информации о файлах
+window.updateFileInfo = function(inputId, infoId) {
+    const input = document.getElementById(inputId);
+    const info = document.getElementById(infoId);
+    if (!input || !info) return;
+    if (input.files.length === 0) {
+        info.textContent = input.multiple ? 'Файлы не выбраны' : 'Файл не выбран';
+    } else {
+        const names = Array.from(input.files).map(f => f.name).join(', ');
+        info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
+    }
+};
+
         // Выбор платформы
         window.selectPlatform = function(platform) {
             selectedPlatform = platform;
