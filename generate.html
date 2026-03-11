@@ -186,11 +186,11 @@
                         <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
                         <div class="file-upload-wrapper">
                             <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('wbPhotos').click()">Выбрать файлы</button>
-                            <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="window.updateFileInfo('wbPhotos', 'wbFileInfo')">
+                            <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('wbPhotos', 'wbFileInfo')">
                             <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
                         </div>
                     </div>
-                    <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="window.generateWBCard()">✨ Создать первое фото (100 ₽)</button>
+                    <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать первое фото (100 ₽)</button>
                 </div>
             </div>
 
@@ -202,13 +202,21 @@
                     <div class="image-gallery" id="resultImages"></div>
                 </div>
             </div>
+
+            <!-- История -->
+            <div class="history-section glass" style="margin-top: 40px;">
+                <h2>Последние генерации</h2>
+                <div class="history-list" id="historyList">
+                    <p class="text-muted">Загрузка...</p>
+                </div>
+            </div>
         </main>
     </div>
 
     <!-- Модальное окно пополнения -->
     <div id="paymentModal" class="modal">
         <div class="modal-content glass payment-modal">
-            <button class="modal-close" onclick="window.closeModal()">&times;</button>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
             <h2 class="gradient-text">Пополнение баланса</h2>
             
             <div class="payment-options">
@@ -217,7 +225,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Сумма (₽)</label>
-                            <input type="number" id="customRubles" min="100" value="500" step="100" oninput="window.calculatePrice()">
+                            <input type="number" id="customRubles" min="100" value="500" step="100" oninput="calculatePrice()">
                         </div>
                     </div>
                 </div>
@@ -231,8 +239,8 @@
             <p class="text-muted" style="margin: 0 0 20px; text-align: center;">После оплаты средства поступят на ваш баланс автоматически.</p>
             
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-primary glow" onclick="window.confirmPayment()" style="flex: 1;">Пополнить</button>
-                <button class="btn btn-outline" onclick="window.closeModal()" style="flex: 1;">Отмена</button>
+                <button class="btn btn-primary glow" onclick="confirmPayment()" style="flex: 1;">Пополнить</button>
+                <button class="btn btn-outline" onclick="closeModal()" style="flex: 1;">Отмена</button>
             </div>
         </div>
     </div>
@@ -253,7 +261,7 @@
     </div>
 
     <!-- Лайтбокс для изображений -->
-    <div id="lightbox" class="lightbox" onclick="window.closeLightbox()">
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
         <span class="lightbox-close">&times;</span>
         <img class="lightbox-content" id="lightbox-img" alt="">
     </div>
@@ -261,33 +269,69 @@
     <script type="module">
         import { auth, db } from './js/firebase.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-        import { doc, getDoc, collection, addDoc, updateDoc, increment, query, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { 
+            doc, getDoc, collection, addDoc, query, orderBy, 
+            getDocs, updateDoc, increment, limit, deleteDoc, setDoc 
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { TEMPLATES, applyTemplateToResults } from './js/templates.js';
+        import { cacheBalance, clearCache } from './js/cache.js';
 
         let currentUser = null;
         let userData = null;
         let activeTemplate = null;
-        let currentDescription = '';
-        let generationInterval = null;
-        let generationStartTime = 0;
+        
+        // Переменные для модального окна загрузки
+        let generationInterval;
+        let generationStartTime;
 
-        // Проверка авторизации
+        // Текущая сессия генерации (группа карточек)
+        let currentGenerationSession = {
+            sessionId: null,           // ID сессии в Firestore
+            productName: null,
+            brand: null,
+            category: null,
+            price: null,
+            features: [],
+            originalImageId: null,
+            attemptsMade: 0,
+            maxAttempts: 5,
+            generatedImages: []        // Массив URL всех фото в этой сессии
+        };
+
+        // Проверка авторизации с fallback при ошибке QUIC
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 window.location.href = '/login.html';
                 return;
             }
             currentUser = user;
-            await loadUserData();
-            loadActiveTemplate();
+            
+            // Пробуем загрузить данные, если ошибка - повтор через 1 сек
+            try {
+                await loadUserData();
+                loadActiveTemplate();
+                await loadHistory();
+            } catch (error) {
+                console.error('Ошибка при загрузке, повтор через 1с:', error);
+                setTimeout(async () => {
+                    await loadUserData();
+                    loadActiveTemplate();
+                    await loadHistory();
+                }, 1000);
+            }
         });
 
-        // Загрузка данных пользователя
-        async function loadUserData() {
+        // Загрузка данных пользователя с кэшированием
+        async function loadUserData(forceRefresh = false) {
             try {
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (userDoc.exists()) {
-                    userData = userDoc.data();
+                const fetchUserData = async () => {
+                    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    return userDoc.exists() ? userDoc.data() : null;
+                };
+                
+                userData = await cacheBalance(currentUser.uid, fetchUserData, forceRefresh);
+                
+                if (userData) {
                     const balance = parseInt(userData.balance) || 0;
                     document.getElementById('sidebarBalance').textContent = balance;
                     document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
@@ -312,16 +356,12 @@
                     activeTemplate = TEMPLATES.premium;
                 }
                 
-                // Показываем индикатор
                 const indicator = document.getElementById('templateIndicator');
                 const indicatorText = document.getElementById('templateIndicatorText');
                 
                 if (activeTemplate) {
                     indicator.style.display = 'flex';
                     indicatorText.innerHTML = `🎨 Активный шаблон: <strong>${activeTemplate.name}</strong>`;
-                    
-                    // Применяем стили шаблона
-                    applyTemplateToResults(activeTemplate);
                 }
                 
                 console.log('🎨 Активный шаблон загружен:', activeTemplate.name);
@@ -343,7 +383,196 @@
             }
         };
 
-        // Показать модальное окно генерации
+        // Загрузка истории
+        async function loadHistory() {
+            if (!currentUser) return;
+            try {
+                const historyList = document.getElementById('historyList');
+                if (!historyList) return;
+                
+                // Пробуем загрузить из generationSessions (новая структура)
+                let sessionsSnapshot;
+                try {
+                    const sessionsQuery = query(
+                        collection(db, 'users', currentUser.uid, 'generationSessions'), 
+                        orderBy('createdAt', 'desc'), 
+                        limit(10)
+                    );
+                    sessionsSnapshot = await getDocs(sessionsQuery);
+                } catch (e) {
+                    console.log('Коллекция generationSessions не найдена, используем старую историю');
+                    // Fallback на старую коллекцию
+                    const oldQuery = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
+                    const oldSnapshot = await getDocs(oldQuery);
+                    
+                    if (oldSnapshot.empty) {
+                        historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+                        return;
+                    }
+                    
+                    // Группируем по названию товара
+                    const groupedByProduct = {};
+                    oldSnapshot.forEach(doc => {
+                        const item = doc.data();
+                        const key = item.productName || 'Без названия';
+                        if (!groupedByProduct[key]) {
+                            groupedByProduct[key] = {
+                                id: doc.id,
+                                productName: item.productName,
+                                attempts: 1,
+                                images: item.result?.images || [],
+                                timestamp: item.timestamp,
+                                oldFormat: true
+                            };
+                        } else {
+                            groupedByProduct[key].attempts++;
+                            if (item.result?.images) {
+                                groupedByProduct[key].images.push(...item.result.images);
+                            }
+                        }
+                    });
+                    
+                    displayHistory(Object.values(groupedByProduct));
+                    return;
+                }
+                
+                if (sessionsSnapshot.empty) {
+                    historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+                    return;
+                }
+                
+                const sessions = [];
+                sessionsSnapshot.forEach(doc => {
+                    sessions.push({ id: doc.id, ...doc.data() });
+                });
+                
+                displayHistory(sessions);
+                
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+                const historyList = document.getElementById('historyList');
+                if (historyList) {
+                    historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
+                }
+            }
+        }
+
+        // Отображение истории
+        function displayHistory(sessions) {
+            const historyList = document.getElementById('historyList');
+            if (!historyList) return;
+
+            if (sessions.length === 0) {
+                historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+                return;
+            }
+
+            historyList.innerHTML = '';
+            
+            sessions.forEach(session => {
+                const date = new Date(session.createdAt || session.timestamp).toLocaleString('ru-RU', { 
+                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
+                });
+                
+                const images = session.images || [];
+                const previewImages = images.slice(0, 3).map((url, idx) => 
+                    `<img src="${url}" class="history-thumb" onclick="event.stopPropagation(); viewHistorySession('${session.id}')" title="Фото ${idx + 1}">`
+                ).join('');
+                
+                const moreBadge = images.length > 3 ? `<span class="more-badge">+${images.length - 3}</span>` : '';
+
+                historyList.innerHTML += `
+                    <div class="history-item" onclick="viewHistorySession('${session.id}')">
+                        <div class="history-item-header">
+                            <div>
+                                <strong>${session.productName || 'Без названия'}</strong>
+                                <span class="history-type">${session.attempts || 1} фото</span>
+                                <div class="history-date">${date}</div>
+                            </div>
+                            <div class="history-actions">
+                                <span class="history-cost">${session.totalSpent || session.attempts * 100} ₽</span>
+                                <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deleteHistorySession('${session.id}')" title="Удалить">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="history-thumbnails">
+                            ${previewImages}
+                            ${moreBadge}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Удаление сессии из истории
+        window.deleteHistorySession = async function(sessionId) {
+            if (!currentUser) return;
+            
+            if (!confirm('Вы уверены, что хотите удалить эту сессию генерации? Это действие необратимо.')) {
+                return;
+            }
+            
+            try {
+                await deleteDoc(doc(db, 'users', currentUser.uid, 'generationSessions', sessionId));
+                showNotification('✅ Сессия удалена', 'success');
+                await loadHistory();
+            } catch (error) {
+                console.error('Ошибка удаления сессии:', error);
+                showNotification('❌ Ошибка при удалении', 'error');
+            }
+        };
+
+        // Просмотр сессии из истории
+        window.viewHistorySession = async function(sessionId) {
+            if (!currentUser) return;
+            try {
+                const sessionDoc = await getDoc(doc(db, 'users', currentUser.uid, 'generationSessions', sessionId));
+                if (sessionDoc.exists()) {
+                    const session = sessionDoc.data();
+                    
+                    currentGenerationSession = {
+                        sessionId: sessionId,
+                        productName: session.productName,
+                        brand: session.brand,
+                        category: session.category,
+                        price: session.price,
+                        features: session.features || [],
+                        originalImageId: session.imageIds?.[0] || null,
+                        attemptsMade: session.attempts,
+                        maxAttempts: 5,
+                        generatedImages: session.images || []
+                    };
+                    
+                    displayCardResults({ images: session.images || [] });
+                    updateRegenerationUI();
+                    
+                    const regenBtn = document.getElementById('regenerateBtn');
+                    if (regenBtn) regenBtn.style.display = 'inline-block';
+                    
+                    document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки сессии:', error);
+                showNotification('❌ Ошибка загрузки', 'error');
+            }
+        };
+
+        // Сброс сессии для новой карточки
+        function resetGenerationSession() {
+            currentGenerationSession = {
+                sessionId: null,
+                productName: null,
+                brand: null,
+                category: null,
+                price: null,
+                features: [],
+                originalImageId: null,
+                attemptsMade: 0,
+                maxAttempts: 5,
+                generatedImages: []
+            };
+        }
+
+        // Показать модальное окно
         function showGenerationModal() {
             const modal = document.getElementById('generationModal');
             modal.classList.add('show');
@@ -424,7 +653,45 @@
                 return;
             }
 
+            resetGenerationSession();
+            currentGenerationSession.productName = productName;
+            currentGenerationSession.brand = brand;
+            currentGenerationSession.category = category;
+            currentGenerationSession.price = price;
+            currentGenerationSession.features = features;
+
+            await performGeneration(files, 0);
+        };
+
+        // Повторная генерация
+        window.regeneratePhoto = async function() {
+            if (!currentUser || !userData) return;
+            if (!currentGenerationSession.originalImageId) {
+                showNotification('Ошибка: нет исходного изображения для повторной генерации', 'error');
+                return;
+            }
+
+            const nextAttempt = currentGenerationSession.attemptsMade;
+            if (nextAttempt >= currentGenerationSession.maxAttempts) {
+                showNotification('Достигнут лимит повторных генераций (максимум 5 фото)', 'warning');
+                return;
+            }
+
+            const cost = 15;
+            const currentBalance = userData.balance || 0;
+            if (currentBalance < cost) {
+                showNotification(`Недостаточно средств. Требуется ${cost} ₽`, 'error');
+                return;
+            }
+
+            await performGeneration(null, nextAttempt);
+        };
+
+        // Общая функция генерации
+        async function performGeneration(files, attempt) {
+            const cost = attempt === 0 ? 100 : 15;
             const btn = document.getElementById('generateWBBtn');
+
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="loading"></span> Генерация...';
@@ -434,16 +701,28 @@
 
             try {
                 const formData = new FormData();
-                for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
-                formData.append('productName', productName);
-                formData.append('brand', brand);
-                formData.append('category', category);
-                formData.append('price', price);
+                if (files) {
+                    for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
+                }
+                formData.append('productName', currentGenerationSession.productName || document.getElementById('wbProductName').value.trim());
+                formData.append('brand', currentGenerationSession.brand || document.getElementById('wbBrand').value.trim());
+                formData.append('category', currentGenerationSession.category || document.getElementById('wbCategory').value);
+                formData.append('price', currentGenerationSession.price || document.getElementById('wbPrice').value.trim() || '1990');
+                
+                const featuresInput = document.getElementById('wbFeatures')?.value;
+                const features = currentGenerationSession.features.length > 0 
+                    ? currentGenerationSession.features 
+                    : (featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : []);
+                
                 formData.append('features', features.join(','));
                 formData.append('platform', 'wb');
-                formData.append('attempt', 0);
+                formData.append('attempt', attempt);
                 
-                // Добавляем шаблон, если он есть
+                if (currentGenerationSession.originalImageId) {
+                    formData.append('originalImageId', currentGenerationSession.originalImageId);
+                }
+                
+                // Добавляем шаблон
                 if (activeTemplate) {
                     formData.append('template', JSON.stringify(activeTemplate));
                     console.log('🎨 Отправляем шаблон:', activeTemplate.name);
@@ -460,35 +739,80 @@
                 }
                 
                 const result = await response.json();
-                
-                // Отображаем результат
-                displayCardResults(result);
 
-                await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
-                    type: 'wb-card',
-                    productName,
-                    result,
-                    template: activeTemplate?.name,
-                    timestamp: new Date().toISOString()
-                });
+                if (result.originalImageId) {
+                    currentGenerationSession.originalImageId = result.originalImageId;
+                }
+
+                if (result.images && result.images.length) {
+                    currentGenerationSession.generatedImages.push(result.images[0]);
+                }
+                
+                const newAttemptCount = attempt + 1;
+                currentGenerationSession.attemptsMade = newAttemptCount;
+
+                // Сохраняем в Firestore (сессии)
+                if (attempt === 0) {
+                    // Первая генерация - создаем новую сессию
+                    const sessionData = {
+                        type: 'product-session',
+                        productName: currentGenerationSession.productName || document.getElementById('wbProductName').value.trim(),
+                        brand: currentGenerationSession.brand || document.getElementById('wbBrand').value.trim(),
+                        category: currentGenerationSession.category || document.getElementById('wbCategory').value,
+                        price: currentGenerationSession.price || document.getElementById('wbPrice').value.trim() || '1990',
+                        features: features,
+                        attempts: 1,
+                        totalSpent: cost,
+                        images: [result.images[0]],
+                        imageIds: [`generated/${result.images[0].split('/').pop()}`],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        template: activeTemplate?.name
+                    };
+                    
+                    const sessionRef = await addDoc(collection(db, 'users', currentUser.uid, 'generationSessions'), sessionData);
+                    currentGenerationSession.sessionId = sessionRef.id;
+                    currentGenerationSession.productName = sessionData.productName;
+                    currentGenerationSession.brand = sessionData.brand;
+                    currentGenerationSession.category = sessionData.category;
+                    currentGenerationSession.price = sessionData.price;
+                    currentGenerationSession.features = features;
+                } 
+                else if (currentGenerationSession.sessionId) {
+                    // Повторная генерация - обновляем сессию
+                    const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
+                    await updateDoc(sessionRef, {
+                        attempts: newAttemptCount,
+                        totalSpent: increment(cost),
+                        images: currentGenerationSession.generatedImages,
+                        updatedAt: new Date().toISOString()
+                    });
+                }
 
                 // Списываем деньги
                 await updateDoc(doc(db, 'users', currentUser.uid), { 
-                    balance: increment(-100),
-                    usedSpent: increment(100)
+                    balance: increment(-cost),
+                    usedSpent: increment(cost)
                 });
-                
+
+                // Обновляем баланс
                 const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (updatedDoc.exists()) {
                     userData = updatedDoc.data();
                     document.getElementById('sidebarBalance').textContent = userData.balance || 0;
                 }
                 
-                showNotification('Карточка создана!', 'success');
-            } catch (error) {
-                console.error('Ошибка генерации:', error);
+                displayCardResults(result);
+                await loadHistory();
                 
-                // Парсим ошибку
+                const message = attempt === 0 
+                    ? '✅ Первое фото готово! Можете сгенерировать ещё за 15 ₽' 
+                    : `✅ Фото №${attempt + 1} готово! Списано ${cost} ₽`;
+                showNotification(message, 'success');
+
+            } catch (error) {
+                console.error('❌ Ошибка генерации:', error);
+                
                 let errorMessage = 'Неизвестная ошибка';
                 try {
                     if (error.message) {
@@ -501,7 +825,6 @@
                     errorMessage = error.message || 'Ошибка соединения';
                 }
                 
-                // Показываем понятное сообщение
                 if (errorMessage.includes('API key')) {
                     showNotification('❌ Ошибка API ключа', 'error');
                 } else if (errorMessage.includes('model')) {
@@ -519,10 +842,13 @@
                 hideGenerationModal();
                 if (btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '✨ Создать первое фото (100 ₽)';
+                    btn.innerHTML = attempt === 0 
+                        ? '✨ Создать первое фото (100 ₽)' 
+                        : '🔄 Сделать ещё (15 ₽)';
                 }
+                updateRegenerationUI();
             }
-        };
+        }
 
         // Отображение результатов
         function displayCardResults(result) {
@@ -530,36 +856,87 @@
             if (!container) return;
             container.style.display = 'block';
 
-            const gallery = document.getElementById('resultImages');
-            if (gallery) {
+            let gallery = document.getElementById('resultImages');
+            if (!gallery) {
+                gallery = document.createElement('div');
+                gallery.id = 'resultImages';
+                gallery.className = 'image-gallery';
+                container.appendChild(gallery);
+            } else {
                 gallery.innerHTML = '';
-                if (result.images && result.images.length) {
-                    result.images.forEach(url => {
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.alt = 'Generated';
-                        img.onclick = () => window.openLightbox(url);
-                        gallery.appendChild(img);
-                    });
-                    
-                    // Применяем шаблон к результатам
-                    if (activeTemplate) {
-                        setTimeout(() => {
-                            applyTemplateToResults(activeTemplate);
-                        }, 100);
-                    }
-                } else {
-                    gallery.innerHTML = '<p class="text-muted">Изображения не сгенерированы</p>';
+            }
+
+            if (result.images && result.images.length) {
+                result.images.forEach(url => {
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = `Фото товара`;
+                    img.onclick = () => openLightbox(url);
+                    gallery.appendChild(img);
+                });
+                
+                // Применяем шаблон к результатам
+                if (activeTemplate) {
+                    setTimeout(() => {
+                        applyTemplateToResults(activeTemplate);
+                    }, 100);
                 }
             }
         }
 
-        // Функции для лайтбокса
-        window.openLightbox = function(imageUrl) {
+        // Обновление UI повторных генераций
+        function updateRegenerationUI() {
+            const container = document.getElementById('cardResults');
+            if (!container) return;
+
+            let infoBlock = document.getElementById('regenerationInfo');
+            if (!infoBlock) {
+                infoBlock = document.createElement('div');
+                infoBlock.id = 'regenerationInfo';
+                infoBlock.className = 'regeneration-info glass';
+                container.insertBefore(infoBlock, container.firstChild);
+            }
+
+            const remaining = currentGenerationSession.maxAttempts - currentGenerationSession.attemptsMade;
+            const nextCost = 15;
+
+            infoBlock.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <strong>${currentGenerationSession.productName}</strong> · 
+                        ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
+                    </div>
+                    <div>
+                        Следующая: ${nextCost} ₽ · осталось ${remaining}
+                    </div>
+                </div>
+            `;
+
+            let regenBtn = document.getElementById('regenerateBtn');
+            if (!regenBtn) {
+                regenBtn = document.createElement('button');
+                regenBtn.id = 'regenerateBtn';
+                regenBtn.className = 'btn btn-primary';
+                regenBtn.style.marginTop = '15px';
+                regenBtn.onclick = window.regeneratePhoto;
+                container.appendChild(regenBtn);
+            }
+
+            if (remaining > 0 && currentGenerationSession.attemptsMade > 0) {
+                regenBtn.style.display = 'inline-block';
+                regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
+                regenBtn.disabled = false;
+            } else {
+                regenBtn.style.display = 'none';
+            }
+        }
+
+        // Лайтбокс
+        window.openLightbox = function(url) {
             const lightbox = document.getElementById('lightbox');
             const lightboxImg = document.getElementById('lightbox-img');
             if (!lightbox || !lightboxImg) return;
-            lightboxImg.src = imageUrl;
+            lightboxImg.src = url;
             lightbox.classList.add('show');
             document.body.style.overflow = 'hidden';
         };
@@ -627,59 +1004,6 @@
                 });
             });
         });
-
-        // Загрузка истории (если есть элемент)
-        async function loadHistory() {
-            if (!currentUser) return;
-            try {
-                const historyList = document.getElementById('historyList');
-                if (!historyList) return;
-                
-                const q = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
-                const snapshot = await getDocs(q);
-                
-                if (snapshot.empty) {
-                    historyList.innerHTML = '<p class="text-muted">История пуста</p>';
-                    return;
-                }
-                
-                historyList.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    const date = new Date(item.timestamp).toLocaleString('ru-RU', { 
-                        day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
-                    });
-                    
-                    historyList.innerHTML += `
-                        <div class="history-item">
-                            <div>
-                                <strong>${item.productName || 'Без названия'}</strong>
-                                <div class="history-date">${date}</div>
-                            </div>
-                            <button class="btn btn-small btn-outline" onclick="viewHistoryItem('${doc.id}')">👁️</button>
-                        </div>
-                    `;
-                });
-            } catch (error) {
-                console.error('Ошибка загрузки истории:', error);
-            }
-        }
-
-        window.viewHistoryItem = async function(docId) {
-            if (!currentUser) return;
-            try {
-                const docSnap = await getDoc(doc(db, 'users', currentUser.uid, 'generations', docId));
-                if (docSnap.exists()) {
-                    const item = docSnap.data();
-                    if (item.result && item.result.images) {
-                        displayCardResults(item.result);
-                        document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
-                    }
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки истории:', error);
-            }
-        };
     </script>
 </body>
 </html>
