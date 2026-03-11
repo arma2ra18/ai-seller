@@ -186,3 +186,64 @@
     color: var(--accent);
     margin: 10px 0;
 }
+
+/* Lightbox для PWA */
+.lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    backdrop-filter: blur(20px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    -webkit-backdrop-filter: blur(20px);
+}
+.lightbox.show { 
+    display: flex; 
+    animation: fadeIn 0.3s ease;
+}
+.lightbox-content {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 0 50px rgba(255,255,255,0.2);
+    animation: scaleIn 0.4s ease;
+}
+.lightbox-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 40px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s;
+    z-index: 2001;
+}
+.lightbox-close:hover {
+    transform: rotate(90deg);
+    color: #ccc;
+}
+
+/* Улучшенные touch-события для мобильных */
+.btn, .menu-item, .gallery-item, .action-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Предотвращение выделения текста при долгом нажатии */
+* {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+input, textarea {
+    -webkit-user-select: auto;
+    user-select: auto;
+}

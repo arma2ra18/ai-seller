@@ -8,6 +8,28 @@
     <link rel="stylesheet" href="styles/main.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
+<!-- PWA Meta Tags -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0071e3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prodiger">
+<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+<link rel="mask-icon" href="/icons/icon-192x192.png" color="#0071e3">
+
+<!-- Service Worker Registration -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+            }).catch(function(err) {
+                console.log('Ошибка регистрации ServiceWorker:', err);
+            });
+        });
+    }
+</script>
+
     <!-- Jivo Chat Widget -->
     <script src="//code.jivo.ru/widget/dxg5looTDX" async></script>
 </head>

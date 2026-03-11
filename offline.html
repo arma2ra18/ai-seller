@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Нет соединения — Prodiger</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <style>
+        .offline-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .offline-card {
+            background: rgba(28, 28, 30, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 32px;
+            padding: 60px 40px;
+            max-width: 500px;
+            animation: fadeInUp 0.8s ease;
+        }
+        
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+            opacity: 0.5;
+            animation: float 3s infinite ease-in-out;
+        }
+        
+        .offline-card h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .offline-card p {
+            color: var(--text-secondary);
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .offline-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .retry-btn {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 60px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 10px 30px rgba(0,113,227,0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .retry-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,113,227,0.5);
+        }
+        
+        .home-btn {
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 14px 30px;
+            border-radius: 60px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        
+        .home-btn:hover {
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-3px);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @media (max-width: 768px) {
+            .offline-card {
+                padding: 40px 20px;
+            }
+            
+            .offline-card h1 {
+                font-size: 28px;
+            }
+            
+            .offline-card p {
+                font-size: 16px;
+            }
+            
+            .offline-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
+
+    <div class="offline-container">
+        <div class="offline-card glass">
+            <div class="offline-icon">📡</div>
+            <h1>Нет соединения</h1>
+            <p>Похоже, вы потеряли подключение к интернету. Проверьте соединение и попробуйте снова.</p>
+            <div class="offline-actions">
+                <button class="retry-btn" onclick="location.reload()">
+                    🔄 Попробовать снова
+                </button>
+                <a href="/news.html" class="home-btn">
+                    🏠 На главную
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
