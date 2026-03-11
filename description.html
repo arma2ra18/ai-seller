@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Генерация описаний — Prodiger</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <style>
+        .description-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .info-block {
+            background: rgba(28, 28, 30, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 32px;
+            padding: 30px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .generation-form {
+            background: rgba(28, 28, 30, 0.5);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 32px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: white;
+            font-size: 16px;
+            transition: var(--transition);
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+
+        .competitor-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .competitor-link-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .competitor-link-input input {
+            flex: 1;
+            padding: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            color: white;
+        }
+
+        .remove-link {
+            background: none;
+            border: none;
+            color: var(--error);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .remove-link:hover {
+            background: rgba(255,59,48,0.1);
+        }
+
+        .add-link-btn {
+            background: none;
+            border: 1px dashed var(--border);
+            border-radius: 30px;
+            padding: 12px 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 10px;
+            width: fit-content;
+        }
+
+        .add-link-btn:hover {
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .keywords-input {
+            margin: 25px 0;
+        }
+
+        .keywords-hint {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 5px;
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, var(--accent), #9b5ef0);
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            border-radius: 60px;
+            font-size: 18px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 10px 30px rgba(0,113,227,0.3);
+            margin-top: 20px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0,113,227,0.5);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .result-card {
+            background: rgba(28, 28, 30, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 32px;
+            padding: 40px;
+            margin-top: 30px;
+            display: none;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .result-card.show {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .result-title {
+            font-size: 24px;
+            color: var(--accent);
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .result-actions button {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            padding: 10px 20px;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-actions button:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .result-content {
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            padding: 30px;
+            white-space: pre-wrap;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            font-size: 16px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .result-content h3 {
+            color: white;
+            margin: 20px 0 10px;
+        }
+
+        .result-content ul, .result-content ol {
+            margin-left: 20px;
+        }
+
+        .placeholder-text {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+            padding: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .result-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Видеофон -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <!-- Сайдбар -->
+        <aside class="sidebar glass">
+            <div class="sidebar-logo-container">
+                <div class="sidebar-logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="14" stroke="url(#grad2)" stroke-width="2" fill="none"/>
+                        <path d="M10 16L14 20L22 12" stroke="url(#grad2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#0071e3" />
+                                <stop offset="50%" stop-color="#9b5ef0" />
+                                <stop offset="100%" stop-color="#f5b041" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="sidebar-logo-text gradient-logo">Prodiger</div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="menu-item" data-section="news">
+                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📰 Новости
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="balance">
+                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            💰 Баланс
+                        </a>
+                    </li>
+                     <li class="menu-item" data-section="generate">
+                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ✨ Генерация
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="description">
+                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📝 Описание товара
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="history">
+                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📜 История
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="settings">
+                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ⚙️ Настройки
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-balance">
+                    <span>Баланс: <span id="sidebarBalance">0</span> ₽</span>
+                    <button class="btn btn-small btn-primary" onclick="window.location.href='/balance.html'">Пополнить</button>
+                </div>
+                <div class="user-info">
+                    <span class="user-email" id="userEmail">Загрузка...</span>
+                </div>
+                <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
+                <a href="/news.html" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 В личный кабинет</a>
+            </div>
+        </aside>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <div class="welcome-block">
+                <h1 class="gradient-text">📝 Генерация описаний</h1>
+                <p>Создайте уникальное, продающее описание для Wildberries или Ozon</p>
+            </div>
+
+            <div class="description-container">
+                <!-- Информационный блок -->
+                <div class="info-block">
+                    <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                        <span>✨</span> Умный текст, который продаёт
+                    </h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 15px;">
+                        Нейросеть анализирует ваш товар, подбирает стиль, ключевые слова и эмоциональные акценты, 
+                        чтобы описание соответствовало требованиям маркетплейсов и привлекало покупателей.
+                    </p>
+                    <div style="background: rgba(0,113,227,0.1); border-radius: 30px; padding: 15px 20px; display: inline-block;">
+                        ⚡ CTR и конверсия растут — время на описание 30 секунд
+                    </div>
+                </div>
+
+                <!-- Форма генерации -->
+                <div class="generation-form">
+                    <h3 style="margin-bottom: 25px;">Параметры генерации</h3>
+                    
+                    <div class="form-group">
+                        <label>Название товара <span style="color: var(--error);">*</span></label>
+                        <input type="text" id="productName" placeholder="Например: Беспроводные наушники AirPods Pro" maxlength="200" oninput="updateCharCount()">
+                        <div class="char-counter"><span id="charCount">0</span>/200 символов</div>
+                    </div>
+
+                    <div style="margin: 30px 0;">
+                        <label>Ссылки на конкурентов (необязательно)</label>
+                        <div id="competitorLinksContainer" class="competitor-links">
+                            <div class="competitor-link-input">
+                                <input type="url" placeholder="https://www.wildberries.ru/catalog/...">
+                            </div>
+                        </div>
+                        <button type="button" class="add-link-btn" onclick="addCompetitorLink()">➕ Добавить ещё ссылку</button>
+                    </div>
+
+                    <div class="keywords-input">
+                        <label>Ключевые слова</label>
+                        <input type="text" id="keywords" placeholder="Ключ1, ключ2, ключ3">
+                        <div class="keywords-hint">Разделите запятыми (необязательно)</div>
+                    </div>
+
+                    <button class="generate-btn" id="generateDescBtn" onclick="generateDescription()">
+                        ✨ Сгенерировать описание (100 ₽)
+                    </button>
+                </div>
+
+                <!-- Результат генерации -->
+                <div class="result-card" id="resultCard">
+                    <div class="result-header">
+                        <div class="result-title">Готовое описание</div>
+                        <div class="result-actions">
+                            <button onclick="copyDescription()">
+                                <span>📋</span> Копировать
+                            </button>
+                            <button onclick="saveDescription()">
+                                <span>💾</span> Сохранить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="result-content" id="resultContent">
+                        <div class="placeholder-text">
+                            Результат появится здесь после генерации
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно загрузки (генерация) -->
+    <div id="generationModal" class="modal">
+        <div class="modal-content glass loading-content">
+            <h2 class="gradient-text">✨ Генерация описания ✨</h2>
+            <div class="loading-animation">
+                <div class="spinner"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="generationProgress" style="width: 0%;"></div>
+                </div>
+            </div>
+            <p>Подождите, нейросеть создаёт описание...</p>
+            <p class="timer" id="generationTimer">0 сек.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './js/firebase.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { 
+            doc, getDoc, collection, addDoc, increment, updateDoc 
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        let currentUser = null;
+        let userData = null;
+        let generatedDescription = '';
+
+        // Проверка авторизации
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
+            }
+            currentUser = user;
+            await loadUserData();
+        });
+
+        // Загрузка данных пользователя
+        async function loadUserData() {
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    const balance = parseInt(userData.balance) || 0;
+                    document.getElementById('sidebarBalance').textContent = balance;
+                    document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+            }
+        }
+
+        // Обновление счётчика символов
+        window.updateCharCount = function() {
+            const input = document.getElementById('productName');
+            const count = input.value.length;
+            document.getElementById('charCount').textContent = count;
+        };
+
+        // Добавление поля для ссылки на конкурента
+        window.addCompetitorLink = function() {
+            const container = document.getElementById('competitorLinksContainer');
+            const newLinkDiv = document.createElement('div');
+            newLinkDiv.className = 'competitor-link-input';
+            newLinkDiv.innerHTML = `
+                <input type="url" placeholder="https://www.wildberries.ru/catalog/...">
+                <button class="remove-link" onclick="this.parentElement.remove()">✕</button>
+            `;
+            container.appendChild(newLinkDiv);
+        };
+
+        // Функции для модального окна
+        function showGenerationModal() {
+            document.getElementById('generationModal').classList.add('show');
+            document.getElementById('generationProgress').style.width = '0%';
+            document.getElementById('generationTimer').textContent = '0 сек.';
+            window.generationStartTime = Date.now();
+            if (window.generationInterval) clearInterval(window.generationInterval);
+            window.generationInterval = setInterval(updateGenerationTimer, 1000);
+        }
+
+        function hideGenerationModal() {
+            document.getElementById('generationModal').classList.remove('show');
+            if (window.generationInterval) {
+                clearInterval(window.generationInterval);
+                window.generationInterval = null;
+            }
+        }
+
+        function updateGenerationTimer() {
+            const elapsed = Math.floor((Date.now() - window.generationStartTime) / 1000);
+            document.getElementById('generationTimer').textContent = `${elapsed} сек.`;
+            const progress = document.getElementById('generationProgress');
+            const percent = Math.min(100, (elapsed / 30) * 100);
+            progress.style.width = percent + '%';
+        }
+
+        // Основная функция генерации описания
+        window.generateDescription = async function() {
+            const productName = document.getElementById('productName').value.trim();
+            
+            if (!productName) {
+                alert('Введите название товара');
+                return;
+            }
+
+            // Проверка баланса
+            const currentBalance = parseInt(userData?.balance) || 0;
+            if (currentBalance < 100) {
+                alert('Недостаточно средств. Требуется 100 ₽');
+                return;
+            }
+
+            // Собираем ссылки конкурентов
+            const competitorLinks = [];
+            document.querySelectorAll('#competitorLinksContainer input').forEach(input => {
+                if (input.value.trim()) {
+                    competitorLinks.push(input.value.trim());
+                }
+            });
+
+            // Ключевые слова
+            const keywords = document.getElementById('keywords').value.trim();
+
+            const btn = document.getElementById('generateDescBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Генерация...';
+            
+            showGenerationModal();
+
+            try {
+                // Здесь будет вызов API
+                // Пока имитируем задержку
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Пример сгенерированного описания
+                generatedDescription = generateSampleDescription(productName, keywords, competitorLinks);
+                
+                // Отображаем результат
+                const resultContent = document.getElementById('resultContent');
+                resultContent.innerHTML = generatedDescription.split('\n').map(p => `<p>${p}</p>`).join('');
+                document.getElementById('resultCard').classList.add('show');
+
+                // Списываем 100 рублей
+                await updateDoc(doc(db, 'users', currentUser.uid), { 
+                    balance: increment(-100),
+                    usedSpent: increment(100)
+                });
+
+                // Сохраняем в историю описаний
+                await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
+                    productName: productName,
+                    description: generatedDescription,
+                    keywords: keywords,
+                    competitorLinks: competitorLinks,
+                    createdAt: new Date().toISOString()
+                });
+
+                // Обновляем баланс в интерфейсе
+                const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (updatedDoc.exists()) {
+                    userData = updatedDoc.data();
+                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
+                }
+
+                alert('✅ Описание готово! Списано 100 ₽');
+
+            } catch (error) {
+                console.error('Ошибка генерации:', error);
+                alert('Ошибка: ' + error.message);
+            } finally {
+                hideGenerationModal();
+                btn.disabled = false;
+                btn.innerHTML = '✨ Сгенерировать описание (100 ₽)';
+            }
+        };
+
+        // Функция для примера (заменить на реальный API)
+        function generateSampleDescription(productName, keywords, competitorLinks) {
+            const keywordList = keywords ? keywords.split(',').map(k => k.trim()) : [];
+            
+            let description = `${productName.toUpperCase()} — ИДЕАЛЬНЫЙ ВЫБОР ДЛЯ ПОВСЕДНЕВНОГО ИСПОЛЬЗОВАНИЯ\n\n`;
+            description += `✨ ПРЕИМУЩЕСТВА:\n`;
+            description += `• Высокое качество материалов\n`;
+            description += `• Стильный и современный дизайн\n`;
+            description += `• Удобство в использовании\n`;
+            description += `• Долговечность и надёжность\n\n`;
+            
+            if (keywordList.length > 0) {
+                description += `🎯 КЛЮЧЕВЫЕ ХАРАКТЕРИСТИКИ:\n`;
+                keywordList.forEach(k => {
+                    description += `• ${k}\n`;
+                });
+                description += `\n`;
+            }
+            
+            description += `📦 КОМПЛЕКТАЦИЯ:\n`;
+            description += `• Товар в идеальном состоянии\n`;
+            description += `• Заводская упаковка\n`;
+            description += `• Документация\n\n`;
+            
+            description += `🚀 ПОЧЕМУ СТОИТ КУПИТЬ:\n`;
+            description += `Этот товар создан для тех, кто ценит качество и комфорт. Он идеально подойдёт для ежедневного использования и станет отличным подарком для близких.\n\n`;
+            
+            description += `💰 ЛУЧШАЯ ЦЕНА НА РЫНКЕ!\n`;
+            description += `Мы предлагаем оптимальное соотношение цены и качества. Закажите прямо сейчас и убедитесь сами!\n\n`;
+            
+            description += `✅ ГАРАНТИЯ КАЧЕСТВА\n`;
+            description += `Товар сертифицирован и соответствует всем стандартам. Мы уверены в его качестве!\n\n`;
+            
+            description += `🛒 ЖМИ «КУПИТЬ» И ОФОРМЛЯЙ ЗАКАЗ ПРЯМО СЕЙЧАС!\n`;
+            
+            return description;
+        }
+
+        // Копирование описания
+        window.copyDescription = function() {
+            if (!generatedDescription) {
+                alert('Сначала сгенерируйте описание');
+                return;
+            }
+            navigator.clipboard.writeText(generatedDescription);
+            alert('✅ Описание скопировано в буфер обмена');
+        };
+
+        // Сохранение описания
+        window.saveDescription = function() {
+            if (!generatedDescription) {
+                alert('Сначала сгенерируйте описание');
+                return;
+            }
+            
+            // Создаём файл для скачивания
+            const blob = new Blob([generatedDescription], { type: 'text/plain;charset=utf-8' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `description_${new Date().toISOString().slice(0,10)}.txt`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+
+        // Навигация
+        window.navigateTo = function(section) {
+            const paths = {
+                'news': '/news.html',
+                'balance': '/balance.html',
+                'generate': '/generate.html',
+                'description': '/description.html',
+                'history': '/history.html',
+                'settings': '/settings.html'
+            };
+            if (paths[section]) {
+                window.location.href = paths[section];
+            }
+        };
+
+        // Выход
+        window.logout = async function() {
+            await auth.signOut();
+            window.location.href = '/login.html';
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    const section = this.dataset.section;
+                    navigateTo(section);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
