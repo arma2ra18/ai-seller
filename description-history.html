@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+// В начало скрипта, после импортов:
+console.log('🔥 Страница истории описаний загружена');
+console.log('Текущий пользователь:', currentUser?.uid);
+
+// В функции loadDescriptions() добавьте:
+console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>История описаний — Prodiger</title>
@@ -254,7 +260,6 @@
             }
         }
     </style>
-
 </head>
 <body>
     <!-- Видеофон -->
