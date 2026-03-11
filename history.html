@@ -384,32 +384,35 @@
             }
         };
 
-        // Просмотр сессии
-        window.viewSession = async function(sessionId) {
-            const session = allSessions.find(s => s.id === sessionId);
-            if (!session) return;
-            
-            document.getElementById('selectedSessionTitle').textContent = session.productName || 'Результаты сессии';
-            
-            const gallery = document.getElementById('resultImages');
-            gallery.innerHTML = (session.images || []).map((url, index) => `
-                <div class="result-image" onclick="openLightbox('${url}')">
-                    <img src="${url}" alt="Фото ${index + 1}" loading="lazy">
-                    <div class="result-overlay">
-                        <span class="result-label">Фото ${index + 1}</span>
-                    </div>
-                </div>
-            `).join('');
-            
-            document.getElementById('cardResults').style.display = 'block';
-            
-            setTimeout(() => {
-                document.getElementById('cardResults').scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
-                });
-            }, 100);
-        };
+        // Просмотр сессии - ИСПРАВЛЕНО
+window.viewSession = async function(sessionId) {
+    const session = allSessions.find(s => s.id === sessionId);
+    if (!session) return;
+    
+    document.getElementById('selectedSessionTitle').textContent = session.productName || 'Результаты сессии';
+    
+    const gallery = document.getElementById('resultImages');
+    
+    // Создаем фото с правильными размерами
+    gallery.innerHTML = (session.images || []).map((url, index) => `
+        <div class="result-image" onclick="openLightbox('${url}')">
+            <img src="${url}" alt="Фото ${index + 1}" loading="lazy" 
+                 style="width: 100%; height: 100%; object-fit: cover;">
+            <div class="result-overlay">
+                <span class="result-label">Фото ${index + 1}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    document.getElementById('cardResults').style.display = 'block';
+    
+    setTimeout(() => {
+        document.getElementById('cardResults').scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }, 100);
+};
 
         // Удаление сессии
         window.deleteSession = async function(sessionId) {
@@ -439,36 +442,80 @@
             document.getElementById('cardResults').style.display = 'none';
         };
 
-      // Открыть лайтбокс (исправленная версия)
+   // Открыть лайтбокс - ИСПРАВЛЕНО
 window.openLightbox = function(url) {
-    const lightbox = document.createElement('div');
-    lightbox.className = 'lightbox show';
-    lightbox.onclick = (e) => {
-        if (e.target === lightbox) lightbox.remove();
-    };
+    // Создаем затемненный фон
+    const overlay = document.createElement('div');
+    overlay.className = 'lightbox show';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.95);
+        backdrop-filter: blur(20px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2000;
+        cursor: pointer;
+    `;
     
+    // Создаем контейнер для изображения
+    const container = document.createElement('div');
+    container.style.cssText = `
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+    
+    // Создаем изображение с ограничением размеров
     const img = document.createElement('img');
     img.src = url;
-    img.className = 'lightbox-content';
+    img.style.cssText = `
+        max-width: 90vw;
+        max-height: 90vh;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 12px;
+        box-shadow: 0 0 50px rgba(255,255,255,0.2);
+    `;
     
-    // Ограничиваем размер изображения
-    img.style.maxWidth = '90vw';
-    img.style.maxHeight = '90vh';
-    img.style.width = 'auto';
-    img.style.height = 'auto';
-    img.style.objectFit = 'contain';
-    
+    // Создаем кнопку закрытия
     const close = document.createElement('span');
-    close.className = 'lightbox-close';
     close.innerHTML = '&times;';
+    close.style.cssText = `
+        position: absolute;
+        top: 20px;
+        right: 40px;
+        font-size: 40px;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s;
+        z-index: 2001;
+    `;
+    close.onmouseover = () => close.style.transform = 'rotate(90deg)';
+    close.onmouseout = () => close.style.transform = 'rotate(0deg)';
+    
+    // Собираем всё вместе
+    container.appendChild(img);
+    overlay.appendChild(container);
+    overlay.appendChild(close);
+    
+    // Добавляем обработчик закрытия
+    overlay.onclick = (e) => {
+        if (e.target === overlay) overlay.remove();
+    };
     close.onclick = (e) => {
         e.stopPropagation();
-        lightbox.remove();
+        overlay.remove();
     };
     
-    lightbox.appendChild(img);
-    lightbox.appendChild(close);
-    document.body.appendChild(lightbox);
+    document.body.appendChild(overlay);
 };
 
         // Экранирование HTML
