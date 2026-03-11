@@ -3,7 +3,7 @@ import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import admin from 'firebase-admin';
 
-// Инициализация Firebase Admin SDK (только один раз)
+// Инициализация Firebase Admin SDK
 if (!admin.apps.length) {
   try {
     const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -38,30 +38,73 @@ const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 async function generateGeminiImage(prompt, referenceImage) {
     try {
         const base64Image = referenceImage.toString('base64');
-        const contents = [
-            {
-                inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: base64Image
-                }
-            },
-            prompt
-        ];
-
+        
+        // Правильный формат для Gemini API
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-image-preview',
-            contents: contents,
+            model: 'gemini-2.0-flash-exp-image-generation',
+            contents: [
+                {
+                    role: 'user',
+                    parts: [
+                        {
+                            inlineData: {
+                                mimeType: 'image/jpeg',
+                                data: base64Image
+                            }
+                        },
+                        {
+                            text: prompt
+                        }
+                    ]
+                }
+            ],
             config: {
-                responseModalities: ['Image'],
-                aspectRatio: '1:1',
+                responseModalities: ['Text', 'Image'],
+                safetySettings: [
+                    {
+                        category: 'HARM_CATEGORY_HARASSMENT',
+                        threshold: 'BLOCK_NONE'
+                    },
+                    {
+                        category: 'HARM_CATEGORY_HATE_SPEECH',
+                        threshold: 'BLOCK_NONE'
+                    },
+                    {
+                        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                        threshold: 'BLOCK_NONE'
+                    },
+                    {
+                        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                        threshold: 'BLOCK_NONE'
+                    }
+                ],
+                generationConfig: {
+                    temperature: 1,
+                    topK: 32,
+                    topP: 1,
+                    maxOutputTokens: 8192,
+                }
             }
         });
 
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        // Проверяем наличие ответа
+        if (!response || !response.candidates || !response.candidates[0]) {
+            throw new Error('Нет ответа от Gemini');
+        }
+
+        const candidate = response.candidates[0];
+        
+        if (!candidate.content || !candidate.content.parts) {
+            throw new Error('Ответ не содержит parts');
+        }
+
+        // Ищем изображение в ответе
+        for (const part of candidate.content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+                return `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
             }
         }
+        
         throw new Error('Ответ не содержит изображения');
     } catch (error) {
         console.error('Gemini generation error:', error);
@@ -113,7 +156,6 @@ export default async function handler(req, res) {
         const brand = fields.brand?.[0] || '';
         const price = fields.price?.[0] || '1990';
         const userFeatures = (fields.features?.[0] || '').split(',').map(f => f.trim()).filter(Boolean);
-        const platform = fields.platform?.[0] || 'wb';
         const attempt = parseInt(fields.attempt?.[0]) || 0;
         const originalImageId = fields.originalImageId?.[0] || null;
 
@@ -132,7 +174,6 @@ export default async function handler(req, res) {
                 console.log(`Loaded reference image: ${photoArray[0].originalFilename}`);
             }
         } else if (originalImageId) {
-            // Загружаем оригинал из Storage для повторных генераций
             try {
                 const file = bucket.file(`originals/${originalImageId}`);
                 const [fileBuffer] = await file.download();
@@ -163,50 +204,26 @@ export default async function handler(req, res) {
             }
         }
 
-        // УЛЬТРА-ПРОМПТ
-        const basePrompt = `Ты — ведущий дизайнер инфографики для Wildberries. Твоя задача создать фото-карточку товара, которая привлечет максимум внимания и увеличит продажи.
+        // Упрощенный промпт для надежности
+        const prompt = `Create a professional product photo card for "${productName}" by ${brand}. Price: ${price} ₽. Features: ${userFeatures.join(', ')}. 
+The image should include:
+- The product in the center
+- Large product name at the top
+- Price in a prominent, glowing style
+- Feature icons or badges around the product
+- Modern, premium, luxurious style
+- No white background, use gradient or dark background
+- Make it look like a high-end marketplace listing`;
 
-**Товар:** "${productName}"
-**Бренд:** ${brand}
-**Цена:** ${price} ₽
-**Ключевые особенности от пользователя:** ${userFeatures.join(', ')}
-
-### **Правила создания шедевра:**
-
-1.  **Используй свои знания.** На основе названия "${productName}", найди в своей базе данных реальные характеристики, технические детали и преимущества этого товара. Добавь их на карточку в виде иконок или коротких надписей. Обязательно используй эту информацию.
-
-2.  **Цветовая стратегия (выбери подходящую):**
-    *   Если товар премиальный или технологичный, используй глубокий, насыщенный фон (тёмно-синий, чёрный, изумрудный). Товар должен светиться на нём.
-    *   Если товар для дома, уюта или еда, используй тёплые, "вкусные" тона (бежевый, терракотовый, мягкий зелёный).
-    *   Если товар для молодёжи или спорта, добавь яркие, контрастные цвета.
-
-3.  **3D и объём:** Добавь мягкие, но заметные 3D-эффекты. Товар должен выглядеть объёмно. Тени должны быть реалистичными.
-
-4.  **Типографика (разные шрифты):**
-    *   **Название товара:** Крупный, жирный, современный шрифт.
-    *   **Цена:** Самый яркий элемент. Сделай её "золотой", неоновой или обведи контуром. Добавь эффект лёгкого свечения.
-    *   **Характеристики:** Используй чистый, хорошо читаемый шрифт. Сгруппируй их в аккуратные блоки.
-
-5.  **Композиция (как у лучших селлеров):**
-    *   Размести товар в центре. Вокруг него, словно на прилавке магазина, разложи информацию.
-    *   **Вверху:** Название и главный слоган.
-    *   **По бокам:** Ключевые фишки в виде иконок с подписями.
-    *   **Внизу:** Цена и кнопка призыва к покупке (стилизованно).
-    *   Используй выноски и указатели, чтобы связать текст с деталями товара.
-
-6.  **Запрещено:** Белый фон, скучный минимализм, мелкий нечитаемый текст, пустота. Карточка должна быть насыщенной, но гармоничной.
-
-Создай фото-карточку, от которой невозможно оторвать взгляд.`;
-
-        const variation = ` (Попытка ${attempt + 1}. Вариант ${attempt + 1} из 5: используй другое расположение текста, цветовую гамму или композицию, но сохрани все ключевые элементы товара)`;
-        const finalPrompt = basePrompt + variation;
+        const variation = attempt > 0 ? ` (Variation ${attempt + 1} with different layout and colors)` : '';
+        const finalPrompt = prompt + variation;
 
         let imageDataUrl;
         try {
             console.log(`Generating image (attempt ${attempt + 1})...`);
             imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer);
         } catch (err) {
-            console.error(`❌ Ошибка при генерации изображения (attempt ${attempt + 1}):`, err);
+            console.error(`❌ Ошибка при генерации изображения:`, err);
             return res.status(500).json({ error: 'Failed to generate image: ' + err.message });
         }
 
@@ -214,9 +231,6 @@ export default async function handler(req, res) {
         const fileName = `card_${Date.now()}_${attempt}.jpg`;
         const publicUrl = await uploadToStorage(imageDataUrl, fileName);
         
-        // Генерируем описания (можно варьировать в зависимости от попытки)
-        const descriptions = []; // Больше не генерируем описания
-
         // Удаляем временные файлы
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
@@ -230,10 +244,10 @@ export default async function handler(req, res) {
         console.log('✅ Успешно сгенерировано изображение');
         res.status(200).json({ 
             images: [publicUrl], 
-            descriptions,
             originalImageId: savedOriginalId,
             attempt: attempt
         });
+        
     } catch (error) {
         console.error('❌ Ошибка в handler:', error);
         res.status(500).json({ error: error.message });
