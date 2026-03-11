@@ -657,104 +657,109 @@
             progress.style.width = percent + '%';
         }
 
-        // Генерация описания
-        window.generateDescription = async function() {
-            const productName = document.getElementById('productName').value.trim();
-            
-            if (!productName) {
-                alert('Введите название товара');
-                return;
-            }
+        // Генерация описания (обновленная функция)
+window.generateDescription = async function() {
+    const productName = document.getElementById('productName').value.trim();
+    
+    if (!productName) {
+        alert('Введите название товара');
+        return;
+    }
 
-            // Проверка баланса
-            const balance = parseInt(userData.balance) || 0;
-            if (balance < 50) {
-                alert('Недостаточно средств. Требуется 50 ₽');
-                return;
-            }
+    // Проверка баланса (50 ₽)
+    const balance = parseInt(userData.balance) || 0;
+    if (balance < 50) {
+        alert('Недостаточно средств. Требуется 50 ₽');
+        return;
+    }
 
-            const btn = document.getElementById('generateDescBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loading"></span> Генерация...';
-            
-            showGenerationModal();
+    const btn = document.getElementById('generateDescBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Генерация...';
+    
+    showGenerationModal();
 
-            try {
-                // Собираем данные
-                const competitors = [
-                    document.getElementById('competitor1').value.trim(),
-                    document.getElementById('competitor2').value.trim(),
-                    document.getElementById('competitor3').value.trim()
-                ].filter(url => url);
-
-                const keywords = document.getElementById('keywords').value.trim()
-                    .split(',').map(k => k.trim()).filter(k => k);
-
-                // Отправляем запрос к API
-const response = await fetch('/api/generate-description', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        productName,
-        platform: selectedPlatform,
-        competitors: [
+    try {
+        // Собираем данные
+        const competitors = [
             document.getElementById('competitor1').value.trim(),
             document.getElementById('competitor2').value.trim(),
             document.getElementById('competitor3').value.trim()
-        ].filter(url => url),
-        keywords: document.getElementById('keywords').value.trim()
-            .split(',').map(k => k.trim()).filter(k => k)
-    })
-});
+        ].filter(url => url);
 
-                if (!response.ok) {
-                    throw new Error(await response.text());
-                }
+        const keywords = document.getElementById('keywords').value.trim()
+            .split(',').map(k => k.trim()).filter(k => k);
 
-                const result = await response.json();
-                currentDescription = result.description;
+        // Отправляем запрос к API
+        const response = await fetch('/api/generate-description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                productName,
+                platform: selectedPlatform,
+                competitors,
+                keywords
+            })
+        });
 
-                // Отображаем результат
-                const resultDiv = document.getElementById('resultContent');
-                resultDiv.innerHTML = `<div style="white-space: pre-wrap;">${currentDescription}</div>`;
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
 
-                // Активируем кнопки
-                document.getElementById('copyBtn').disabled = false;
-                document.getElementById('saveBtn').disabled = false;
+        const result = await response.json();
+        currentDescription = result.description;
 
-                // Списываем деньги
-                await updateDoc(doc(db, 'users', currentUser.uid), {
-                    balance: increment(-50),
-                    usedSpent: increment(50)
-                });
+        // ========== СОХРАНЕНИЕ В FIREBASE ==========
+        try {
+            // Сохраняем в коллекцию descriptions
+            await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
+                productName: productName,
+                platform: selectedPlatform,
+                description: currentDescription,
+                keywords: keywords,
+                competitors: competitors,
+                createdAt: new Date().toISOString(),
+                cost: 50
+            });
+            console.log('✅ Описание сохранено в историю');
+        } catch (saveError) {
+            console.error('❌ Ошибка сохранения в историю:', saveError);
+            // Не прерываем выполнение, если не удалось сохранить
+        }
 
-                // Сохраняем в историю
-                await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
-                    productName,
-                    platform: selectedPlatform,
-                    description: currentDescription,
-                    createdAt: new Date().toISOString()
-                });
+        // ========== СПИСЫВАЕМ ДЕНЬГИ ==========
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            balance: increment(-50),
+            usedSpent: increment(50)
+        });
 
-                // Обновляем баланс
-                const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (updatedDoc.exists()) {
-                    userData = updatedDoc.data();
-                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
-                }
+        // Обновляем баланс на странице
+        const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (updatedDoc.exists()) {
+            userData = updatedDoc.data();
+            document.getElementById('sidebarBalance').textContent = userData.balance || 0;
+        }
 
-                hideGenerationModal();
-                alert('✅ Описание готово!');
+        // Отображаем результат
+        const resultDiv = document.getElementById('resultContent');
+        resultDiv.innerHTML = `<div style="white-space: pre-wrap;">${currentDescription}</div>`;
 
-            } catch (error) {
-                console.error('Ошибка генерации:', error);
-                alert('Ошибка: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '✨ Сгенерировать описание (100 ₽)';
-                hideGenerationModal();
-            }
-        };
+        // Активируем кнопки
+        document.getElementById('copyBtn').disabled = false;
+        document.getElementById('saveBtn').disabled = false;
+
+        hideGenerationModal();
+        alert('✅ Описание готово и сохранено в историю!');
+
+    } catch (error) {
+        console.error('Ошибка генерации:', error);
+        alert('Ошибка: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Сгенерировать описание (50 ₽)';
+        hideGenerationModal();
+    }
+};
 
         // Копирование описания
         window.copyDescription = function() {
