@@ -1,6 +1,6 @@
 /* Базовые настройки */
-@import url('variables.css');
-@import url('base.css');
+@import url('/styles/variables.css');
+@import url('/styles/base.css');
 
 /* Анимации */
 @keyframes fadeInUp {
@@ -46,24 +46,23 @@
 }
 
 /* Компоненты */
-@import url('components.css');
-@import url('header-footer.css');
+@import url('/styles/components.css');
+@import url('/styles/header-footer.css');
 
 /* Страницы */
-@import url('home.css');
-@import url('auth.css');
+@import url('/styles/home.css');
+@import url('/styles/auth.css');
 
 /* Дашборд */
-@import url('dashboard-common.css');
-@import url('dashboard-balance.css');
-@import url('dashboard-generate.css');
-@import url('dashboard-description.css');
-@import url('dashboard-history.css');
-@import url('dashboard-description-history.css');
-@import url('dashboard-settings.css');
+@import url('/styles/dashboard-common.css');
+@import url('/styles/dashboard-balance.css');
+@import url('/styles/dashboard-generate.css');
+@import url('/styles/dashboard-description.css');
+@import url('/styles/dashboard-description-history.css');
+@import url('/styles/dashboard-settings.css');
 
 /* Админка */
-@import url('admin.css');
+@import url('/styles/admin.css');
 
 /* Адаптация */
 @media (max-width: 1024px) {
