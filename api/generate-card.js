@@ -41,18 +41,25 @@ async function generateGeminiImage(prompt, referenceImage) {
         
         // Используем правильную модель для генерации изображений
         const response = await ai.models.generateContent({
-            model: 'gemini-1.5-flash', // Эта модель точно работает
+            model: 'gemini-2.0-flash-exp', // Эта модель поддерживает изображения
             contents: [
                 {
                     role: 'user',
                     parts: [
                         {
-                            text: `Generate a professional product photo card based on this image. ${prompt}`
+                            inlineData: {
+                                mimeType: 'image/jpeg',
+                                data: base64Image
+                            }
+                        },
+                        {
+                            text: prompt
                         }
                     ]
                 }
             ],
             config: {
+                responseModalities: ['Text', 'Image'],
                 temperature: 1,
                 topK: 32,
                 topP: 1,
@@ -70,29 +77,40 @@ async function generateGeminiImage(prompt, referenceImage) {
             throw new Error('Ответ не содержит parts');
         }
 
-        // В gemini-1.5-flash нет прямой генерации изображений,
-        // поэтому возвращаем текст с описанием
-        const textResponse = candidate.content.parts.map(p => p.text).join('');
+        // Ищем изображение в ответе
+        for (const part of candidate.content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+                return `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
+            }
+        }
         
-        // Создаем простой SVG с текстом (временное решение)
-        const svgContent = `
-            <svg width="1024" height="1024" xmlns="http://www.w3.org/2000/svg">
-                <rect width="1024" height="1024" fill="#1a1a2e"/>
-                <text x="512" y="200" font-family="Arial" font-size="48" fill="white" text-anchor="middle">${prompt.split('\n')[0]}</text>
-                <text x="512" y="300" font-family="Arial" font-size="36" fill="#00ff00" text-anchor="middle">Цена: ${price} ₽</text>
-                <text x="512" y="400" font-family="Arial" font-size="24" fill="#cccccc" text-anchor="middle">${userFeatures.join(' • ')}</text>
-                <circle cx="512" cy="600" r="200" fill="#0071e3" opacity="0.5"/>
-                <text x="512" y="620" font-family="Arial" font-size="32" fill="white" text-anchor="middle">✨ Готово!</text>
-            </svg>
-        `;
-        
-        const base64Svg = Buffer.from(svgContent).toString('base64');
-        return `data:image/svg+xml;base64,${base64Svg}`;
-        
+        throw new Error('Ответ не содержит изображения');
     } catch (error) {
         console.error('Gemini generation error:', error);
         throw error;
     }
+}
+
+/**
+ * Загружает изображение в Firebase Storage и возвращает публичный URL.
+ */
+async function uploadToStorage(base64Data, fileName) {
+    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+        throw new Error('Invalid base64 data');
+    }
+    const mimeType = matches[1];
+    const base64 = matches[2];
+    const buffer = Buffer.from(base64, 'base64');
+
+    const file = bucket.file(`generated/${fileName}`);
+    await file.save(buffer, {
+        metadata: { contentType: mimeType },
+        public: true,
+    });
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+    console.log(`Uploaded to Storage: ${publicUrl}`);
+    return publicUrl;
 }
 
 export default async function handler(req, res) {
@@ -127,6 +145,7 @@ export default async function handler(req, res) {
         let referenceBuffer = null;
         let savedOriginalId = null;
 
+        // Загружаем референсное изображение
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             if (photoArray.length) {
@@ -149,6 +168,7 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No photo uploaded or original image not found' });
         }
 
+        // Сохраняем оригинал при первой генерации
         if (attempt === 0 && files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             if (photoArray.length) {
@@ -163,16 +183,48 @@ export default async function handler(req, res) {
             }
         }
 
-        // Генерируем изображение
+        // ПОЛНЫЙ УЛЬТРА-ПРОМПТ (восстановлен)
+        const basePrompt = `Ты — ведущий дизайнер инфографики для Wildberries. Твоя задача создать фото-карточку товара, которая привлечет максимум внимания и увеличит продажи.
+
+**Товар:** "${productName}"
+**Бренд:** ${brand}
+**Цена:** ${price} ₽
+**Ключевые особенности от пользователя:** ${userFeatures.join(', ')}
+
+### **Правила создания шедевра:**
+
+1.  **Используй свои знания.** На основе названия "${productName}", найди в своей базе данных реальные характеристики, технические детали и преимущества этого товара. Добавь их на карточку в виде иконок или коротких надписей. Например, для "AirPods Pro" ты должна знать про чип H2, активное шумоподавление, влагозащиту IPX4 и время работы 30 часов. Обязательно используй эту информацию.
+
+2.  **Цветовая стратегия (выбери подходящую):**
+    *   Если товар премиальный или технологичный (украшения, электроника), используй глубокий, насыщенный фон (тёмно-синий, чёрный, изумрудный). Товар должен светиться на нём.
+    *   Если товар для дома, уюта или еда, используй тёплые, "вкусные" тона (бежевый, терракотовый, мягкий зелёный).
+    *   Если товар для молодёжи или спорта, добавь яркие, контрастные цвета.
+
+3.  **3D и объём:** Добавь мягкие, но заметные 3D-эффекты. Товар должен выглядеть объёмно. Тени должны быть реалистичными.
+
+4.  **Типографика (разные шрифты):**
+    *   **Название товара:** Крупный, жирный, современный шрифт (например, Bebas Neue, Oswald).
+    *   **Цена:** Самый яркий элемент. Сделай её "золотой", неоновой или обведи контуром. Добавь эффект лёгкого свечения.
+    *   **Характеристики:** Используй чистый, хорошо читаемый шрифт (например, Roboto, Open Sans). Сгруппируй их в аккуратные блоки.
+
+5.  **Композиция (как у лучших селлеров):**
+    *   Размести товар в центре. Вокруг него, словно на прилавке магазина, разложи информацию.
+    *   **Вверху:** Название и главный слоган (например, "Лидер продаж 2026").
+    *   **По бокам:** Ключевые фишки в виде иконок с подписями (шумоподавление 🎧, влагозащита 💧, 30ч работы 🔋).
+    *   **Внизу:** Цена и кнопка призыва к покупке (стилизованно).
+    *   Используй выноски и указатели, чтобы связать текст с деталями товара.
+
+6.  **Запрещено:** Белый фон, скучный минимализм, мелкий нечитаемый текст, пустота. Карточка должна быть насыщенной, но гармоничной.
+
+Создай фото-карточку, от которой невозможно оторвать взгляд.`;
+
+        const variation = ` (Попытка ${attempt + 1}. Вариант ${attempt + 1} из 5: используй другое расположение текста, цветовую гамму или композицию, но сохрани все ключевые элементы товара)`;
+        const finalPrompt = basePrompt + variation;
+
         let imageDataUrl;
         try {
             console.log(`Generating image (attempt ${attempt + 1})...`);
-            
-            // Пока используем заглушку - возвращаем то же изображение с наложенным текстом
-            // В реальном проекте нужно использовать Replicate или другую нейросеть
-            const base64Image = referenceBuffer.toString('base64');
-            imageDataUrl = `data:image/jpeg;base64,${base64Image}`;
-            
+            imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer);
         } catch (err) {
             console.error(`❌ Ошибка при генерации изображения:`, err);
             return res.status(500).json({ error: 'Failed to generate image: ' + err.message });
@@ -182,6 +234,7 @@ export default async function handler(req, res) {
         const fileName = `card_${Date.now()}_${attempt}.jpg`;
         const publicUrl = await uploadToStorage(imageDataUrl, fileName);
         
+        // Удаляем временные файлы
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             photoArray.forEach(file => {
@@ -202,23 +255,4 @@ export default async function handler(req, res) {
         console.error('❌ Ошибка в handler:', error);
         res.status(500).json({ error: error.message });
     }
-}
-
-async function uploadToStorage(base64Data, fileName) {
-    const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-        throw new Error('Invalid base64 data');
-    }
-    const mimeType = matches[1];
-    const base64 = matches[2];
-    const buffer = Buffer.from(base64, 'base64');
-
-    const file = bucket.file(`generated/${fileName}`);
-    await file.save(buffer, {
-        metadata: { contentType: mimeType },
-        public: true,
-    });
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-    console.log(`Uploaded to Storage: ${publicUrl}`);
-    return publicUrl;
 }
