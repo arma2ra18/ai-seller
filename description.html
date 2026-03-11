@@ -131,134 +131,134 @@
         }
         
         /* Улучшенный дизайн для ссылок конкурентов */
-.competitor-links {
-    background: linear-gradient(145deg, rgba(30, 30, 35, 0.8), rgba(25, 25, 30, 0.9));
-    border-radius: 24px;
-    padding: 25px;
-    margin-bottom: 30px;
-    border: 1px solid rgba(255,255,255,0.03);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
+        .competitor-links {
+            background: linear-gradient(145deg, rgba(30, 30, 35, 0.8), rgba(25, 25, 30, 0.9));
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.03);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
 
-.competitor-links h4 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: var(--accent);
-    font-size: 18px;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
+        .competitor-links h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--accent);
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
 
-.competitor-links h4::before {
-    content: '🔗';
-    font-size: 20px;
-}
+        .competitor-links h4::before {
+            content: '🔗';
+            font-size: 20px;
+        }
 
-.competitor-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 20px;
-}
+        .competitor-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
 
-.competitor-input {
-    position: relative;
-    transition: var(--transition);
-}
+        .competitor-input {
+            position: relative;
+            transition: var(--transition);
+        }
 
-.competitor-input:hover {
-    transform: translateX(5px);
-}
+        .competitor-input:hover {
+            transform: translateX(5px);
+        }
 
-.competitor-input .input-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 24px;
-    height: 24px;
-    background: rgba(0,113,227,0.1);
-    border: 1px solid rgba(0,113,227,0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--accent);
-    font-size: 12px;
-    font-weight: 600;
-    transition: var(--transition);
-}
+        .competitor-input .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: rgba(0,113,227,0.1);
+            border: 1px solid rgba(0,113,227,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
 
-.competitor-input:hover .input-icon {
-    background: var(--accent);
-    color: white;
-    transform: translateY(-50%) scale(1.1);
-}
+        .competitor-input:hover .input-icon {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-50%) scale(1.1);
+        }
 
-.competitor-input input {
-    width: 100%;
-    padding: 16px 16px 16px 50px;
-    background: rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 16px;
-    color: white;
-    font-size: 14px;
-    transition: var(--transition);
-}
+        .competitor-input input {
+            width: 100%;
+            padding: 16px 16px 16px 50px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 16px;
+            color: white;
+            font-size: 14px;
+            transition: var(--transition);
+        }
 
-.competitor-input input:focus {
-    outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
-    background: rgba(0,113,227,0.05);
-}
+        .competitor-input input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
+            background: rgba(0,113,227,0.05);
+        }
 
-.competitor-input input::placeholder {
-    color: rgba(255,255,255,0.2);
-    font-style: italic;
-}
+        .competitor-input input::placeholder {
+            color: rgba(255,255,255,0.2);
+            font-style: italic;
+        }
 
-.competitor-note {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 15px;
-    background: rgba(0,113,227,0.05);
-    border-radius: 16px;
-    margin-top: 15px;
-    border: 1px dashed rgba(0,113,227,0.3);
-}
+        .competitor-note {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            background: rgba(0,113,227,0.05);
+            border-radius: 16px;
+            margin-top: 15px;
+            border: 1px dashed rgba(0,113,227,0.3);
+        }
 
-.competitor-note .badge {
-    background: var(--accent);
-    color: white;
-    padding: 6px 16px;
-    border-radius: 40px;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    box-shadow: 0 4px 10px rgba(0,113,227,0.3);
-}
+        .competitor-note .badge {
+            background: var(--accent);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(0,113,227,0.3);
+        }
 
-.competitor-note span:last-child {
-    color: var(--text-secondary);
-    font-size: 13px;
-    line-height: 1.5;
-}
+        .competitor-note span:last-child {
+            color: var(--text-secondary);
+            font-size: 13px;
+            line-height: 1.5;
+        }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-    .competitor-links {
-        padding: 20px;
-    }
-    
-    .competitor-note {
-        flex-direction: column;
-        text-align: center;
-    }
-}
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .competitor-links {
+                padding: 20px;
+            }
+            
+            .competitor-note {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
         
         .keywords-tip {
             display: flex;
@@ -381,6 +381,55 @@
                 position: static;
             }
         }
+
+        /* Стили для уведомлений */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 60px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 9999;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.success {
+            background: rgba(48, 209, 88, 0.95);
+            border-color: rgba(48, 209, 88, 0.3);
+        }
+
+        .notification.error {
+            background: rgba(255, 59, 48, 0.95);
+            border-color: rgba(255, 59, 48, 0.3);
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+        }
     </style>
 </head>
 <body>
@@ -433,7 +482,7 @@
                             📝 Описание товара
                         </a>
                     </li>
-<li class="menu-item" data-section="description-history">
+                    <li class="menu-item" data-section="description-history">
                         <a href="/description-history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
                             📚 История описаний
                         </a>
@@ -502,31 +551,31 @@
                         </div>
                         
                         <!-- Ссылки на конкурентов (УЛУЧШЕННЫЙ ДИЗАЙН) -->
-<div class="competitor-links">
-    <h4>Анализ конкурентов</h4>
-    
-    <div class="competitor-grid">
-        <div class="competitor-input">
-            <span class="input-icon">1</span>
-            <input type="url" id="competitor1" placeholder="Ссылка на конкурента 1">
-        </div>
-        
-        <div class="competitor-input">
-            <span class="input-icon">2</span>
-            <input type="url" id="competitor2" placeholder="Ссылка на конкурента 2">
-        </div>
-        
-        <div class="competitor-input">
-            <span class="input-icon">3</span>
-            <input type="url" id="competitor3" placeholder="Ссылка на конкурента 3">
-        </div>
-    </div>
-    
-    <div class="competitor-note">
-        <span class="badge">AI Анализ</span>
-        <span>Нейросеть изучит описания конкурентов и выделит ключевые преимущества для вашего товара</span>
-    </div>
-</div>
+                        <div class="competitor-links">
+                            <h4>Анализ конкурентов</h4>
+                            
+                            <div class="competitor-grid">
+                                <div class="competitor-input">
+                                    <span class="input-icon">1</span>
+                                    <input type="url" id="competitor1" placeholder="Ссылка на конкурента 1">
+                                </div>
+                                
+                                <div class="competitor-input">
+                                    <span class="input-icon">2</span>
+                                    <input type="url" id="competitor2" placeholder="Ссылка на конкурента 2">
+                                </div>
+                                
+                                <div class="competitor-input">
+                                    <span class="input-icon">3</span>
+                                    <input type="url" id="competitor3" placeholder="Ссылка на конкурента 3">
+                                </div>
+                            </div>
+                            
+                            <div class="competitor-note">
+                                <span class="badge">AI Анализ</span>
+                                <span>Нейросеть изучит описания конкурентов и выделит ключевые преимущества для вашего товара</span>
+                            </div>
+                        </div>
                         
                         <!-- Ключевые слова -->
                         <div class="form-group">
@@ -591,6 +640,23 @@
             doc, getDoc, collection, addDoc, updateDoc, increment 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
+        // ========== УВЕДОМЛЕНИЯ ==========
+        function showNotification(message, type = 'info') {
+            // Удаляем предыдущее уведомление, если есть
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Автоматически скрываем через 3 секунды
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
         let currentUser = null;
         let userData = null;
         let selectedPlatform = 'wb';
@@ -618,6 +684,7 @@
                 }
             } catch (error) {
                 console.error('Ошибка загрузки данных:', error);
+                showNotification('❌ Ошибка загрузки данных', 'error');
             }
         }
 
@@ -662,115 +729,115 @@
             progress.style.width = percent + '%';
         }
 
-        // Генерация описания (обновленная функция)
-window.generateDescription = async function() {
-    const productName = document.getElementById('productName').value.trim();
-    
-    if (!productName) {
-        alert('Введите название товара');
-        return;
-    }
+        // Генерация описания (обновленная функция с уведомлениями)
+        window.generateDescription = async function() {
+            const productName = document.getElementById('productName').value.trim();
+            
+            if (!productName) {
+                showNotification('❌ Введите название товара', 'error');
+                return;
+            }
 
-    // Проверка баланса (50 ₽)
-    const balance = parseInt(userData.balance) || 0;
-    if (balance < 50) {
-        alert('Недостаточно средств. Требуется 50 ₽');
-        return;
-    }
+            // Проверка баланса (50 ₽)
+            const balance = parseInt(userData.balance) || 0;
+            if (balance < 50) {
+                showNotification('❌ Недостаточно средств. Требуется 50 ₽', 'error');
+                return;
+            }
 
-    const btn = document.getElementById('generateDescBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span> Генерация...';
-    
-    showGenerationModal();
+            const btn = document.getElementById('generateDescBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Генерация...';
+            
+            showGenerationModal();
 
-    try {
-        // Собираем данные
-        const competitors = [
-            document.getElementById('competitor1').value.trim(),
-            document.getElementById('competitor2').value.trim(),
-            document.getElementById('competitor3').value.trim()
-        ].filter(url => url);
+            try {
+                // Собираем данные
+                const competitors = [
+                    document.getElementById('competitor1').value.trim(),
+                    document.getElementById('competitor2').value.trim(),
+                    document.getElementById('competitor3').value.trim()
+                ].filter(url => url);
 
-        const keywords = document.getElementById('keywords').value.trim()
-            .split(',').map(k => k.trim()).filter(k => k);
+                const keywords = document.getElementById('keywords').value.trim()
+                    .split(',').map(k => k.trim()).filter(k => k);
 
-        // Отправляем запрос к API
-        const response = await fetch('/api/generate-description', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                productName,
-                platform: selectedPlatform,
-                competitors,
-                keywords
-            })
-        });
+                // Отправляем запрос к API
+                const response = await fetch('/api/generate-description', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productName,
+                        platform: selectedPlatform,
+                        competitors,
+                        keywords
+                    })
+                });
 
-        if (!response.ok) {
-            throw new Error(await response.text());
-        }
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
 
-        const result = await response.json();
-        currentDescription = result.description;
+                const result = await response.json();
+                currentDescription = result.description;
 
-        // ========== СОХРАНЕНИЕ В FIREBASE ==========
-        try {
-            // Сохраняем в коллекцию descriptions
-            await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
-                productName: productName,
-                platform: selectedPlatform,
-                description: currentDescription,
-                keywords: keywords,
-                competitors: competitors,
-                createdAt: new Date().toISOString(),
-                cost: 50
-            });
-            console.log('✅ Описание сохранено в историю');
-        } catch (saveError) {
-            console.error('❌ Ошибка сохранения в историю:', saveError);
-            // Не прерываем выполнение, если не удалось сохранить
-        }
+                // ========== СОХРАНЕНИЕ В FIREBASE ==========
+                try {
+                    // Сохраняем в коллекцию descriptions
+                    await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
+                        productName: productName,
+                        platform: selectedPlatform,
+                        description: currentDescription,
+                        keywords: keywords,
+                        competitors: competitors,
+                        createdAt: new Date().toISOString(),
+                        cost: 50
+                    });
+                    console.log('✅ Описание сохранено в историю');
+                } catch (saveError) {
+                    console.error('❌ Ошибка сохранения в историю:', saveError);
+                    showNotification('⚠️ Описание создано, но не сохранено в историю', 'warning');
+                }
 
-        // ========== СПИСЫВАЕМ ДЕНЬГИ ==========
-        await updateDoc(doc(db, 'users', currentUser.uid), {
-            balance: increment(-50),
-            usedSpent: increment(50)
-        });
+                // ========== СПИСЫВАЕМ ДЕНЬГИ ==========
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    balance: increment(-50),
+                    usedSpent: increment(50)
+                });
 
-        // Обновляем баланс на странице
-        const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (updatedDoc.exists()) {
-            userData = updatedDoc.data();
-            document.getElementById('sidebarBalance').textContent = userData.balance || 0;
-        }
+                // Обновляем баланс на странице
+                const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (updatedDoc.exists()) {
+                    userData = updatedDoc.data();
+                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
+                }
 
-        // Отображаем результат
-        const resultDiv = document.getElementById('resultContent');
-        resultDiv.innerHTML = `<div style="white-space: pre-wrap;">${currentDescription}</div>`;
+                // Отображаем результат
+                const resultDiv = document.getElementById('resultContent');
+                resultDiv.innerHTML = `<div style="white-space: pre-wrap;">${currentDescription}</div>`;
 
-        // Активируем кнопки
-        document.getElementById('copyBtn').disabled = false;
-        document.getElementById('saveBtn').disabled = false;
+                // Активируем кнопки
+                document.getElementById('copyBtn').disabled = false;
+                document.getElementById('saveBtn').disabled = false;
 
-        hideGenerationModal();
-        alert('✅ Описание готово и сохранено в историю!');
+                hideGenerationModal();
+                showNotification('✅ Описание готово и сохранено в историю!', 'success');
 
-    } catch (error) {
-        console.error('Ошибка генерации:', error);
-        alert('Ошибка: ' + error.message);
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '✨ Сгенерировать описание (50 ₽)';
-        hideGenerationModal();
-    }
-};
+            } catch (error) {
+                console.error('Ошибка генерации:', error);
+                showNotification('❌ Ошибка: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '✨ Сгенерировать описание (50 ₽)';
+                hideGenerationModal();
+            }
+        };
 
         // Копирование описания
         window.copyDescription = function() {
             if (!currentDescription) return;
             navigator.clipboard.writeText(currentDescription);
-            alert('✅ Описание скопировано в буфер обмена');
+            showNotification('✅ Описание скопировано в буфер обмена', 'success');
         };
 
         // Сохранение описания
@@ -783,6 +850,7 @@ window.generateDescription = async function() {
             a.download = `description_${Date.now()}.txt`;
             a.click();
             window.URL.revokeObjectURL(url);
+            showNotification('✅ Описание сохранено в файл', 'success');
         };
 
         // Навигация
@@ -792,6 +860,7 @@ window.generateDescription = async function() {
                 'balance': '/balance.html',
                 'generate': '/generate.html',
                 'description': '/description.html',
+                'description-history': '/description-history.html',
                 'history': '/history.html',
                 'settings': '/settings.html'
             };
