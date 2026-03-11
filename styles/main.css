@@ -1,8 +1,8 @@
-/* Базовые настройки */
+/* ===== БАЗОВЫЕ НАСТРОЙКИ ===== */
 @import url('/styles/variables.css');
 @import url('/styles/base.css');
 
-/* Анимации */
+/* ===== АНИМАЦИИ ===== */
 @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -45,15 +45,15 @@
     100% { box-shadow: 0 0 0 0 rgba(0,113,227,0); }
 }
 
-/* Компоненты */
+/* ===== КОМПОНЕНТЫ ===== */
 @import url('/styles/components.css');
 @import url('/styles/header-footer.css');
 
-/* Страницы */
+/* ===== СТРАНИЦЫ ===== */
 @import url('/styles/home.css');
 @import url('/styles/auth.css');
 
-/* Дашборд */
+/* ===== ДАШБОРД ===== */
 @import url('/styles/dashboard-common.css');
 @import url('/styles/dashboard-balance.css');
 @import url('/styles/dashboard-generate.css');
@@ -61,27 +61,34 @@
 @import url('/styles/dashboard-description-history.css');
 @import url('/styles/dashboard-settings.css');
 
-/* Админка */
+/* ===== АДМИНКА ===== */
 @import url('/styles/admin.css');
 
-/* Адаптация */
+/* ===== АДАПТАЦИЯ ===== */
 @media (max-width: 1024px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+    .footer-main {
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+    }
 }
 
 @media (max-width: 768px) {
+    /* Хедер */
     .nav .btn-gold {
         display: none;
     }
     
+    /* Главная */
     .hero .container { flex-direction: column; }
     .stats-grid { grid-template-columns: 1fr; }
     .steps { grid-template-columns: 1fr; }
     .reviews-grid { grid-template-columns: 1fr; }
     .footer-main { grid-template-columns: 1fr; }
     
+    /* Дашборд */
     .dashboard-wrapper { flex-direction: column; }
     .sidebar {
         width: 100%;
@@ -137,5 +144,5 @@
     .bottom { transform: rotateX(-90deg) translateZ(75px); }
 }
 
-/* Утилиты */
+/* ===== УТИЛИТЫ ===== */
 img, video, iframe { max-width: 100%; height: auto; }
