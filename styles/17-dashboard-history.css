@@ -731,3 +731,30 @@
     height: auto !important;
     object-fit: contain !important;
 }
+/* Специальные стили для одного фото */
+.single-photo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    width: 100%;
+}
+
+.result-image.single-photo {
+    width: 300px !important;
+    height: 300px !important;
+    margin: 0 auto !important;
+}
+
+/* Для случаев, когда фото одно в сетке */
+.results-gallery:has(.result-image:only-child) {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.results-gallery .result-image:only-child {
+    width: 300px !important;
+    height: 300px !important;
+    margin: 0 auto !important;
+}
