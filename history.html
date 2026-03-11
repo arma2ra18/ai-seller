@@ -439,30 +439,37 @@
             document.getElementById('cardResults').style.display = 'none';
         };
 
-        // Открыть лайтбокс
-        window.openLightbox = function(url) {
-            const lightbox = document.createElement('div');
-            lightbox.className = 'lightbox show';
-            lightbox.onclick = (e) => {
-                if (e.target === lightbox) lightbox.remove();
-            };
-            
-            const img = document.createElement('img');
-            img.src = url;
-            img.className = 'lightbox-content';
-            
-            const close = document.createElement('span');
-            close.className = 'lightbox-close';
-            close.innerHTML = '&times;';
-            close.onclick = (e) => {
-                e.stopPropagation();
-                lightbox.remove();
-            };
-            
-            lightbox.appendChild(img);
-            lightbox.appendChild(close);
-            document.body.appendChild(lightbox);
-        };
+      // Открыть лайтбокс (исправленная версия)
+window.openLightbox = function(url) {
+    const lightbox = document.createElement('div');
+    lightbox.className = 'lightbox show';
+    lightbox.onclick = (e) => {
+        if (e.target === lightbox) lightbox.remove();
+    };
+    
+    const img = document.createElement('img');
+    img.src = url;
+    img.className = 'lightbox-content';
+    
+    // Ограничиваем размер изображения
+    img.style.maxWidth = '90vw';
+    img.style.maxHeight = '90vh';
+    img.style.width = 'auto';
+    img.style.height = 'auto';
+    img.style.objectFit = 'contain';
+    
+    const close = document.createElement('span');
+    close.className = 'lightbox-close';
+    close.innerHTML = '&times;';
+    close.onclick = (e) => {
+        e.stopPropagation();
+        lightbox.remove();
+    };
+    
+    lightbox.appendChild(img);
+    lightbox.appendChild(close);
+    document.body.appendChild(lightbox);
+};
 
         // Экранирование HTML
         function escapeHtml(text) {
