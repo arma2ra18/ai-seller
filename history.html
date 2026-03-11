@@ -384,7 +384,7 @@
             }
         };
 
-        // Просмотр сессии - ИСПРАВЛЕНО
+        // Просмотр сессии - ИСПРАВЛЕНО (для одного фото)
 window.viewSession = async function(sessionId) {
     const session = allSessions.find(s => s.id === sessionId);
     if (!session) return;
@@ -392,17 +392,31 @@ window.viewSession = async function(sessionId) {
     document.getElementById('selectedSessionTitle').textContent = session.productName || 'Результаты сессии';
     
     const gallery = document.getElementById('resultImages');
+    const images = session.images || [];
     
-    // Создаем фото с правильными размерами
-    gallery.innerHTML = (session.images || []).map((url, index) => `
-        <div class="result-image" onclick="openLightbox('${url}')">
-            <img src="${url}" alt="Фото ${index + 1}" loading="lazy" 
-                 style="width: 100%; height: 100%; object-fit: cover;">
-            <div class="result-overlay">
-                <span class="result-label">Фото ${index + 1}</span>
+    // Если только одно фото - показываем его в уменьшенном размере
+    if (images.length === 1) {
+        gallery.innerHTML = `
+            <div style="display: flex; justify-content: center; align-items: center; padding: 20px;">
+                <div class="result-image" style="width: 300px; height: 300px; margin: 0 auto;" onclick="openLightbox('${images[0]}')">
+                    <img src="${images[0]}" alt="Фото" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div class="result-overlay">
+                        <span class="result-label">Фото</span>
+                    </div>
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    } else {
+        // Если несколько фото - показываем сеткой
+        gallery.innerHTML = images.map((url, index) => `
+            <div class="result-image" onclick="openLightbox('${url}')">
+                <img src="${url}" alt="Фото ${index + 1}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                <div class="result-overlay">
+                    <span class="result-label">Фото ${index + 1}</span>
+                </div>
+            </div>
+        `).join('');
+    }
     
     document.getElementById('cardResults').style.display = 'block';
     
