@@ -7,256 +7,296 @@
     <link rel="stylesheet" href="styles/main.css">
     <style>
         .description-container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
         }
-
-        .info-block {
+        
+        /* Информационный баннер */
+        .beta-banner {
+            background: linear-gradient(135deg, rgba(0,113,227,0.2), rgba(155,94,240,0.2));
+            border: 1px solid var(--accent);
+            border-radius: 60px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .beta-badge {
+            background: var(--accent-gold);
+            color: #000;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .beta-text {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .beta-text strong {
+            color: white;
+        }
+        
+        /* Основная сетка */
+        .description-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        /* Левая колонка - форма */
+        .form-card {
             background: rgba(28, 28, 30, 0.7);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.05);
             border-radius: 32px;
             padding: 30px;
+            animation: fadeInUp 0.7s ease;
+        }
+        
+        .form-card h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .form-card .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
             margin-bottom: 30px;
-            animation: fadeInUp 0.5s ease;
         }
-
-        .generation-form {
-            background: rgba(28, 28, 30, 0.5);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 32px;
-            padding: 40px;
+        
+        .feature-highlight {
+            background: rgba(0,113,227,0.1);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            border-radius: 12px;
             margin-bottom: 30px;
         }
-
-        .form-row {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+        
+        .feature-highlight p {
+            color: var(--text-secondary);
+            font-size: 14px;
         }
-
+        
+        .feature-highlight strong {
+            color: var(--accent);
+        }
+        
         .form-group {
-            flex: 1;
-            min-width: 250px;
+            margin-bottom: 25px;
         }
-
+        
         .form-group label {
             display: block;
             margin-bottom: 8px;
             color: var(--text-secondary);
             font-weight: 500;
         }
-
+        
         .form-group input,
         .form-group textarea {
             width: 100%;
             padding: 16px;
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--border);
-            border-radius: 20px;
+            border-radius: 16px;
             color: white;
             font-size: 16px;
             transition: var(--transition);
-            resize: vertical;
         }
-
+        
         .form-group input:focus,
         .form-group textarea:focus {
-            border-color: var(--accent);
             outline: none;
+            border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
         }
-
+        
         .form-group textarea {
+            resize: vertical;
             min-height: 100px;
         }
-
+        
         .char-counter {
             text-align: right;
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-muted);
             margin-top: 5px;
         }
-
+        
         .competitor-links {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 25px;
         }
-
-        .competitor-link-input {
-            display: flex;
-            gap: 10px;
-            align-items: center;
+        
+        .competitor-links h4 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 16px;
         }
-
-        .competitor-link-input input {
-            flex: 1;
-            padding: 14px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 30px;
-            color: white;
+        
+        .competitor-input {
+            margin-bottom: 15px;
+            position: relative;
         }
-
-        .remove-link {
-            background: none;
-            border: none;
-            color: var(--error);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 50%;
-            transition: var(--transition);
+        
+        .competitor-input input {
+            padding-left: 45px;
         }
-
-        .remove-link:hover {
-            background: rgba(255,59,48,0.1);
+        
+        .competitor-input .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
         }
-
-        .add-link-btn {
-            background: none;
-            border: 1px dashed var(--border);
-            border-radius: 30px;
-            padding: 12px 20px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: var(--transition);
+        
+        .competitor-note {
+            font-size: 13px;
+            color: var(--text-muted);
             margin-top: 10px;
-            width: fit-content;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
-
-        .add-link-btn:hover {
-            border-color: var(--accent);
-            color: white;
+        
+        .competitor-note .badge {
+            background: rgba(0,113,227,0.2);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
         }
-
-        .keywords-input {
-            margin: 25px 0;
-        }
-
-        .keywords-hint {
+        
+        .keywords-tip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
             color: var(--text-muted);
             font-size: 13px;
-            margin-top: 5px;
         }
-
-        .generate-btn {
-            background: linear-gradient(135deg, var(--accent), #9b5ef0);
-            color: white;
-            border: none;
-            padding: 18px 30px;
-            border-radius: 60px;
+        
+        .btn-large {
+            padding: 18px;
             font-size: 18px;
-            font-weight: 600;
             width: 100%;
-            cursor: pointer;
-            transition: var(--transition);
-            box-shadow: 0 10px 30px rgba(0,113,227,0.3);
             margin-top: 20px;
         }
-
-        .generate-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0,113,227,0.5);
-        }
-
-        .generate-btn:disabled {
-            opacity: 0.5;
-            pointer-events: none;
-        }
-
+        
+        /* Правая колонка - результат */
         .result-card {
             background: rgba(28, 28, 30, 0.7);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255,255,255,0.05);
             border-radius: 32px;
-            padding: 40px;
-            margin-top: 30px;
-            display: none;
-            animation: fadeInUp 0.5s ease;
+            padding: 30px;
+            animation: fadeInUp 0.8s ease;
+            position: sticky;
+            top: 100px;
         }
-
-        .result-card.show {
-            display: block;
-        }
-
+        
         .result-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
+            margin-bottom: 20px;
         }
-
-        .result-title {
-            font-size: 24px;
-            color: var(--accent);
+        
+        .result-header h3 {
+            font-size: 20px;
         }
-
-        .result-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .result-actions button {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            border-radius: 30px;
-            padding: 10px 20px;
-            color: white;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .result-actions button:hover {
-            background: var(--accent);
-            border-color: var(--accent);
-        }
-
+        
         .result-content {
             background: rgba(0,0,0,0.2);
             border-radius: 20px;
-            padding: 30px;
+            padding: 25px;
+            min-height: 400px;
             white-space: pre-wrap;
             line-height: 1.7;
             color: var(--text-secondary);
-            font-size: 16px;
-            max-height: 500px;
+            font-size: 15px;
             overflow-y: auto;
+            max-height: 600px;
         }
-
-        .result-content h3 {
-            color: white;
-            margin: 20px 0 10px;
-        }
-
-        .result-content ul, .result-content ol {
-            margin-left: 20px;
-        }
-
-        .placeholder-text {
+        
+        .result-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
             color: var(--text-muted);
-            font-style: italic;
             text-align: center;
-            padding: 40px;
         }
-
+        
+        .result-placeholder .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .result-actions button {
+            flex: 1;
+        }
+        
+        .platform-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .platform-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+        
+        .platform-btn:hover {
+            background: rgba(0,113,227,0.1);
+            border-color: var(--accent);
+        }
+        
+        .platform-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
         @media (max-width: 768px) {
-            .form-row {
-                flex-direction: column;
+            .description-grid {
+                grid-template-columns: 1fr;
             }
             
-            .result-header {
+            .beta-banner {
                 flex-direction: column;
-                align-items: flex-start;
+                text-align: center;
+            }
+            
+            .result-card {
+                position: static;
             }
         }
     </style>
@@ -301,12 +341,12 @@
                             💰 Баланс
                         </a>
                     </li>
-                     <li class="menu-item" data-section="generate">
+                    <li class="menu-item" data-section="generate">
                         <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ✨ Генерация
+                            ✨ Генерация фото
                         </a>
                     </li>
-                    <li class="menu-item" data-section="description">
+                    <li class="menu-item active" data-section="description">
                         <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
                             📝 Описание товара
                         </a>
@@ -332,7 +372,7 @@
                     <span class="user-email" id="userEmail">Загрузка...</span>
                 </div>
                 <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
-                <a href="/news.html" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 В личный кабинет</a>
+                <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
             </div>
         </aside>
 
@@ -340,71 +380,95 @@
         <main class="main-content">
             <div class="welcome-block">
                 <h1 class="gradient-text">📝 Генерация описаний</h1>
-                <p>Создайте уникальное, продающее описание для Wildberries или Ozon</p>
+                <p>Создайте профессиональное описание товара для Wildberries или Ozon</p>
             </div>
 
             <div class="description-container">
-                <!-- Информационный блок -->
-                <div class="info-block">
-                    <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                        <span>✨</span> Умный текст, который продаёт
-                    </h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 15px;">
-                        Нейросеть анализирует ваш товар, подбирает стиль, ключевые слова и эмоциональные акценты, 
-                        чтобы описание соответствовало требованиям маркетплейсов и привлекало покупателей.
-                    </p>
-                    <div style="background: rgba(0,113,227,0.1); border-radius: 30px; padding: 15px 20px; display: inline-block;">
-                        ⚡ CTR и конверсия растут — время на описание 30 секунд
-                    </div>
+                <!-- Бета-баннер -->
+                <div class="beta-banner">
+                    <span class="beta-badge">🔥 БЕТА-ЗАПУСК</span>
+                    <span class="beta-text">Новые функции уже доступны! <strong>Генерация описаний</strong> — теперь в боковом меню</span>
                 </div>
 
-                <!-- Форма генерации -->
-                <div class="generation-form">
-                    <h3 style="margin-bottom: 25px;">Параметры генерации</h3>
-                    
-                    <div class="form-group">
-                        <label>Название товара <span style="color: var(--error);">*</span></label>
-                        <input type="text" id="productName" placeholder="Например: Беспроводные наушники AirPods Pro" maxlength="200" oninput="updateCharCount()">
-                        <div class="char-counter"><span id="charCount">0</span>/200 символов</div>
-                    </div>
-
-                    <div style="margin: 30px 0;">
-                        <label>Ссылки на конкурентов (необязательно)</label>
-                        <div id="competitorLinksContainer" class="competitor-links">
-                            <div class="competitor-link-input">
-                                <input type="url" placeholder="https://www.wildberries.ru/catalog/...">
+                <div class="description-grid">
+                    <!-- Левая колонка: форма -->
+                    <div class="form-card">
+                        <h2>Параметры генерации</h2>
+                        <div class="subtitle">Заполните данные для создания уникального описания</div>
+                        
+                        <div class="feature-highlight">
+                            <p>⚡ <strong>Умный текст, который продаёт</strong> — подбор стиля, ключевых слов и эмоциональных акцентов</p>
+                            <p style="margin-top: 8px; color: var(--text-muted);">CTR и конверсия растут — время на описание 30 секунд</p>
+                        </div>
+                        
+                        <!-- Выбор платформы -->
+                        <div class="platform-selector">
+                            <div class="platform-btn active" id="platformWB" onclick="selectPlatform('wb')">Wildberries</div>
+                            <div class="platform-btn" id="platformOzon" onclick="selectPlatform('ozon')">Ozon</div>
+                        </div>
+                        
+                        <!-- Название товара -->
+                        <div class="form-group">
+                            <label>Название товара <span style="color: var(--accent);">*</span></label>
+                            <input type="text" id="productName" placeholder="Например: Беспроводные наушники AirPods" maxlength="150" oninput="updateCharCount()">
+                            <div class="char-counter"><span id="charCount">0</span>/150 символов</div>
+                        </div>
+                        
+                        <!-- Ссылки на конкурентов -->
+                        <div class="competitor-links">
+                            <h4>🔗 Ссылки на конкурентов (необязательно)</h4>
+                            <div class="competitor-input">
+                                <span class="input-icon">1</span>
+                                <input type="url" id="competitor1" placeholder="Ссылка на конкурента 1">
+                            </div>
+                            <div class="competitor-input">
+                                <span class="input-icon">2</span>
+                                <input type="url" id="competitor2" placeholder="Ссылка на конкурента 2">
+                            </div>
+                            <div class="competitor-input">
+                                <span class="input-icon">3</span>
+                                <input type="url" id="competitor3" placeholder="Ссылка на конкурента 3">
+                            </div>
+                            <div class="competitor-note">
+                                <span class="badge">AI</span>
+                                <span>Нейросеть проанализирует описания конкурентов и выделит ключевые преимущества</span>
                             </div>
                         </div>
-                        <button type="button" class="add-link-btn" onclick="addCompetitorLink()">➕ Добавить ещё ссылку</button>
-                    </div>
-
-                    <div class="keywords-input">
-                        <label>Ключевые слова</label>
-                        <input type="text" id="keywords" placeholder="Ключ1, ключ2, ключ3">
-                        <div class="keywords-hint">Разделите запятыми (необязательно)</div>
-                    </div>
-
-                    <button class="generate-btn" id="generateDescBtn" onclick="generateDescription()">
-                        ✨ Сгенерировать описание (100 ₽)
-                    </button>
-                </div>
-
-                <!-- Результат генерации -->
-                <div class="result-card" id="resultCard">
-                    <div class="result-header">
-                        <div class="result-title">Готовое описание</div>
-                        <div class="result-actions">
-                            <button onclick="copyDescription()">
-                                <span>📋</span> Копировать
-                            </button>
-                            <button onclick="saveDescription()">
-                                <span>💾</span> Сохранить
-                            </button>
+                        
+                        <!-- Ключевые слова -->
+                        <div class="form-group">
+                            <label>Ключевые слова</label>
+                            <input type="text" id="keywords" placeholder="Например: беспроводные, шумоподавление, быстрая зарядка">
+                            <div class="keywords-tip">
+                                <span>💡</span>
+                                <span>Разделите запятыми (необязательно)</span>
+                            </div>
                         </div>
+                        
+                        <!-- Кнопка генерации -->
+                        <button class="btn btn-primary btn-large glow" id="generateDescBtn" onclick="generateDescription()">
+                            ✨ Сгенерировать описание (100 ₽)
+                        </button>
                     </div>
-                    <div class="result-content" id="resultContent">
-                        <div class="placeholder-text">
-                            Результат появится здесь после генерации
+                    
+                    <!-- Правая колонка: результат -->
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h3>Готовое описание</h3>
+                            <span class="badge" style="background: rgba(0,113,227,0.2); color: var(--accent);">WB/OZON</span>
+                        </div>
+                        
+                        <div id="resultContent" class="result-content">
+                            <div class="result-placeholder">
+                                <div class="icon">📝</div>
+                                <p>Описание появится после генерации</p>
+                                <p style="font-size: 13px; margin-top: 10px;">Нажмите кнопку "Сгенерировать"</p>
+                            </div>
+                        </div>
+                        
+                        <div class="result-actions">
+                            <button class="btn btn-outline" onclick="copyDescription()" disabled id="copyBtn">📋 Копировать</button>
+                            <button class="btn btn-outline" onclick="saveDescription()" disabled id="saveBtn">💾 Сохранить</button>
                         </div>
                     </div>
                 </div>
@@ -412,17 +476,17 @@
         </main>
     </div>
 
-    <!-- Модальное окно загрузки (генерация) -->
+    <!-- Модальное окно загрузки -->
     <div id="generationModal" class="modal">
         <div class="modal-content glass loading-content">
-            <h2 class="gradient-text">✨ Генерация описания ✨</h2>
+            <h2 class="gradient-text">✨ Генерация описания</h2>
             <div class="loading-animation">
                 <div class="spinner"></div>
                 <div class="progress-bar">
                     <div class="progress-fill" id="generationProgress" style="width: 0%;"></div>
                 </div>
             </div>
-            <p>Подождите, нейросеть создаёт описание...</p>
+            <p>Нейросеть создаёт продающий текст...</p>
             <p class="timer" id="generationTimer">0 сек.</p>
         </div>
     </div>
@@ -431,12 +495,13 @@
         import { auth, db } from './js/firebase.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
         import { 
-            doc, getDoc, collection, addDoc, increment, updateDoc 
+            doc, getDoc, collection, addDoc, updateDoc, increment 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         let currentUser = null;
         let userData = null;
-        let generatedDescription = '';
+        let selectedPlatform = 'wb';
+        let currentDescription = '';
 
         // Проверка авторизации
         onAuthStateChanged(auth, async (user) => {
@@ -463,28 +528,24 @@
             }
         }
 
-        // Обновление счётчика символов
+        // Выбор платформы
+        window.selectPlatform = function(platform) {
+            selectedPlatform = platform;
+            document.getElementById('platformWB').classList.toggle('active', platform === 'wb');
+            document.getElementById('platformOzon').classList.toggle('active', platform === 'ozon');
+        };
+
+        // Счётчик символов
         window.updateCharCount = function() {
             const input = document.getElementById('productName');
             const count = input.value.length;
             document.getElementById('charCount').textContent = count;
         };
 
-        // Добавление поля для ссылки на конкурента
-        window.addCompetitorLink = function() {
-            const container = document.getElementById('competitorLinksContainer');
-            const newLinkDiv = document.createElement('div');
-            newLinkDiv.className = 'competitor-link-input';
-            newLinkDiv.innerHTML = `
-                <input type="url" placeholder="https://www.wildberries.ru/catalog/...">
-                <button class="remove-link" onclick="this.parentElement.remove()">✕</button>
-            `;
-            container.appendChild(newLinkDiv);
-        };
-
-        // Функции для модального окна
+        // Показать модальное окно
         function showGenerationModal() {
-            document.getElementById('generationModal').classList.add('show');
+            const modal = document.getElementById('generationModal');
+            modal.classList.add('show');
             document.getElementById('generationProgress').style.width = '0%';
             document.getElementById('generationTimer').textContent = '0 сек.';
             window.generationStartTime = Date.now();
@@ -508,175 +569,115 @@
             progress.style.width = percent + '%';
         }
 
-       // Основная функция генерации описания
-window.generateDescription = async function() {
-    const productName = document.getElementById('productName')?.value.trim() || '';
-    
-    if (!productName) {
-        alert('Введите название товара');
-        return;
-    }
-
-    // Проверка баланса
-    const currentBalance = parseInt(userData?.balance) || 0;
-    if (currentBalance < 100) {
-        alert('Недостаточно средств. Требуется 100 ₽');
-        return;
-    }
-
-    // Собираем ссылки конкурентов (с проверкой на undefined)
-    const competitorLinks = [];
-    document.querySelectorAll('#competitorLinksContainer input').forEach(input => {
-        const value = input.value?.trim();
-        if (value) {
-            competitorLinks.push(value);
-        }
-    });
-
-    // Ключевые слова (с проверкой на undefined)
-    const keywordsInput = document.getElementById('keywords')?.value?.trim() || '';
-    
-    // Здесь была ошибка split на undefined - ИСПРАВЛЕНО
-    // const keywords = keywordsInput ? keywordsInput.split(',').map(k => k.trim()).filter(Boolean) : [];
-    // Если нужно разделять по запятым, используем эту логику
-
-    const btn = document.getElementById('generateDescBtn');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="loading"></span> Генерация...';
-    }
-    
-    showGenerationModal();
-
-    try {
-        // Вызов API
-        const response = await fetch('/api/generate-description', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                productName: productName,
-                competitorLinks: competitorLinks,
-                keywords: keywordsInput, // Отправляем как есть, без split
-                platform: 'wb',
-                userId: currentUser?.uid
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP error ${response.status}`);
-        }
-
-        const result = await response.json();
-
-// Логируем ответ для отладки
-console.log('✅ Ответ от сервера:', result);
-
-if (!result.success || !result.description) {
-    throw new Error('Неверный формат ответа от сервера');
-}
-        
-        // Сохраняем результат
-        generatedDescription = result.description;
-        
-        // Отображаем результат
-        const resultContent = document.getElementById('resultContent');
-        if (resultContent) {
-            // Форматируем текст с абзацами
-            resultContent.innerHTML = generatedDescription.split('\n').map(p => 
-                p.trim() ? `<p>${p}</p>` : ''
-            ).join('');
-        }
-        
-        const resultCard = document.getElementById('resultCard');
-        if (resultCard) {
-            resultCard.classList.add('show');
-        }
-
-        // Обновляем баланс в интерфейсе
-        if (result.balance !== undefined) {
-            const sidebarBalance = document.getElementById('sidebarBalance');
-            if (sidebarBalance) sidebarBalance.textContent = result.balance;
-            if (userData) userData.balance = result.balance;
-        }
-
-        alert('✅ Описание готово! Списано 100 ₽');
-
-    } catch (error) {
-        console.error('❌ Ошибка генерации:', error);
-        alert('Ошибка: ' + error.message);
-    } finally {
-        hideGenerationModal();
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '✨ Сгенерировать описание (100 ₽)';
-        }
-    }
-};
-
-        // Функция для примера (заменить на реальный API)
-        function generateSampleDescription(productName, keywords, competitorLinks) {
-            const keywordList = keywords ? keywords.split(',').map(k => k.trim()) : [];
+        // Генерация описания
+        window.generateDescription = async function() {
+            const productName = document.getElementById('productName').value.trim();
             
-            let description = `${productName.toUpperCase()} — ИДЕАЛЬНЫЙ ВЫБОР ДЛЯ ПОВСЕДНЕВНОГО ИСПОЛЬЗОВАНИЯ\n\n`;
-            description += `✨ ПРЕИМУЩЕСТВА:\n`;
-            description += `• Высокое качество материалов\n`;
-            description += `• Стильный и современный дизайн\n`;
-            description += `• Удобство в использовании\n`;
-            description += `• Долговечность и надёжность\n\n`;
-            
-            if (keywordList.length > 0) {
-                description += `🎯 КЛЮЧЕВЫЕ ХАРАКТЕРИСТИКИ:\n`;
-                keywordList.forEach(k => {
-                    description += `• ${k}\n`;
-                });
-                description += `\n`;
+            if (!productName) {
+                alert('Введите название товара');
+                return;
             }
+
+            // Проверка баланса
+            const balance = parseInt(userData.balance) || 0;
+            if (balance < 100) {
+                alert('Недостаточно средств. Требуется 100 ₽');
+                return;
+            }
+
+            const btn = document.getElementById('generateDescBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Генерация...';
             
-            description += `📦 КОМПЛЕКТАЦИЯ:\n`;
-            description += `• Товар в идеальном состоянии\n`;
-            description += `• Заводская упаковка\n`;
-            description += `• Документация\n\n`;
-            
-            description += `🚀 ПОЧЕМУ СТОИТ КУПИТЬ:\n`;
-            description += `Этот товар создан для тех, кто ценит качество и комфорт. Он идеально подойдёт для ежедневного использования и станет отличным подарком для близких.\n\n`;
-            
-            description += `💰 ЛУЧШАЯ ЦЕНА НА РЫНКЕ!\n`;
-            description += `Мы предлагаем оптимальное соотношение цены и качества. Закажите прямо сейчас и убедитесь сами!\n\n`;
-            
-            description += `✅ ГАРАНТИЯ КАЧЕСТВА\n`;
-            description += `Товар сертифицирован и соответствует всем стандартам. Мы уверены в его качестве!\n\n`;
-            
-            description += `🛒 ЖМИ «КУПИТЬ» И ОФОРМЛЯЙ ЗАКАЗ ПРЯМО СЕЙЧАС!\n`;
-            
-            return description;
-        }
+            showGenerationModal();
+
+            try {
+                // Собираем данные
+                const competitors = [
+                    document.getElementById('competitor1').value.trim(),
+                    document.getElementById('competitor2').value.trim(),
+                    document.getElementById('competitor3').value.trim()
+                ].filter(url => url);
+
+                const keywords = document.getElementById('keywords').value.trim()
+                    .split(',').map(k => k.trim()).filter(k => k);
+
+                // Отправляем запрос к API
+                const response = await fetch('/api/generate-description', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productName,
+                        platform: selectedPlatform,
+                        competitors,
+                        keywords
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(await response.text());
+                }
+
+                const result = await response.json();
+                currentDescription = result.description;
+
+                // Отображаем результат
+                const resultDiv = document.getElementById('resultContent');
+                resultDiv.innerHTML = `<div style="white-space: pre-wrap;">${currentDescription}</div>`;
+
+                // Активируем кнопки
+                document.getElementById('copyBtn').disabled = false;
+                document.getElementById('saveBtn').disabled = false;
+
+                // Списываем деньги
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    balance: increment(-100),
+                    usedSpent: increment(100)
+                });
+
+                // Сохраняем в историю
+                await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
+                    productName,
+                    platform: selectedPlatform,
+                    description: currentDescription,
+                    createdAt: new Date().toISOString()
+                });
+
+                // Обновляем баланс
+                const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (updatedDoc.exists()) {
+                    userData = updatedDoc.data();
+                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
+                }
+
+                hideGenerationModal();
+                alert('✅ Описание готово!');
+
+            } catch (error) {
+                console.error('Ошибка генерации:', error);
+                alert('Ошибка: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '✨ Сгенерировать описание (100 ₽)';
+                hideGenerationModal();
+            }
+        };
 
         // Копирование описания
         window.copyDescription = function() {
-            if (!generatedDescription) {
-                alert('Сначала сгенерируйте описание');
-                return;
-            }
-            navigator.clipboard.writeText(generatedDescription);
+            if (!currentDescription) return;
+            navigator.clipboard.writeText(currentDescription);
             alert('✅ Описание скопировано в буфер обмена');
         };
 
         // Сохранение описания
         window.saveDescription = function() {
-            if (!generatedDescription) {
-                alert('Сначала сгенерируйте описание');
-                return;
-            }
-            
-            // Создаём файл для скачивания
-            const blob = new Blob([generatedDescription], { type: 'text/plain;charset=utf-8' });
+            if (!currentDescription) return;
+            const blob = new Blob([currentDescription], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `description_${new Date().toISOString().slice(0,10)}.txt`;
+            a.download = `description_${Date.now()}.txt`;
             a.click();
             window.URL.revokeObjectURL(url);
         };
@@ -696,7 +697,6 @@ if (!result.success || !result.description) {
             }
         };
 
-        // Выход
         window.logout = async function() {
             await auth.signOut();
             window.location.href = '/login.html';
