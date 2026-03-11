@@ -53,6 +53,23 @@ onAuthStateChanged(auth, async (user) => {
     }
     currentUser = user;
     await loadUserData();
+    
+    // Получаем текущий путь страницы
+    const path = window.location.pathname;
+    console.log('Текущая страница:', path);
+    
+    // Загружаем историю только если это не страница новостей
+    if (!path.includes('news.html')) {
+        if (path.includes('history.html')) {
+            console.log('Загружаем всю историю...');
+            await loadAllHistory();
+        } else {
+            console.log('Загружаем последние 10 записей...');
+            await loadRecentHistory();
+        }
+    } else {
+        console.log('Страница новостей, историю не загружаем');
+    }
 });
 
 // Загрузка данных пользователя из Firestore
@@ -63,15 +80,6 @@ async function loadUserData() {
         if (userDoc.exists()) {
             userData = userDoc.data();
             updateUI();
-            
-            // Проверяем, на какой мы странице
-            const path = window.location.pathname;
-            if (path.includes('history.html')) {
-                await loadAllHistory(); // Загружаем все сессии для страницы истории
-            } else {
-                await loadRecentHistory(); // Загружаем последние 10 для дашборда
-            }
-            
             updateStats();
         } else {
             await setDoc(doc(db, 'users', currentUser.uid), {
@@ -172,9 +180,6 @@ document.querySelectorAll('.menu-item').forEach(item => {
             target.classList.add('active');
             if (section === 'settings') {
                 loadSettingsData();
-            } else if (section === 'history') {
-                // При переходе на историю загружаем все сессии
-                loadAllHistory();
             }
         }
     });
@@ -193,10 +198,10 @@ window.updateFileInfo = function(inputId, infoId) {
     }
 };
 
-// ----- Сброс сессии генерации -----
+// ----- Сброс сессии генерации (только для новой карточки) -----
 function resetGenerationSession() {
     currentGenerationSession = {
-        sessionId: null,
+        sessionId: null,           // Сбрасываем, чтобы создать новую сессию
         productName: null,
         brand: null,
         category: null,
@@ -205,8 +210,8 @@ function resetGenerationSession() {
         originalImageId: null,
         attemptsMade: 0,
         maxAttempts: 5,
-        generatedImages: [],
-        imageIds: []
+        generatedImages: [],       // Массив URL всех фото в этой сессии
+        imageIds: []               // Массив ID изображений в Storage
     };
 }
 
@@ -467,7 +472,7 @@ async function performGeneration(files, attempt) {
         const path = window.location.pathname;
         if (path.includes('history.html')) {
             await loadAllHistory();
-        } else {
+        } else if (!path.includes('news.html')) {
             await loadRecentHistory();
         }
         
@@ -762,7 +767,6 @@ function displayHistory(sessions, isRecent = true) {
                     </div>
                     <div class="history-actions">
                         <span class="history-cost">${session.totalSpent || session.attempts * 100} ₽</span>
-                        ${!isRecent ? `<button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deleteHistorySession('${session.id}')" title="Удалить">🗑️</button>` : ''}
                     </div>
                 </div>
                 <div class="history-thumbnails">
