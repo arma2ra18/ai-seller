@@ -636,19 +636,25 @@ async function loadUserData() {
             const spent = userData.usedSpent || 0;
             document.getElementById('totalSpent').textContent = spent.toLocaleString();
             
-            // Количество генераций - ТОЛЬКО ЧИСЛО
-            let totalGenerations = 0;
-            try {
-                const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
-                sessionsSnapshot.forEach(doc => {
-                    totalGenerations += doc.data().attempts || 0;
-                });
-            } catch (e) {
-                console.log('Коллекция generationSessions не найдена');
-            }
-            
-            // УБЕДИМСЯ, ЧТО ТУТ ТОЛЬКО ЧИСЛО
-            document.getElementById('totalGenerations').textContent = totalGenerations;
+            // Количество генераций - принудительно извлекаем число
+let totalGenerations = 0;
+try {
+    const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
+    sessionsSnapshot.forEach(doc => {
+        totalGenerations += doc.data().attempts || 0;
+    });
+} catch (e) {
+    console.log('Коллекция generationSessions не найдена');
+}
+
+// ЕСЛИ ПОЧЕМУ-ТО ПРИШЛА СТРОКА - ОЧИЩАЕМ
+if (typeof totalGenerations === 'string') {
+    // Извлекаем только цифры из строки
+    const matches = totalGenerations.match(/\d+/);
+    totalGenerations = matches ? parseInt(matches[0]) : 0;
+}
+
+document.getElementById('totalGenerations').textContent = totalGenerations;
             
             // Бонусы
             const bonus = userData.bonusBalance || 0;
