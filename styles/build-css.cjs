@@ -2,8 +2,27 @@
 const fs = require('fs');
 const path = require('path');
 
-// Порядок, в котором нужно собирать файлы
-const filesToConcat = [
+// Текущая папка (styles)
+const sourceDir = __dirname;
+const destDir = __dirname;
+
+console.log('📁 Папка со стилями:', sourceDir);
+
+// Получаем список всех CSS файлов
+let allFiles = [];
+try {
+    allFiles = fs.readdirSync(sourceDir)
+        .filter(file => file.endsWith('.css') && file !== 'main.css' && file !== 'build-css.cjs')
+        .sort();
+    console.log('📋 Найдены CSS файлы:', allFiles.length);
+    allFiles.forEach(f => console.log(`   - ${f}`));
+} catch (err) {
+    console.error('❌ Ошибка чтения папки:', err.message);
+    process.exit(1);
+}
+
+// Приоритетный порядок (важные файлы должны быть первыми)
+const priorityOrder = [
     'variables.css',
     'base.css',
     'components.css',
@@ -19,55 +38,36 @@ const filesToConcat = [
     'admin.css'
 ];
 
-// !!! ВАЖНО: Укажите правильный путь к папке с исходными файлами !!!
-// Вариант А: Если файлы в папке styles-src (как я предлагал ранее)
-const sourceDir = path.join(__dirname);
+// Сортируем файлы: сначала приоритетные, потом остальные по алфавиту
+const sortedFiles = [
+    ...priorityOrder.filter(f => allFiles.includes(f)),
+    ...allFiles.filter(f => !priorityOrder.includes(f)).sort()
+];
 
-// Вариант Б: Если файлы в той же папке, где и скрипт
-// const sourceDir = __dirname;
-
-// Вариант В: Если файлы в папке на уровень выше
-// const sourceDir = path.join(__dirname);
-
-const destDir = __dirname; // Сохраняем в текущую папку
-
-console.log('📁 Ищем файлы в:', sourceDir);
+console.log('\n📊 Порядок сборки:');
+sortedFiles.forEach((f, i) => console.log(`   ${i+1}. ${f}`));
 
 let combinedCSS = '';
-let filesFound = 0;
+let totalLines = 0;
 
-// Проверяем, существует ли папка с исходниками
-if (!fs.existsSync(sourceDir)) {
-    console.error(`❌ Папка не найдена: ${sourceDir}`);
-    console.log('\n🔍 Возможные варианты:');
-    console.log('1. Создайте папку styles-src и переместите туда все CSS файлы');
-    console.log('2. Или измените путь в скрипте (раскомментируйте нужный вариант)');
-    process.exit(1);
-}
-
-// Собираем все стили в одну строку
-filesToConcat.forEach(file => {
+// Собираем все файлы
+sortedFiles.forEach(file => {
     const filePath = path.join(sourceDir, file);
     try {
         const content = fs.readFileSync(filePath, 'utf8');
-        combinedCSS += `/* ===== ${file} ===== */\n${content}\n\n`;
-        console.log(`✅ Добавлен: ${file}`);
-        filesFound++;
+        const lines = content.split('\n').length;
+        combinedCSS += `/* ========== ${file} (${lines} строк) ========== */\n${content}\n\n`;
+        totalLines += lines;
+        console.log(`✅ ${file} — ${lines} строк`);
     } catch (err) {
-        console.error(`❌ Не найден: ${file} (${err.message})`);
+        console.error(`❌ Ошибка чтения ${file}:`, err.message);
     }
 });
 
-if (filesFound === 0) {
-    console.error('\n❌ Не найдено ни одного CSS файла!');
-    console.log('Проверьте путь:', sourceDir);
-    process.exit(1);
-}
-
-// Добавляем медиа-запросы (скопируйте их из вашего старого main.css)
-// ВАЖНО: Замените этот блок на ваши реальные медиа-запросы
+// Добавляем резервные медиа-запросы на всякий случай
+// (если они уже есть в файлах, они продублируются, но это не страшно)
 combinedCSS += `
-/* ===== АДАПТАЦИЯ ===== */
+/* ========== ГЛОБАЛЬНАЯ АДАПТАЦИЯ ========== */
 @media (max-width: 1024px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -137,10 +137,30 @@ combinedCSS += `
 img, video, iframe { max-width: 100%; height: auto; }
 `;
 
-// Записываем итоговый файл
+// Записываем результат
 const destPath = path.join(destDir, 'main.css');
 fs.writeFileSync(destPath, combinedCSS, 'utf8');
 
-console.log(`\n🎉 Готово! Создан файл: ${destPath}`);
-console.log(`📊 Добавлено файлов: ${filesFound} из ${filesToConcat.length}`);
-console.log(`📏 Размер: ${(combinedCSS.length / 1024).toFixed(2)} KB`);
+const finalLines = combinedCSS.split('\n').length;
+
+console.log('\n' + '='.repeat(60));
+console.log(`📊 ИТОГОВАЯ СТАТИСТИКА:`);
+console.log(`📁 Собрано файлов: ${sortedFiles.length}`);
+console.log(`📏 Всего строк в новом main.css: ${finalLines}`);
+console.log(`📏 Ожидалось строк (из старого main.css): 2663`);
+console.log(`📊 Разница: ${finalLines - 2663} строк`);
+console.log('='.repeat(60));
+
+if (finalLines < 2663) {
+    console.log('\n⚠️  Новый файл меньше старого на', 2663 - finalLines, 'строк');
+    console.log('Возможные причины:');
+    console.log('1. В некоторых файлах меньше стилей, чем было в старом main.css');
+    console.log('2. Какие-то стили были утеряны при разделении');
+    console.log('\n💡 Рекомендация:');
+    console.log('Откройте старый main.css и новый main.css в редакторе');
+    console.log('и сравните, каких блоков не хватает.');
+} else if (finalLines > 2663) {
+    console.log('\n✅ Новый файл даже больше старого! Возможно, есть дублирование.');
+} else {
+    console.log('\n✅ Идеально! Количество строк совпадает!');
+}

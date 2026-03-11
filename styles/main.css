@@ -1,4 +1,4 @@
-/* ===== variables.css ===== */
+/* ========== variables.css (21 строк) ========== */
 :root {
     --bg-primary: #0a0a0c;
     --bg-secondary: #151517;
@@ -21,7 +21,7 @@
     --transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
-/* ===== base.css ===== */
+/* ========== base.css (40 строк) ========== */
 * {
     margin: 0;
     padding: 0;
@@ -63,7 +63,7 @@ body {
     background-clip: text;
 }
 
-/* ===== components.css ===== */
+/* ========== components.css (246 строк) ========== */
 /* Кнопки */
 .btn {
     display: inline-flex;
@@ -311,7 +311,7 @@ body {
     cursor: pointer;
 }
 
-/* ===== header-footer.css ===== */
+/* ========== header-footer.css (151 строк) ========== */
 /* Хедер */
 .header {
     position: sticky;
@@ -464,7 +464,7 @@ body {
     color: var(--text-muted);
 }
 
-/* ===== home.css ===== */
+/* ========== home.css (337 строк) ========== */
 /* Герой */
 .hero {
     min-height: 80vh;
@@ -803,7 +803,7 @@ body {
     font-weight: 600;
 }
 
-/* ===== auth.css ===== */
+/* ========== auth.css (89 строк) ========== */
 .auth-container {
     min-height: 100vh;
     display: flex;
@@ -894,7 +894,7 @@ body {
 .auth-message.error { display: block; background: rgba(255,59,48,0.1); color: var(--error); }
 .auth-message.success { display: block; background: rgba(48,209,88,0.1); color: var(--success); }
 
-/* ===== dashboard-common.css ===== */
+/* ========== dashboard-common.css (269 строк) ========== */
 /* Общие стили для дашборда */
 .dashboard-wrapper {
     display: flex;
@@ -1165,7 +1165,7 @@ body {
     color: white;
 }
 
-/* ===== dashboard-balance.css ===== */
+/* ========== dashboard-balance.css (282 строк) ========== */
 .balance-container {
     max-width: 700px;
     margin: 0 auto;
@@ -1449,7 +1449,7 @@ body {
     color: var(--error);
 }
 
-/* ===== dashboard-generate.css ===== */
+/* ========== dashboard-generate.css (61 строк) ========== */
 .generation-form {
     max-width: 700px;
 }
@@ -1512,7 +1512,7 @@ body {
     box-shadow: 0 4px 15px rgba(243,156,18,0.3);
 }
 
-/* ===== dashboard-description.css ===== */
+/* ========== dashboard-description.css (179 строк) ========== */
 .description-container {
     max-width: 1000px;
     margin: 0 auto;
@@ -1693,13 +1693,13 @@ body {
     margin-top: 20px;
 }
 
-/* ===== dashboard-description-history.css ===== */
+/* ========== dashboard-description-history.css (1 строк) ========== */
 
 
-/* ===== dashboard-settings.css ===== */
+/* ========== dashboard-settings.css (1 строк) ========== */
 
 
-/* ===== admin.css ===== */
+/* ========== admin.css (122 строк) ========== */
 .admin-wrapper {
     display: flex;
     min-height: 100vh;
@@ -1823,8 +1823,11 @@ body {
     color: var(--success);
 }
 
+/* ========== dashboard-history.css (1 строк) ========== */
 
-/* ===== АДАПТАЦИЯ ===== */
+
+
+/* ========== ГЛОБАЛЬНАЯ АДАПТАЦИЯ ========== */
 @media (max-width: 1024px) {
     .stats-grid {
         grid-template-columns: repeat(2, 1fr);
