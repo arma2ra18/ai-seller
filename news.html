@@ -316,5 +316,56 @@
         // Загружаем при старте
         document.addEventListener('DOMContentLoaded', loadNews);
     </script>
+<script type="module">
+    import { auth, db } from './js/firebase.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+    
+    // Проверка авторизации
+    onAuthStateChanged(auth, (user) => {
+        if (!user) {
+            window.location.href = '/login.html';
+            return;
+        }
+        
+        // Обновляем email в сайдбаре
+        const userEmailEl = document.getElementById('userEmail');
+        if (userEmailEl) {
+            userEmailEl.textContent = user.email || user.phoneNumber || 'Пользователь';
+        }
+    });
+    
+    // Обработка кликов по пунктам меню
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            const section = this.dataset.section;
+            
+            // Если это ссылка на другую страницу
+            if (section === 'balance') {
+                window.location.href = '/dashboard.html';
+            } else if (section === 'wb') {
+                window.location.href = '/dashboard.html';
+            } else if (section === 'history') {
+                window.location.href = '/history.html';
+            } else if (section === 'news') {
+                window.location.href = '/news.html';
+            } else if (section === 'settings') {
+                window.location.href = '/dashboard.html#settings';
+            }
+        });
+    });
+    
+    // Выделяем активный пункт меню
+    const currentPath = window.location.pathname;
+    document.querySelectorAll('.menu-item').forEach(item => {
+        const section = item.dataset.section;
+        if ((section === 'news' && currentPath.includes('news.html')) ||
+            (section === 'history' && currentPath.includes('history.html')) ||
+            (section === 'balance' && currentPath === '/dashboard.html') ||
+            (section === 'wb' && currentPath === '/dashboard.html') ||
+            (section === 'settings' && currentPath === '/dashboard.html')) {
+            item.classList.add('active');
+        }
+    });
+</script>
 </body>
 </html>
