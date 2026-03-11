@@ -1,36 +1,37 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-import { cacheBalance } from './js/cache.js';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Баланс — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
+            });
+        }
+    </script>
+    
     <style>
         .balance-container {
             max-width: 700px;
             margin: 0 auto;
         }
-// Функция для отладки - покажет, что приходит из Firestore
-async function debugGenerations() {
-    try {
-        const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
-        console.log('📊 Найдено сессий:', sessionsSnapshot.size);
-        
-        let total = 0;
-        sessionsSnapshot.forEach(doc => {
-            const data = doc.data();
-            console.log('Сессия:', data.productName, 'попыток:', data.attempts);
-            total += data.attempts || 0;
-        });
-        
-        console.log('✅ ИТОГО генераций:', total);
-        return total;
-    } catch (e) {
-        console.log('Коллекция generationSessions не найдена');
-        return 0;
-    }
-}
         
         /* Главная карточка баланса */
         .balance-hero {
@@ -448,39 +449,25 @@ async function debugGenerations() {
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item" data-section="news">
-                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📰 Новости
-                        </a>
+                        <a href="/news.html">📰 Новости</a>
                     </li>
                     <li class="menu-item active" data-section="balance">
-                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            💰 Баланс
-                        </a>
+                        <a href="/balance.html">💰 Баланс</a>
                     </li>
                     <li class="menu-item" data-section="generate">
-                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ✨ Генерация фото
-                        </a>
+                        <a href="/generate.html">✨ Генерация</a>
                     </li>
- <li class="menu-item" data-section="description">
-                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📝 Описание товара
-                        </a>
+                    <li class="menu-item" data-section="description">
+                        <a href="/description.html">📝 Описание товара</a>
                     </li>
-<li class="menu-item" data-section="description-history">
-                        <a href="/description-history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📚 История описаний
-                        </a>
+                    <li class="menu-item" data-section="description-history">
+                        <a href="/description-history.html">📚 История описаний</a>
                     </li>
                     <li class="menu-item" data-section="history">
-                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📜 История фото
-                        </a>
+                        <a href="/history.html">📜 История фото</a>
                     </li>
                     <li class="menu-item" data-section="settings">
-                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ⚙️ Настройки
-                        </a>
+                        <a href="/settings.html">⚙️ Настройки</a>
                     </li>
                 </ul>
             </nav>
@@ -502,6 +489,13 @@ async function debugGenerations() {
             <div class="welcome-block">
                 <h1 class="gradient-text">💰 Баланс</h1>
                 <p>Управляйте своими средствами и пополняйте счёт</p>
+            </div>
+
+            <!-- Кнопка обновления -->
+            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px;">
+                <button class="btn btn-small btn-outline" onclick="refreshBalance()">
+                    🔄 Обновить баланс
+                </button>
             </div>
 
             <div class="balance-container">
@@ -615,6 +609,7 @@ async function debugGenerations() {
         import { 
             doc, getDoc, collection, query, orderBy, getDocs, limit 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { cacheBalance, clearCache } from './js/cache.js';
 
         let currentUser = null;
         let selectedAmount = 500;
@@ -632,69 +627,73 @@ async function debugGenerations() {
         });
 
         // Загрузка данных пользователя из Firestore с кэшированием
-async function loadUserData(forceRefresh = false) {
-    try {
-        // Функция для получения данных из Firebase
-        const fetchUserData = async () => {
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (userDoc.exists()) {
-                return userDoc.data();
-            }
-            return null;
-        };
-        
-        // Получаем данные с кэшированием
-        const userData = await cacheBalance(currentUser.uid, fetchUserData, forceRefresh);
-        
-        if (userData) {
-            // Баланс
-            const balance = userData.balance || 0;
-            document.getElementById('balanceAmount').textContent = balance.toLocaleString();
-            document.getElementById('sidebarBalance').textContent = balance;
-            
-            // Всего потрачено
-            const spent = userData.usedSpent || 0;
-            document.getElementById('totalSpent').textContent = spent.toLocaleString();
-            
-            // Количество генераций
-            let totalGenerations = 0;
+        async function loadUserData(forceRefresh = false) {
             try {
-                const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
-                sessionsSnapshot.forEach(doc => {
-                    totalGenerations += doc.data().attempts || 0;
-                });
-            } catch (e) {
-                console.log('Коллекция generationSessions не найдена');
+                // Функция для получения данных из Firebase
+                const fetchUserData = async () => {
+                    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                    return userDoc.exists() ? userDoc.data() : null;
+                };
+                
+                // Получаем данные с кэшированием
+                const userData = await cacheBalance(currentUser.uid, fetchUserData, forceRefresh);
+                
+                if (userData) {
+                    // Баланс
+                    const balance = userData.balance || 0;
+                    document.getElementById('balanceAmount').textContent = balance.toLocaleString();
+                    document.getElementById('sidebarBalance').textContent = balance;
+                    
+                    // Всего потрачено
+                    const spent = userData.usedSpent || 0;
+                    document.getElementById('totalSpent').textContent = spent.toLocaleString();
+                    
+                    // Количество генераций - принудительно извлекаем число
+                    let totalGenerations = 0;
+                    try {
+                        const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
+                        sessionsSnapshot.forEach(doc => {
+                            totalGenerations += doc.data().attempts || 0;
+                        });
+                    } catch (e) {
+                        console.log('Коллекция generationSessions не найдена');
+                    }
+
+                    // Если почему-то пришла строка - очищаем
+                    if (typeof totalGenerations === 'string') {
+                        const matches = totalGenerations.match(/\d+/);
+                        totalGenerations = matches ? parseInt(matches[0]) : 0;
+                    }
+
+                    document.getElementById('totalGenerations').textContent = totalGenerations;
+                    
+                    // Бонусы
+                    const bonus = userData.bonusBalance || 0;
+                    document.getElementById('bonusBalance').textContent = bonus;
+                    
+                    // Email
+                    document.getElementById('userEmail').textContent = userData.email || userData.phoneNumber || 'Пользователь';
+                    
+                    console.log('✅ Баланс загружен:', {
+                        balance: balance,
+                        spent: spent,
+                        generations: totalGenerations,
+                        bonus: bonus
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Ошибка загрузки данных:', error);
             }
-            
-            if (typeof totalGenerations === 'string') {
-                const matches = totalGenerations.match(/\d+/);
-                totalGenerations = matches ? parseInt(matches[0]) : 0;
-            }
-            
-            document.getElementById('totalGenerations').textContent = totalGenerations;
-            
-            // Бонусы
-            const bonus = userData.bonusBalance || 0;
-            document.getElementById('bonusBalance').textContent = bonus;
-            
-            // Email
-            document.getElementById('userEmail').textContent = userData.email || userData.phoneNumber || 'Пользователь';
-            
-            console.log('✅ Баланс загружен:', {
-                balance: balance,
-                spent: spent,
-                generations: totalGenerations,
-                bonus: bonus
-            });
         }
-    } catch (error) {
-        console.error('❌ Ошибка загрузки данных:', error);
-    }
-}
+
+        // Функция для принудительного обновления баланса
+        window.refreshBalance = function() {
+            loadUserData(true);
+            loadTransactions(true);
+        };
 
         // Загрузка истории транзакций
-        async function loadTransactions() {
+        async function loadTransactions(forceRefresh = false) {
             try {
                 const transactionsList = document.getElementById('transactionsList');
                 let transactions = [];
@@ -843,6 +842,8 @@ async function loadUserData(forceRefresh = false) {
                 'news': '/news.html',
                 'balance': '/balance.html',
                 'generate': '/generate.html',
+                'description': '/description.html',
+                'description-history': '/description-history.html',
                 'history': '/history.html',
                 'settings': '/settings.html'
             };
