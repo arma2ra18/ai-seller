@@ -508,85 +508,91 @@
             progress.style.width = percent + '%';
         }
 
-        // Основная функция генерации описания
-        window.generateDescription = async function() {
-            const productName = document.getElementById('productName').value.trim();
-            
-            if (!productName) {
-                alert('Введите название товара');
-                return;
-            }
+       // Основная функция генерации описания
+window.generateDescription = async function() {
+    const productName = document.getElementById('productName').value.trim();
+    
+    if (!productName) {
+        alert('Введите название товара');
+        return;
+    }
 
-            // Проверка баланса
-            const currentBalance = parseInt(userData?.balance) || 0;
-            if (currentBalance < 100) {
-                alert('Недостаточно средств. Требуется 100 ₽');
-                return;
-            }
+    // Проверка баланса
+    const currentBalance = parseInt(userData?.balance) || 0;
+    if (currentBalance < 100) {
+        alert('Недостаточно средств. Требуется 100 ₽');
+        return;
+    }
 
-            // Собираем ссылки конкурентов
-            const competitorLinks = [];
-            document.querySelectorAll('#competitorLinksContainer input').forEach(input => {
-                if (input.value.trim()) {
-                    competitorLinks.push(input.value.trim());
-                }
-            });
+    // Собираем ссылки конкурентов
+    const competitorLinks = [];
+    document.querySelectorAll('#competitorLinksContainer input').forEach(input => {
+        if (input.value.trim()) {
+            competitorLinks.push(input.value.trim());
+        }
+    });
 
-            // Ключевые слова
-            const keywords = document.getElementById('keywords').value.trim();
+    // Ключевые слова
+    const keywords = document.getElementById('keywords').value.trim();
 
-            const btn = document.getElementById('generateDescBtn');
-            btn.disabled = true;
-            btn.innerHTML = '<span class="loading"></span> Генерация...';
-            
-            showGenerationModal();
+    const btn = document.getElementById('generateDescBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Генерация...';
+    
+    showGenerationModal();
 
-            try {
-                // Здесь будет вызов API
-                // Пока имитируем задержку
-                await new Promise(resolve => setTimeout(resolve, 3000));
+    try {
+        // Вызов нового API
+        const response = await fetch('/api/generate-description', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                productName: productName,
+                competitorLinks: competitorLinks,
+                keywords: keywords,
+                platform: 'wb', // или можно добавить выбор платформы
+                userId: currentUser.uid
+            })
+        });
 
-                // Пример сгенерированного описания
-                generatedDescription = generateSampleDescription(productName, keywords, competitorLinks);
-                
-                // Отображаем результат
-                const resultContent = document.getElementById('resultContent');
-                resultContent.innerHTML = generatedDescription.split('\n').map(p => `<p>${p}</p>`).join('');
-                document.getElementById('resultCard').classList.add('show');
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Ошибка генерации');
+        }
 
-                // Списываем 100 рублей
-                await updateDoc(doc(db, 'users', currentUser.uid), { 
-                    balance: increment(-100),
-                    usedSpent: increment(100)
-                });
+        const result = await response.json();
+        
+        // Сохраняем результат
+        generatedDescription = result.description;
+        
+        // Отображаем результат
+        const resultContent = document.getElementById('resultContent');
+        // Форматируем текст с абзацами
+        resultContent.innerHTML = generatedDescription.split('\n').map(p => 
+            p.trim() ? `<p>${p}</p>` : ''
+        ).join('');
+        
+        document.getElementById('resultCard').classList.add('show');
 
-                // Сохраняем в историю описаний
-                await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
-                    productName: productName,
-                    description: generatedDescription,
-                    keywords: keywords,
-                    competitorLinks: competitorLinks,
-                    createdAt: new Date().toISOString()
-                });
+        // Обновляем баланс в интерфейсе
+        if (result.balance !== undefined) {
+            document.getElementById('sidebarBalance').textContent = result.balance;
+            if (userData) userData.balance = result.balance;
+        }
 
-                // Обновляем баланс в интерфейсе
-                const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (updatedDoc.exists()) {
-                    userData = updatedDoc.data();
-                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
-                }
+        alert('✅ Описание готово! Списано 100 ₽');
 
-                alert('✅ Описание готово! Списано 100 ₽');
-
-            } catch (error) {
-                console.error('Ошибка генерации:', error);
-                alert('Ошибка: ' + error.message);
-            } finally {
-                hideGenerationModal();
-                btn.disabled = false;
-                btn.innerHTML = '✨ Сгенерировать описание (100 ₽)';
-            }
-        };
+    } catch (error) {
+        console.error('Ошибка генерации:', error);
+        alert('Ошибка: ' + error.message);
+    } finally {
+        hideGenerationModal();
+        btn.disabled = false;
+        btn.innerHTML = '✨ Сгенерировать описание (100 ₽)';
+    }
+};
 
         // Функция для примера (заменить на реальный API)
         function generateSampleDescription(productName, keywords, competitorLinks) {
