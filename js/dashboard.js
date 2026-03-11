@@ -14,6 +14,7 @@ import {
     reauthenticateWithCredential,
     EmailAuthProvider
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { TEMPLATES, applyTemplateToResults } from './templates.js';
 
 let currentUser = null;
 let userData = null;
@@ -40,6 +41,9 @@ let currentGenerationSession = {
     imageIds: []               // Массив ID изображений в Storage
 };
 
+// Активный шаблон
+let activeTemplate = null;
+
 // Для страницы истории (все сессии)
 let allSessions = [];
 let currentHistoryPage = 1;
@@ -53,6 +57,7 @@ onAuthStateChanged(auth, async (user) => {
     }
     currentUser = user;
     await loadUserData();
+    loadActiveTemplate();
     
     // Получаем текущий путь страницы
     const path = window.location.pathname;
@@ -71,6 +76,26 @@ onAuthStateChanged(auth, async (user) => {
         console.log('Страница новостей, историю не загружаем');
     }
 });
+
+// Загрузка активного шаблона
+function loadActiveTemplate() {
+    try {
+        const saved = localStorage.getItem('activeTemplate');
+        const savedForUser = localStorage.getItem(`template_${currentUser?.uid}`);
+        
+        if (saved) {
+            activeTemplate = JSON.parse(saved);
+        } else if (savedForUser) {
+            activeTemplate = JSON.parse(savedForUser);
+        } else {
+            activeTemplate = TEMPLATES.premium;
+        }
+        
+        console.log('🎨 Активный шаблон загружен:', activeTemplate.name);
+    } catch (error) {
+        console.error('Ошибка загрузки шаблона:', error);
+    }
+}
 
 // Загрузка данных пользователя из Firestore
 async function loadUserData() {
@@ -373,6 +398,21 @@ window.regeneratePhoto = async function() {
     await performGeneration(null, nextAttempt);
 };
 
+// ----- Уведомления -----
+function showNotification(message, type = 'info') {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
 // ----- Общая функция генерации (ИСПРАВЛЕННАЯ) -----
 async function performGeneration(files, attempt) {
     const cost = attempt === 0 ? 100 : 15;
@@ -399,6 +439,12 @@ async function performGeneration(files, attempt) {
         formData.append('attempt', attempt);
         if (currentGenerationSession.originalImageId) {
             formData.append('originalImageId', currentGenerationSession.originalImageId);
+        }
+        
+        // Добавляем шаблон, если он есть
+        if (activeTemplate) {
+            formData.append('template', JSON.stringify(activeTemplate));
+            console.log('🎨 Отправляем шаблон:', activeTemplate.name);
         }
 
         const response = await fetch('/api/generate-card', {
@@ -485,7 +531,34 @@ async function performGeneration(files, attempt) {
 
     } catch (error) {
         console.error('❌ Ошибка генерации:', error);
-        showNotification('Ошибка: ' + error.message, 'error');
+        
+        // Парсим ошибку
+        let errorMessage = 'Неизвестная ошибка';
+        try {
+            if (error.message) {
+                const parsed = JSON.parse(error.message);
+                errorMessage = parsed.error || parsed.message || error.message;
+            } else {
+                errorMessage = error.message || 'Ошибка соединения';
+            }
+        } catch {
+            errorMessage = error.message || 'Ошибка соединения';
+        }
+        
+        // Показываем понятное сообщение
+        if (errorMessage.includes('API key')) {
+            showNotification('❌ Ошибка API ключа', 'error');
+        } else if (errorMessage.includes('model')) {
+            showNotification('❌ Ошибка модели Gemini', 'error');
+        } else if (errorMessage.includes('balance')) {
+            showNotification('❌ Недостаточно средств', 'error');
+        } else if (errorMessage.includes('500')) {
+            showNotification('❌ Ошибка сервера. Попробуйте позже.', 'error');
+        } else if (errorMessage.includes('Failed to fetch')) {
+            showNotification('❌ Ошибка соединения. Проверьте интернет.', 'error');
+        } else {
+            showNotification('❌ ' + errorMessage.substring(0, 100), 'error');
+        }
     } finally {
         hideGenerationModal();
         if (btn) {
@@ -523,6 +596,13 @@ function displayCardResults(result, attempt) {
                 gallery.appendChild(img);
             }
         });
+        
+        // Применяем шаблон к результатам
+        if (activeTemplate) {
+            setTimeout(() => {
+                applyTemplateToResults(activeTemplate);
+            }, 100);
+        }
     }
 
     const descList = document.getElementById('resultDescriptions');
@@ -886,6 +966,13 @@ window.viewHistorySession = async function(sessionId) {
                 gallery.appendChild(img);
             });
             
+            // Применяем шаблон
+            if (activeTemplate) {
+                setTimeout(() => {
+                    applyTemplateToResults(activeTemplate);
+                }, 100);
+            }
+            
             updateRegenerationUI();
             
             const regenBtn = document.getElementById('regenerateBtn');
@@ -1148,15 +1235,6 @@ window.deleteAccount = async function() {
         showNotification('Ошибка: ' + error.message, 'error');
     }
 };
-
-// ----- Уведомления -----
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}
 
 document.addEventListener('DOMContentLoaded', function() {
     const wbFeatures = document.getElementById('wbFeatures');
