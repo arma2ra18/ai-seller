@@ -603,16 +603,21 @@
                     .split(',').map(k => k.trim()).filter(k => k);
 
                 // Отправляем запрос к API
-                const response = await fetch('/api/generate-description', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        productName,
-                        platform: selectedPlatform,
-                        competitors,
-                        keywords
-                    })
-                });
+const response = await fetch('/api/generate-description', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        productName,
+        platform: selectedPlatform,
+        competitors: [
+            document.getElementById('competitor1').value.trim(),
+            document.getElementById('competitor2').value.trim(),
+            document.getElementById('competitor3').value.trim()
+        ].filter(url => url),
+        keywords: document.getElementById('keywords').value.trim()
+            .split(',').map(k => k.trim()).filter(k => k)
+    })
+});
 
                 if (!response.ok) {
                     throw new Error(await response.text());
