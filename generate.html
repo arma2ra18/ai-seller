@@ -322,5 +322,19 @@
             });
         });
     </script>
+<!-- Подключаем поддержку шаблонов -->
+<script type="module">
+    import { TEMPLATES } from './js/templates.js';
+    
+    // Загружаем активный шаблон
+    const savedTemplate = localStorage.getItem('activeTemplate');
+    if (savedTemplate) {
+        const template = JSON.parse(savedTemplate);
+        console.log('🎨 Активный шаблон:', template.name);
+        
+        // Здесь можно применить шаблон к генерации
+        // В следующем обновлении добавим интеграцию с API
+    }
+</script>
 </body>
 </html>
