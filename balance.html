@@ -40,11 +40,6 @@
             line-height: 1.2;
         }
         
-        .balance-currency {
-            font-size: 24px;
-            color: var(--text-secondary);
-        }
-        
         .balance-stats {
             display: flex;
             justify-content: center;
@@ -70,46 +65,22 @@
             color: var(--text-secondary);
         }
         
-        .payment-methods {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 30px 0;
-        }
-        
-        .payment-method {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
+        .bonus-info {
+            background: rgba(48, 209, 88, 0.1);
+            border: 1px solid rgba(48, 209, 88, 0.3);
             border-radius: 16px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: var(--transition);
+            padding: 15px;
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--success);
         }
         
-        .payment-method:hover {
-            background: rgba(0,113,227,0.1);
-            border-color: var(--accent);
-            transform: translateY(-2px);
-        }
-        
-        .payment-method.selected {
-            background: rgba(0,113,227,0.15);
-            border-color: var(--accent);
-            box-shadow: 0 0 20px rgba(0,113,227,0.3);
-        }
-        
-        .payment-method img {
-            width: 40px;
-            height: 40px;
-            margin-bottom: 10px;
-            filter: brightness(0) invert(1);
-        }
-        
-        .payment-method span {
-            display: block;
-            color: white;
-            font-weight: 500;
+        .bonus-info.large {
+            background: rgba(255, 215, 0, 0.1);
+            border-color: gold;
+            color: gold;
         }
         
         .amount-presets {
@@ -162,16 +133,46 @@
             box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
         }
         
-        .bonus-info {
-            background: rgba(48, 209, 88, 0.1);
-            border: 1px solid rgba(48, 209, 88, 0.3);
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .payment-method {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 15px;
-            margin: 20px 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--success);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .payment-method:hover {
+            background: rgba(0,113,227,0.1);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+        
+        .payment-method.selected {
+            background: rgba(0,113,227,0.15);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0,113,227,0.3);
+        }
+        
+        .payment-method img {
+            width: 40px;
+            height: 40px;
+            margin-bottom: 10px;
+            filter: brightness(0) invert(1);
+        }
+        
+        .payment-method span {
+            display: block;
+            color: white;
+            font-weight: 500;
         }
         
         .transaction-history {
@@ -235,6 +236,13 @@
             color: var(--error);
         }
         
+        .no-transactions {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+        
         @media (max-width: 768px) {
             .balance-amount {
                 font-size: 48px;
@@ -245,12 +253,12 @@
                 gap: 20px;
             }
             
-            .payment-methods {
-                grid-template-columns: 1fr;
-            }
-            
             .amount-presets {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .payment-methods {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -290,14 +298,14 @@
                             📰 Новости
                         </a>
                     </li>
-                    <li class="menu-item" data-section="balance">
+                    <li class="menu-item active" data-section="balance">
                         <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
                             💰 Баланс
                         </a>
                     </li>
-                    <li class="menu-item" data-section="wb">
+                    <li class="menu-item" data-section="generate">
                         <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📦 Карточки товара
+                            ✨ Генерация
                         </a>
                     </li>
                     <li class="menu-item" data-section="history">
@@ -321,7 +329,7 @@
                     <span class="user-email" id="userEmail">Загрузка...</span>
                 </div>
                 <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
-                <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
+                <a href="/news.html" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 В личный кабинет</a>
             </div>
         </aside>
 
@@ -375,10 +383,14 @@
                         <input type="number" id="customAmount" placeholder="Введите свою сумму" min="100" step="100" oninput="customAmountInput()">
                     </div>
                     
-                    <!-- Бонус за пополнение -->
-                    <div class="bonus-info">
+                    <!-- Бонусы за пополнение -->
+                    <div class="bonus-info" id="bonus1000">
                         <span>🎁</span>
-                        <span>При пополнении от 1000 ₽ вы получаете +10% бонусами</span>
+                        <span>При пополнении от 1 000 ₽ вы получаете +10% бонусами</span>
+                    </div>
+                    <div class="bonus-info large" id="bonus10000" style="display: none;">
+                        <span>🌟</span>
+                        <span>При пополнении от 10 000 ₽ вы получаете +20% бонусами</span>
                     </div>
                     
                     <!-- Методы оплаты -->
@@ -406,73 +418,179 @@
 
                 <!-- История транзакций -->
                 <div class="transaction-history">
-                    <h3 style="margin-bottom: 20px;">📋 Последние операции</h3>
+                    <h3 style="margin-bottom: 20px;">📋 История операций</h3>
                     <div id="transactionsList">
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-icon">💰</div>
-                                <div class="transaction-details">
-                                    <div class="transaction-title">Пополнение баланса</div>
-                                    <div class="transaction-date">11 марта 2026, 14:23</div>
-                                </div>
-                            </div>
-                            <div class="transaction-amount">+500 ₽</div>
-                        </div>
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-icon">📸</div>
-                                <div class="transaction-details">
-                                    <div class="transaction-title">Генерация фото (x3)</div>
-                                    <div class="transaction-date">11 марта 2026, 12:05</div>
-                                </div>
-                            </div>
-                            <div class="transaction-amount negative">-130 ₽</div>
-                        </div>
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-icon">💰</div>
-                                <div class="transaction-details">
-                                    <div class="transaction-title">Приветственный бонус</div>
-                                    <div class="transaction-date">10 марта 2026, 10:00</div>
-                                </div>
-                            </div>
-                            <div class="transaction-amount">+500 ₽</div>
-                        </div>
+                        <div class="no-transactions">Загрузка транзакций...</div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <script type="module" src="js/dashboard.js"></script>
-    <script>
+    <script type="module">
+        import { auth, db } from './js/firebase.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { 
+            doc, getDoc, collection, query, orderBy, getDocs, limit 
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+        let currentUser = null;
         let selectedAmount = 500;
         let selectedMethod = 'card';
         
-        // Загрузка данных пользователя
-        async function loadBalanceData() {
+        // Проверка авторизации
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
+            }
+            currentUser = user;
+            await loadUserData();
+            await loadTransactions();
+        });
+
+        // Загрузка данных пользователя из Firestore
+        async function loadUserData() {
             try {
-                // Здесь будет загрузка из Firebase
-                // Пока тестовые данные
-                document.getElementById('balanceAmount').textContent = '1 250';
-                document.getElementById('sidebarBalance').textContent = '1250';
-                document.getElementById('totalSpent').textContent = '750';
-                document.getElementById('totalGenerations').textContent = '8';
-                document.getElementById('bonusBalance').textContent = '50';
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    
+                    // Баланс
+                    const balance = userData.balance || 0;
+                    document.getElementById('balanceAmount').textContent = balance.toLocaleString();
+                    document.getElementById('sidebarBalance').textContent = balance;
+                    
+                    // Всего потрачено
+                    const spent = userData.usedSpent || 0;
+                    document.getElementById('totalSpent').textContent = spent.toLocaleString();
+                    
+                    // Количество генераций (считаем из коллекции generationSessions)
+                    const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
+                    const totalAttempts = sessionsSnapshot.docs.reduce((sum, doc) => sum + (doc.data().attempts || 0), 0);
+                    document.getElementById('totalGenerations').textContent = totalAttempts;
+                    
+                    // Бонусы (можно хранить отдельно или рассчитывать)
+                    const bonus = userData.bonusBalance || 0;
+                    document.getElementById('bonusBalance').textContent = bonus;
+                    
+                    // Email
+                    document.getElementById('userEmail').textContent = userData.email || userData.phoneNumber || 'Пользователь';
+                }
             } catch (error) {
-                console.error('Ошибка загрузки баланса:', error);
+                console.error('Ошибка загрузки данных:', error);
             }
         }
-        
-        // Выбор суммы
+
+        // Загрузка истории транзакций из Firestore
+        async function loadTransactions() {
+            try {
+                const transactionsList = document.getElementById('transactionsList');
+                
+                // Пытаемся загрузить из коллекции payments
+                let transactions = [];
+                
+                try {
+                    const paymentsQuery = query(
+                        collection(db, 'users', currentUser.uid, 'payments'),
+                        orderBy('createdAt', 'desc'),
+                        limit(20)
+                    );
+                    const paymentsSnapshot = await getDocs(paymentsQuery);
+                    
+                    paymentsSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        transactions.push({
+                            type: 'payment',
+                            amount: data.amount,
+                            method: data.method || 'card',
+                            status: data.status,
+                            date: data.createdAt?.toDate?.() || new Date(data.createdAt),
+                            description: 'Пополнение баланса'
+                        });
+                    });
+                } catch (e) {
+                    console.log('Коллекция payments не найдена');
+                }
+                
+                // Добавляем списания из сессий генераций
+                try {
+                    const sessionsQuery = query(
+                        collection(db, 'users', currentUser.uid, 'generationSessions'),
+                        orderBy('createdAt', 'desc'),
+                        limit(20)
+                    );
+                    const sessionsSnapshot = await getDocs(sessionsQuery);
+                    
+                    sessionsSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.totalSpent && data.totalSpent > 0) {
+                            transactions.push({
+                                type: 'spent',
+                                amount: -data.totalSpent,
+                                date: new Date(data.createdAt),
+                                description: `Генерация: ${data.productName || 'товар'} (${data.attempts || 1} фото)`
+                            });
+                        }
+                    });
+                } catch (e) {
+                    console.log('Коллекция generationSessions не найдена');
+                }
+                
+                // Сортируем по дате (сначала новые)
+                transactions.sort((a, b) => b.date - a.date);
+                
+                if (transactions.length === 0) {
+                    transactionsList.innerHTML = '<div class="no-transactions">У вас пока нет операций</div>';
+                    return;
+                }
+                
+                // Отображаем транзакции
+                transactionsList.innerHTML = transactions.map(t => {
+                    const dateStr = t.date.toLocaleString('ru-RU', {
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                    
+                    const isPositive = t.amount > 0;
+                    const icon = isPositive ? '💰' : '📸';
+                    const amountClass = isPositive ? 'transaction-amount' : 'transaction-amount negative';
+                    const amountStr = isPositive ? `+${t.amount}` : t.amount;
+                    
+                    return `
+                        <div class="transaction-item">
+                            <div class="transaction-info">
+                                <div class="transaction-icon">${icon}</div>
+                                <div class="transaction-details">
+                                    <div class="transaction-title">${t.description}</div>
+                                    <div class="transaction-date">${dateStr}</div>
+                                </div>
+                            </div>
+                            <div class="${amountClass}">${amountStr} ₽</div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                console.error('Ошибка загрузки транзакций:', error);
+                document.getElementById('transactionsList').innerHTML = 
+                    '<div class="no-transactions">Ошибка загрузки операций</div>';
+            }
+        }
+
+        // Выбор суммы с обновлением бонусов
         window.selectAmount = function(amount) {
             selectedAmount = amount;
             document.querySelectorAll('.amount-preset').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
             document.getElementById('customAmount').value = '';
             document.getElementById('paymentAmount').textContent = amount.toLocaleString();
+            
+            // Показываем соответствующий бонус
+            document.getElementById('bonus1000').style.display = amount >= 1000 ? 'flex' : 'none';
+            document.getElementById('bonus10000').style.display = amount >= 10000 ? 'flex' : 'none';
         };
-        
+
         // Ввод своей суммы
         window.customAmountInput = function() {
             const value = parseInt(document.getElementById('customAmount').value) || 0;
@@ -480,16 +598,20 @@
                 selectedAmount = value;
                 document.querySelectorAll('.amount-preset').forEach(el => el.classList.remove('active'));
                 document.getElementById('paymentAmount').textContent = value.toLocaleString();
+                
+                // Показываем соответствующий бонус
+                document.getElementById('bonus1000').style.display = value >= 1000 ? 'flex' : 'none';
+                document.getElementById('bonus10000').style.display = value >= 10000 ? 'flex' : 'none';
             }
         };
-        
+
         // Выбор метода оплаты
         window.selectPaymentMethod = function(method) {
             selectedMethod = method;
             document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('selected'));
             document.getElementById(`method${method.charAt(0).toUpperCase() + method.slice(1)}`).classList.add('selected');
         };
-        
+
         // Обработка платежа
         window.processPayment = function() {
             if (selectedAmount < 100) {
@@ -497,35 +619,42 @@
                 return;
             }
             
-            // Здесь будет интеграция с ЮKassa
-            alert(`Перенаправление на оплату ${selectedAmount} ₽...`);
-        };
-        
-        // Навигация
-        function navigateTo(section) {
-            if (section === 'news') {
-                window.location.href = '/news.html';
-            } else if (section === 'balance') {
-                window.location.href = '/balance.html';
-            } else if (section === 'wb') {
-                window.location.href = '/dashboard.html';
-            } else if (section === 'history') {
-                window.location.href = '/history.html';
-            } else if (section === 'settings') {
-                window.location.href = '/settings.html';
+            // Рассчитываем бонус
+            let bonus = 0;
+            if (selectedAmount >= 10000) {
+                bonus = Math.floor(selectedAmount * 0.2);
+            } else if (selectedAmount >= 1000) {
+                bonus = Math.floor(selectedAmount * 0.1);
             }
-        }
-        
+            
+            const bonusText = bonus > 0 ? ` (включая бонус ${bonus} ₽)` : '';
+            
+            // Здесь будет интеграция с ЮKassa
+            alert(`Перенаправление на оплату ${selectedAmount} ₽${bonusText}...`);
+        };
+
+        // Навигация
+        window.navigateTo = function(section) {
+            const paths = {
+                'news': '/news.html',
+                'balance': '/balance.html',
+                'generate': '/generate.html',
+                'history': '/history.html',
+                'settings': '/settings.html'
+            };
+            if (paths[section]) {
+                window.location.href = paths[section];
+            }
+        };
+
         // Выход
-        window.logout = function() {
+        window.logout = async function() {
+            await auth.signOut();
             window.location.href = '/login.html';
         };
-        
-        // Загружаем при старте
+
+        // Обработчики меню
         document.addEventListener('DOMContentLoaded', function() {
-            loadBalanceData();
-            
-            // Добавляем обработчики для пунктов меню
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.addEventListener('click', function(e) {
                     const section = this.dataset.section;
