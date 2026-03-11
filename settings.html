@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки профиля — Prodiger</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <style>
+        .settings-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .settings-card {
+            background: rgba(28, 28, 30, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 24px;
+            padding: 30px;
+            transition: var(--transition);
+            animation: fadeInUp 0.5s ease;
+        }
+        
+        .settings-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 113, 227, 0.2);
+        }
+        
+        .settings-card h3 {
+            margin-bottom: 25px;
+            font-size: 22px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .settings-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .settings-row input {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            transition: var(--transition);
+        }
+        
+        .settings-row input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
+            transform: scale(1.02);
+            outline: none;
+        }
+        
+        .settings-row input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: var(--transition);
+        }
+        
+        .stat-item:hover {
+            background: rgba(255,255,255,0.02);
+            transform: translateX(5px);
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .stat-value {
+            font-weight: 600;
+            color: var(--accent);
+            background: rgba(0,113,227,0.1);
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+        
+        .danger-zone {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255,59,48,0.05);
+            border: 1px solid rgba(255,59,48,0.2);
+            border-radius: 16px;
+            transition: var(--transition);
+        }
+        
+        .danger-zone:hover {
+            background: rgba(255,59,48,0.08);
+        }
+        
+        .danger-zone h4 {
+            color: var(--error);
+            margin-bottom: 15px;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--error), #ff1f1f);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .btn-danger:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255,59,48,0.5);
+        }
+        
+        .success-message {
+            background: rgba(48, 209, 88, 0.1);
+            border: 1px solid rgba(48, 209, 88, 0.3);
+            color: var(--success);
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 15px;
+            text-align: center;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Видеофон -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <!-- Сайдбар -->
+        <aside class="sidebar glass">
+            <div class="sidebar-logo-container">
+                <div class="sidebar-logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="14" stroke="url(#grad2)" stroke-width="2" fill="none"/>
+                        <path d="M10 16L14 20L22 12" stroke="url(#grad2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#0071e3" />
+                                <stop offset="50%" stop-color="#9b5ef0" />
+                                <stop offset="100%" stop-color="#f5b041" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <div class="sidebar-logo-text gradient-logo">Prodiger</div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="menu-item" data-section="balance">
+                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            💰 Баланс
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="wb">
+                        <a href="/dashboard.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📦 Карточки товара
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="history">
+                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📜 История
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="news">
+                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📰 Новости
+                        </a>
+                    </li>
+                    <li class="menu-item active" data-section="settings">
+                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ⚙️ Настройки
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-balance">
+                    <span>Баланс: <span id="sidebarBalance">0</span> ₽</span>
+                    <button class="btn btn-small btn-primary" onclick="window.location.href='/balance.html'">Пополнить</button>
+                </div>
+                <div class="user-info">
+                    <span class="user-email" id="userEmail">Загрузка...</span>
+                </div>
+                <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
+                <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
+            </div>
+        </aside>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <div class="welcome-block">
+                <h1 class="gradient-text">⚙️ Настройки профиля</h1>
+                <p>Управляйте личными данными и безопасностью аккаунта</p>
+            </div>
+
+            <div class="settings-container">
+                <div class="settings-grid">
+                    <!-- Левая колонка: основная информация -->
+                    <div class="settings-card glass">
+                        <h3>Основная информация</h3>
+                        
+                        <div class="form-group">
+                            <label>Имя пользователя</label>
+                            <div class="settings-row">
+                                <input type="text" id="displayName" placeholder="Ваше имя" value="">
+                                <button class="btn btn-small btn-primary" onclick="updateDisplayName()">Сохранить</button>
+                            </div>
+                            <small class="text-muted">Как к вам обращаться</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <div class="settings-row">
+                                <input type="email" id="userEmailSettings" value="" readonly disabled>
+                                <button class="btn btn-small btn-outline" onclick="changeEmail()">Изменить</button>
+                            </div>
+                            <small class="text-muted">Email привязан к аккаунту, его можно изменить</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Номер телефона</label>
+                            <div class="settings-row">
+                                <input type="tel" id="phoneNumber" placeholder="+7 999 123-45-67" value="">
+                                <button class="btn btn-small btn-primary" onclick="updatePhoneNumber()">Сохранить</button>
+                            </div>
+                            <small class="text-muted">Для входа и уведомлений</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Пароль</label>
+                            <div class="settings-row">
+                                <input type="password" id="newPassword" placeholder="Новый пароль">
+                                <button class="btn btn-small btn-primary" onclick="changePassword()">Изменить</button>
+                            </div>
+                            <small class="text-muted">Минимум 6 символов</small>
+                        </div>
+                        
+                        <div id="settingsSuccessMessage" class="success-message"></div>
+                    </div>
+
+                    <!-- Правая колонка: статистика и безопасность -->
+                    <div class="settings-card glass">
+                        <h3>Статистика аккаунта</h3>
+                        
+                        <div class="stat-item">
+                            <span class="stat-label">Дата регистрации:</span>
+                            <span class="stat-value" id="accountCreated">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Всего потрачено:</span>
+                            <span class="stat-value" id="totalGenerations">0 ₽</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Всего генераций:</span>
+                            <span class="stat-value" id="totalSessions">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Последний вход:</span>
+                            <span class="stat-value" id="lastLogin">—</span>
+                        </div>
+
+                        <div class="danger-zone">
+                            <h4>Зона опасности</h4>
+                            <button class="btn btn-danger" onclick="deleteAccount()">Удалить аккаунт</button>
+                            <p class="text-muted small" style="margin-top: 10px;">Это действие необратимо. Все данные будут удалены.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Модальное окно для смены email -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content glass">
+            <button class="modal-close" onclick="closeEmailModal()">&times;</button>
+            <h2>Смена email</h2>
+            
+            <div class="form-group">
+                <label>Новый email</label>
+                <input type="email" id="newEmail" placeholder="new@email.com">
+            </div>
+            
+            <div class="form-group">
+                <label>Текущий пароль (для подтверждения)</label>
+                <input type="password" id="emailConfirmPassword" placeholder="••••••••">
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="confirmEmailChange()">Сохранить</button>
+                <button class="btn btn-outline" onclick="closeEmailModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/dashboard.js"></script>
+    <script>
+        // Функции для работы с настройками
+        
+        // Загрузка данных пользователя
+        async function loadUserSettings() {
+            try {
+                // Здесь будут данные из Firebase
+                // Пока тестовые данные
+                document.getElementById('displayName').value = 'Алексей';
+                document.getElementById('userEmailSettings').value = 'alex@example.com';
+                document.getElementById('phoneNumber').value = '+7 999 123-45-67';
+                document.getElementById('accountCreated').textContent = '11.03.2026';
+                document.getElementById('totalGenerations').textContent = '1 250 ₽';
+                document.getElementById('totalSessions').textContent = '8';
+                document.getElementById('lastLogin').textContent = '11.03.2026, 14:30';
+                document.getElementById('sidebarBalance').textContent = '1 250';
+                document.getElementById('userEmail').textContent = 'alex@example.com';
+            } catch (error) {
+                console.error('Ошибка загрузки настроек:', error);
+            }
+        }
+
+        // Показать уведомление
+        function showSettingsMessage(text, isSuccess = true) {
+            const msgEl = document.getElementById('settingsSuccessMessage');
+            msgEl.textContent = text;
+            msgEl.className = 'success-message show';
+            if (!isSuccess) {
+                msgEl.style.background = 'rgba(255,59,48,0.1)';
+                msgEl.style.border = '1px solid rgba(255,59,48,0.3)';
+                msgEl.style.color = 'var(--error)';
+            } else {
+                msgEl.style.background = 'rgba(48,209,88,0.1)';
+                msgEl.style.border = '1px solid rgba(48,209,88,0.3)';
+                msgEl.style.color = 'var(--success)';
+            }
+            setTimeout(() => msgEl.classList.remove('show'), 3000);
+        }
+
+        // Обновление имени
+        window.updateDisplayName = function() {
+            const newName = document.getElementById('displayName').value.trim();
+            if (!newName) {
+                showSettingsMessage('Введите имя', false);
+                return;
+            }
+            showSettingsMessage('Имя обновлено!');
+        };
+
+        // Смена email
+        window.changeEmail = function() {
+            document.getElementById('emailModal').classList.add('show');
+        };
+
+        window.closeEmailModal = function() {
+            document.getElementById('emailModal').classList.remove('show');
+            document.getElementById('newEmail').value = '';
+            document.getElementById('emailConfirmPassword').value = '';
+        };
+
+        window.confirmEmailChange = function() {
+            const newEmail = document.getElementById('newEmail').value.trim();
+            const password = document.getElementById('emailConfirmPassword').value;
+            
+            if (!newEmail || !password) {
+                alert('Заполните все поля');
+                return;
+            }
+            
+            showSettingsMessage('Email успешно изменён!');
+            closeEmailModal();
+            document.getElementById('userEmailSettings').value = newEmail;
+        };
+
+        // Обновление телефона
+        window.updatePhoneNumber = function() {
+            const newPhone = document.getElementById('phoneNumber').value.trim();
+            if (!newPhone) {
+                showSettingsMessage('Введите номер телефона', false);
+                return;
+            }
+            showSettingsMessage('Номер телефона обновлён!');
+        };
+
+        // Смена пароля
+        window.changePassword = function() {
+            const newPassword = document.getElementById('newPassword').value;
+            
+            if (!newPassword) {
+                showSettingsMessage('Введите новый пароль', false);
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showSettingsMessage('Пароль должен быть не менее 6 символов', false);
+                return;
+            }
+            
+            showSettingsMessage('Пароль успешно изменён!');
+            document.getElementById('newPassword').value = '';
+        };
+
+        // Удаление аккаунта
+        window.deleteAccount = function() {
+            if (!confirm('Вы уверены, что хотите удалить аккаунт? Это действие необратимо.')) {
+                return;
+            }
+            alert('Аккаунт будет удалён. Перенаправление...');
+            window.location.href = '/';
+        };
+
+        // Выход
+        window.logout = function() {
+            window.location.href = '/login.html';
+        };
+
+        // Навигация
+        function navigateTo(section) {
+            if (section === 'balance') {
+                window.location.href = '/balance.html';
+            } else if (section === 'wb') {
+                window.location.href = '/dashboard.html';
+            } else if (section === 'history') {
+                window.location.href = '/history.html';
+            } else if (section === 'news') {
+                window.location.href = '/news.html';
+            } else if (section === 'settings') {
+                window.location.href = '/settings.html';
+            }
+        }
+
+        // Загружаем при старте
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserSettings();
+            
+            // Добавляем обработчики для пунктов меню
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    const section = this.dataset.section;
+                    navigateTo(section);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
