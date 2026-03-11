@@ -254,6 +254,12 @@
             }
         }
     </style>
+// В начало скрипта, после импортов:
+console.log('🔥 Страница истории описаний загружена');
+console.log('Текущий пользователь:', currentUser?.uid);
+
+// В функции loadDescriptions() добавьте:
+console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`);
 </head>
 <body>
     <!-- Видеофон -->
