@@ -35,3 +35,6 @@
 
 /* Утилиты и адаптация */
 @import url('21-utilities.css');
+
+/* Шаблоны */
+@import url('23-templates.css');
