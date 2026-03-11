@@ -2571,13 +2571,6 @@ input:checked + .slider:before {
     color: var(--text-secondary);
 }
 
-/* Подписи для фото */
-.photo-caption {
-    text-align: center;
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-}
 
 /* Адаптивность для истории */
 @media (max-width: 768px) {

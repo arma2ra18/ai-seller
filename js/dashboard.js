@@ -491,13 +491,13 @@ async function performGeneration(files, attempt) {
     }
 }
 
-// ----- Отображение результатов (только фото) -----
+// ----- Отображение результатов (только фото, без лишних надписей) -----
 function displayCardResults(result, attempt) {
     const container = document.getElementById('cardResults');
     if (!container) return;
     container.style.display = 'block';
 
-    // Галерея
+    // Галерея - создаём один раз
     let gallery = document.getElementById('resultImages');
     if (!gallery) {
         gallery = document.createElement('div');
@@ -506,26 +506,37 @@ function displayCardResults(result, attempt) {
         container.appendChild(gallery);
     }
 
-    // Если это первая генерация, очищаем галерею
-    if (attempt === 0) {
-        gallery.innerHTML = '';
-    }
-
+    // Добавляем новое фото в существующую галерею
     if (result.images && result.images.length) {
         result.images.forEach(url => {
-            const img = document.createElement('img');
-            img.src = url;
-            img.alt = `Фото ${attempt + 1}`;
-            img.onclick = () => window.openLightbox(url);
-            gallery.appendChild(img);
+            // Проверяем, нет ли уже такого фото (по URL)
+            const existingImages = Array.from(gallery.children).map(img => img.src);
+            if (!existingImages.includes(url)) {
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = `Фото товара`;
+                img.onclick = () => window.openLightbox(url);
+                gallery.appendChild(img);
+            }
         });
     }
 
-    // Убираем блок с описаниями, если он есть
+    // Полностью удаляем блок с описаниями, если он есть
     const descList = document.getElementById('resultDescriptions');
     if (descList) {
-        descList.style.display = 'none';
+        descList.remove(); // Удаляем из DOM
     }
+
+    // Убираем любые другие лишние элементы с текстом
+    const unwantedSelectors = [
+        '.photo-caption',
+        '.result-item',
+        '.description-list'
+    ];
+    
+    unwantedSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => el.remove());
+    });
 
     updateRegenerationUI();
 }
