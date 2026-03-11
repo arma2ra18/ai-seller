@@ -510,7 +510,7 @@
 
        // Основная функция генерации описания
 window.generateDescription = async function() {
-    const productName = document.getElementById('productName').value.trim();
+    const productName = document.getElementById('productName')?.value.trim() || '';
     
     if (!productName) {
         alert('Введите название товара');
@@ -524,25 +524,32 @@ window.generateDescription = async function() {
         return;
     }
 
-    // Собираем ссылки конкурентов
+    // Собираем ссылки конкурентов (с проверкой на undefined)
     const competitorLinks = [];
     document.querySelectorAll('#competitorLinksContainer input').forEach(input => {
-        if (input.value.trim()) {
-            competitorLinks.push(input.value.trim());
+        const value = input.value?.trim();
+        if (value) {
+            competitorLinks.push(value);
         }
     });
 
-    // Ключевые слова
-    const keywords = document.getElementById('keywords').value.trim();
+    // Ключевые слова (с проверкой на undefined)
+    const keywordsInput = document.getElementById('keywords')?.value?.trim() || '';
+    
+    // Здесь была ошибка split на undefined - ИСПРАВЛЕНО
+    // const keywords = keywordsInput ? keywordsInput.split(',').map(k => k.trim()).filter(Boolean) : [];
+    // Если нужно разделять по запятым, используем эту логику
 
     const btn = document.getElementById('generateDescBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="loading"></span> Генерация...';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Генерация...';
+    }
     
     showGenerationModal();
 
     try {
-        // Вызов нового API
+        // Вызов API
         const response = await fetch('/api/generate-description', {
             method: 'POST',
             headers: {
@@ -551,46 +558,58 @@ window.generateDescription = async function() {
             body: JSON.stringify({
                 productName: productName,
                 competitorLinks: competitorLinks,
-                keywords: keywords,
-                platform: 'wb', // или можно добавить выбор платформы
-                userId: currentUser.uid
+                keywords: keywordsInput, // Отправляем как есть, без split
+                platform: 'wb',
+                userId: currentUser?.uid
             })
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Ошибка генерации');
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP error ${response.status}`);
         }
 
         const result = await response.json();
+        
+        if (!result.success || !result.description) {
+            throw new Error('Неверный формат ответа от сервера');
+        }
         
         // Сохраняем результат
         generatedDescription = result.description;
         
         // Отображаем результат
         const resultContent = document.getElementById('resultContent');
-        // Форматируем текст с абзацами
-        resultContent.innerHTML = generatedDescription.split('\n').map(p => 
-            p.trim() ? `<p>${p}</p>` : ''
-        ).join('');
+        if (resultContent) {
+            // Форматируем текст с абзацами
+            resultContent.innerHTML = generatedDescription.split('\n').map(p => 
+                p.trim() ? `<p>${p}</p>` : ''
+            ).join('');
+        }
         
-        document.getElementById('resultCard').classList.add('show');
+        const resultCard = document.getElementById('resultCard');
+        if (resultCard) {
+            resultCard.classList.add('show');
+        }
 
         // Обновляем баланс в интерфейсе
         if (result.balance !== undefined) {
-            document.getElementById('sidebarBalance').textContent = result.balance;
+            const sidebarBalance = document.getElementById('sidebarBalance');
+            if (sidebarBalance) sidebarBalance.textContent = result.balance;
             if (userData) userData.balance = result.balance;
         }
 
         alert('✅ Описание готово! Списано 100 ₽');
 
     } catch (error) {
-        console.error('Ошибка генерации:', error);
+        console.error('❌ Ошибка генерации:', error);
         alert('Ошибка: ' + error.message);
     } finally {
         hideGenerationModal();
-        btn.disabled = false;
-        btn.innerHTML = '✨ Сгенерировать описание (100 ₽)';
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '✨ Сгенерировать описание (100 ₽)';
+        }
     }
 };
 
