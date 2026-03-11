@@ -368,7 +368,7 @@ window.regeneratePhoto = async function() {
     await performGeneration(null, nextAttempt);
 };
 
-// ----- Общая функция генерации -----
+// ----- Общая функция генерации (ИСПРАВЛЕННАЯ) -----
 async function performGeneration(files, attempt) {
     const cost = attempt === 0 ? 100 : 15;
     const btn = document.getElementById('generateWBBtn');
@@ -418,7 +418,20 @@ async function performGeneration(files, attempt) {
         const newAttemptCount = attempt + 1;
         currentGenerationSession.attemptsMade = newAttemptCount;
 
-        if (attempt === 0) {
+        // ВАЖНО: Всегда используем sessionId, если он есть
+        if (currentGenerationSession.sessionId) {
+            // Обновляем существующую сессию
+            const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
+            await updateDoc(sessionRef, {
+                attempts: newAttemptCount,
+                totalSpent: increment(cost),
+                images: currentGenerationSession.generatedImages,
+                imageIds: currentGenerationSession.imageIds,
+                updatedAt: new Date().toISOString()
+            });
+            console.log('✅ Сессия обновлена:', currentGenerationSession.sessionId);
+        } else {
+            // Создаём новую сессию (только для первой генерации)
             const sessionData = {
                 type: 'product-session',
                 productName: currentGenerationSession.productName,
@@ -436,16 +449,7 @@ async function performGeneration(files, attempt) {
             
             const sessionRef = await addDoc(collection(db, 'users', currentUser.uid, 'generationSessions'), sessionData);
             currentGenerationSession.sessionId = sessionRef.id;
-        } 
-        else if (currentGenerationSession.sessionId) {
-            const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
-            await updateDoc(sessionRef, {
-                attempts: newAttemptCount,
-                totalSpent: increment(cost),
-                images: currentGenerationSession.generatedImages,
-                imageIds: currentGenerationSession.imageIds,
-                updatedAt: new Date().toISOString()
-            });
+            console.log('✅ Новая сессия создана:', sessionRef.id);
         }
 
         await updateDoc(doc(db, 'users', currentUser.uid), { 
@@ -475,7 +479,7 @@ async function performGeneration(files, attempt) {
         showNotification(message, 'success');
 
     } catch (error) {
-        console.error('Ошибка генерации:', error);
+        console.error('❌ Ошибка генерации:', error);
         showNotification('Ошибка: ' + error.message, 'error');
     } finally {
         hideGenerationModal();
