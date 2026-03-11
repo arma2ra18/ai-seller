@@ -8,6 +8,38 @@
     <style>
         /* ===== ПРЕМИАЛЬНЫЕ СТИЛИ ДЛЯ ИСТОРИИ ===== */
         
+        /* Исправляем логотип в сайдбаре */
+        .sidebar-logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0 20px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-logo-icon {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .sidebar-logo-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .sidebar-logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #0071e3, #9b5ef0, #f5b041);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+        }
+        
         /* Заголовок страницы */
         .page-header {
             display: flex;
@@ -25,6 +57,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             position: relative;
+            margin: 0;
         }
         
         .page-title::after {
@@ -216,6 +249,7 @@
             font-weight: 700;
             color: white;
             position: relative;
+            margin: 0;
         }
         
         .session-badge {
@@ -490,178 +524,134 @@
             box-shadow: 0 5px 15px rgba(0,113,227,0.3);
         }
         
-        /* Результаты генерации */
-.results-section {
-    margin-top: 60px;
-    animation: fadeInUp 1s ease;
-}
-
-.results-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.results-header h2 {
-    font-size: 28px;
-    background: linear-gradient(135deg, #fff, var(--accent));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin: 0;
-}
-
-.close-results {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-    background: rgba(255,59,48,0.1);
-    border: 1px solid rgba(255,59,48,0.3);
-    color: var(--error);
-    font-size: 22px;
-    cursor: pointer;
-    transition: var(--transition);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.close-results:hover {
-    background: var(--error);
-    color: white;
-    transform: rotate(90deg);
-}
-
-.results-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.result-image {
-    position: relative;
-    border-radius: 20px;
-    overflow: hidden;
-    cursor: pointer;
-    aspect-ratio: 1;
-    transition: var(--transition);
-    box-shadow: var(--shadow-sm);
-}
-
-.result-image:hover {
-    transform: scale(1.03);
-    box-shadow: 0 15px 30px rgba(0,113,227,0.3);
-}
-
-.result-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s;
-}
-
-.result-image:hover img {
-    transform: scale(1.1);
-}
-
-.result-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    padding: 15px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.result-image:hover .result-overlay {
-    opacity: 1;
-}
-
-.result-label {
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    background: var(--accent);
-    padding: 6px 16px;
-    border-radius: 40px;
-    transform: translateY(10px);
-    transition: transform 0.3s;
-}
-
-.result-image:hover .result-label {
-    transform: translateY(0);
-}
-
-/* Адаптивность для результатов */
-@media (max-width: 768px) {
-    .results-header h2 {
-        font-size: 22px;
-    }
-    
-    .results-gallery {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-    }
-    
-    .result-image {
-        border-radius: 16px;
-    }
-    
-    .result-label {
-        font-size: 12px;
-        padding: 4px 12px;
-    }
-}
-
-@media (max-width: 480px) {
-    .results-gallery {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    .result-image {
-        max-width: 100%;
-    }
-}
-        
-        /* Анимации */
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        /* ===== ИСПРАВЛЕННАЯ ГАЛЕРЕЯ РЕЗУЛЬТАТОВ ===== */
+        .results-section {
+            margin-top: 60px;
+            animation: fadeInUp 1s ease;
+            background: rgba(28, 28, 30, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 32px;
+            padding: 30px;
         }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+
+        .results-header h2 {
+            font-size: 28px;
+            background: linear-gradient(135deg, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
         }
-        
+
+        .close-results {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,59,48,0.1);
+            border: 1px solid rgba(255,59,48,0.3);
+            color: var(--error);
+            font-size: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-results:hover {
+            background: var(--error);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .results-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .result-image {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            aspect-ratio: 1;
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .result-image:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(0,113,227,0.3);
+        }
+
+        .result-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+            display: block;
+        }
+
+        .result-image:hover img {
+            transform: scale(1.1);
+        }
+
+        .result-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .result-image:hover .result-overlay {
+            opacity: 1;
+        }
+
+        .result-label {
+            color: white;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--accent);
+            padding: 5px 12px;
+            border-radius: 40px;
+            transform: translateY(10px);
+            transition: transform 0.3s;
+        }
+
+        .result-image:hover .result-label {
+            transform: translateY(0);
+        }
+
         /* Адаптивность */
+        @media (max-width: 1024px) {
+            .page-title {
+                font-size: 42px;
+            }
+            
+            .results-gallery {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
         @media (max-width: 768px) {
             .page-header {
                 flex-direction: column;
@@ -672,9 +662,14 @@
                 font-size: 36px;
             }
             
+            .page-title::after {
+                width: 60px;
+            }
+            
             .sessions-stats {
                 flex-direction: column;
                 width: 100%;
+                padding: 15px 20px;
             }
             
             .history-filters {
@@ -711,14 +706,24 @@
             .more-badge {
                 width: 80px;
                 height: 80px;
+                font-size: 16px;
             }
             
             .results-gallery {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            
+            .results-header h2 {
+                font-size: 22px;
             }
         }
-        
+
         @media (max-width: 480px) {
+            .page-title {
+                font-size: 28px;
+            }
+            
             .gallery-item {
                 width: 70px;
                 height: 70px;
@@ -732,6 +737,7 @@
             
             .results-gallery {
                 grid-template-columns: 1fr;
+                gap: 10px;
             }
             
             .pagination-btn {
@@ -739,6 +745,47 @@
                 height: 40px;
                 font-size: 16px;
             }
+            
+            .result-image {
+                border-radius: 12px;
+            }
+            
+            .result-label {
+                font-size: 12px;
+                padding: 4px 10px;
+            }
+        }
+
+        /* Анимации */
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -773,39 +820,25 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item" data-section="news">
-                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📰 Новости
-                        </a>
+                        <a href="/news.html">📰 Новости</a>
                     </li>
                     <li class="menu-item" data-section="balance">
-                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            💰 Баланс
-                        </a>
+                        <a href="/balance.html">💰 Баланс</a>
                     </li>
                     <li class="menu-item" data-section="generate">
-                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ✨ Генерация фото
-                        </a>
+                        <a href="/generate.html">✨ Генерация фото</a>
                     </li>
                     <li class="menu-item" data-section="description">
-                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📝 Описание товара
-                        </a>
+                        <a href="/description.html">📝 Описание товара</a>
                     </li>
                     <li class="menu-item active" data-section="history">
-                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📜 История фото
-                        </a>
+                        <a href="/history.html">📜 История фото</a>
                     </li>
                     <li class="menu-item" data-section="description-history">
-                        <a href="/description-history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📚 История описаний
-                        </a>
+                        <a href="/description-history.html">📚 История описаний</a>
                     </li>
                     <li class="menu-item" data-section="settings">
-                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ⚙️ Настройки
-                        </a>
+                        <a href="/settings.html">⚙️ Настройки</a>
                     </li>
                 </ul>
             </nav>
@@ -860,7 +893,6 @@
 
             <!-- Список сессий -->
             <div id="sessionsList" class="sessions-list">
-                <!-- Сессии будут загружаться сюда -->
                 <div class="loading-spinner" style="text-align: center; padding: 60px;">
                     <div class="spinner" style="width: 50px; height: 50px; border: 3px solid rgba(0,113,227,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
                     <p style="color: var(--text-secondary);">Загрузка истории...</p>
@@ -870,8 +902,8 @@
             <!-- Пагинация -->
             <div class="pagination" id="pagination"></div>
 
-            <!-- Результаты генерации (появляются при клике) -->
-            <div id="cardResults" class="results-section glass" style="display: none;">
+            <!-- Результаты генерации -->
+            <div id="cardResults" class="results-section" style="display: none;">
                 <div class="results-header">
                     <h2 id="selectedSessionTitle">Результаты сессии</h2>
                     <button class="close-results" onclick="closeResults()">✕</button>
@@ -1134,32 +1166,31 @@
         };
 
         // Просмотр сессии
-window.viewSession = async function(sessionId) {
-    const session = allSessions.find(s => s.id === sessionId);
-    if (!session) return;
-    
-    document.getElementById('selectedSessionTitle').textContent = session.productName || 'Результаты сессии';
-    
-    const gallery = document.getElementById('resultImages');
-    gallery.innerHTML = (session.images || []).map((url, index) => `
-        <div class="result-image" onclick="openLightbox('${url}')">
-            <img src="${url}" alt="Фото ${index + 1}">
-            <div class="result-overlay">
-                <span class="result-label">Фото ${index + 1}</span>
-            </div>
-        </div>
-    `).join('');
-    
-    document.getElementById('cardResults').style.display = 'block';
-    
-    // Плавный скролл к результатам
-    setTimeout(() => {
-        document.getElementById('cardResults').scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
-        });
-    }, 100);
-};
+        window.viewSession = async function(sessionId) {
+            const session = allSessions.find(s => s.id === sessionId);
+            if (!session) return;
+            
+            document.getElementById('selectedSessionTitle').textContent = session.productName || 'Результаты сессии';
+            
+            const gallery = document.getElementById('resultImages');
+            gallery.innerHTML = (session.images || []).map((url, index) => `
+                <div class="result-image" onclick="openLightbox('${url}')">
+                    <img src="${url}" alt="Фото ${index + 1}" loading="lazy">
+                    <div class="result-overlay">
+                        <span class="result-label">Фото ${index + 1}</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('cardResults').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('cardResults').scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+        };
 
         // Удаление сессии
         window.deleteSession = async function(sessionId) {
@@ -1193,7 +1224,9 @@ window.viewSession = async function(sessionId) {
         window.openLightbox = function(url) {
             const lightbox = document.createElement('div');
             lightbox.className = 'lightbox show';
-            lightbox.onclick = () => lightbox.remove();
+            lightbox.onclick = (e) => {
+                if (e.target === lightbox) lightbox.remove();
+            };
             
             const img = document.createElement('img');
             img.src = url;
