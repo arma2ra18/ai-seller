@@ -1173,3 +1173,137 @@ window.onclick = function(event) {
     const generationModal = document.getElementById('generationModal');
     if (event.target === generationModal) hideGenerationModal();
 };
+// ========== ИСТОРИЯ ЗАЧИСЛЕНИЙ ==========
+
+// Загрузка истории зачислений
+async function loadPaymentsHistory() {
+    if (!currentUser) return;
+    
+    try {
+        const paymentsRef = collection(db, 'users', currentUser.uid, 'payments');
+        const paymentsQuery = query(paymentsRef, orderBy('createdAt', 'desc'), limit(20));
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+        
+        const tbody = document.getElementById('paymentsHistoryBody');
+        if (!tbody) return;
+        
+        if (paymentsSnapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">История зачислений пуста</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        paymentsSnapshot.forEach(doc => {
+            const payment = doc.data();
+            const date = payment.createdAt?.toDate 
+                ? payment.createdAt.toDate().toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : new Date(payment.createdAt).toLocaleString('ru-RU');
+            
+            const status = payment.status || 'completed';
+            const statusText = status === 'completed' ? '✅ Зачислено' : '⏳ В обработке';
+            const statusColor = status === 'completed' ? 'var(--success)' : 'var(--accent-gold)';
+            
+            tbody.innerHTML += `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 12px;">${date}</td>
+                    <td style="padding: 12px; font-weight: 600; color: var(--accent);">+${payment.amount || 0} ₽</td>
+                    <td style="padding: 12px;">${payment.method || 'ЮKassa'}</td>
+                    <td style="padding: 12px; color: ${statusColor};">${statusText}</td>
+                </tr>
+            `;
+        });
+        
+    } catch (error) {
+        console.error('Ошибка загрузки истории платежей:', error);
+        const tbody = document.getElementById('paymentsHistoryBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 30px; color: var(--text-muted);">Ошибка загрузки истории</td></tr>';
+        }
+    }
+}
+
+// Обновленная функция confirmPayment (с сохранением в историю)
+window.confirmPayment = async function() {
+    if (selectedRubles <= 0) {
+        showNotification('Введите сумму пополнения', 'warning');
+        return;
+    }
+
+    try {
+        const newBalance = (userData.balance || 0) + selectedRubles;
+        
+        // Обновляем баланс
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            balance: newBalance,
+        });
+        
+        // Сохраняем запись о пополнении
+        await addDoc(collection(db, 'users', currentUser.uid, 'payments'), {
+            amount: selectedRubles,
+            method: 'ЮKassa',
+            status: 'completed',
+            createdAt: new Date().toISOString()
+        });
+        
+        userData.balance = newBalance;
+        updateUI();
+        
+        // Обновляем отображение текущего баланса
+        const balanceDisplay = document.getElementById('currentBalanceDisplay');
+        if (balanceDisplay) {
+            balanceDisplay.textContent = newBalance + ' ₽';
+        }
+        
+        // Перезагружаем историю зачислений
+        await loadPaymentsHistory();
+        
+        showNotification(`Баланс пополнен на ${selectedRubles} ₽!`, 'success');
+        closeModal();
+        
+    } catch (error) {
+        console.error('Ошибка при пополнении:', error);
+        showNotification('Ошибка при пополнении', 'error');
+    }
+};
+
+// Обновляем функцию updateUI для отображения баланса на странице
+function updateUI() {
+    if (!userData) return;
+    
+    const currentBalance = userData.balance || 0;
+
+    const balanceSelectors = [
+        '#remainingGenerations',
+        '#remainingGenerationsDetail',
+        '#sidebarBalance',
+        '#currentBalanceDisplay'
+    ];
+    
+    balanceSelectors.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+            if (el) {
+                if (selector === '#currentBalanceDisplay') {
+                    el.textContent = currentBalance + ' ₽';
+                } else {
+                    el.textContent = currentBalance;
+                }
+            }
+        });
+    });
+
+    const userEmailEl = document.getElementById('userEmail');
+    if (userEmailEl) {
+        userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
+    }
+}
+
+// Вызываем загрузку истории при переходе на страницу баланса
+document.addEventListener('DOMContentLoaded', function() {
+    const path = window.location.pathname;
+    if (path.includes('dashboard.html') || path === '/') {
+        // Если мы на странице баланса, загружаем историю зачислений
+        setTimeout(() => {
+            loadPaymentsHistory();
+        }, 1000);
+    }
+});
