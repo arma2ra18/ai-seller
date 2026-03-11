@@ -570,10 +570,13 @@ window.generateDescription = async function() {
         }
 
         const result = await response.json();
-        
-        if (!result.success || !result.description) {
-            throw new Error('Неверный формат ответа от сервера');
-        }
+
+// Логируем ответ для отладки
+console.log('✅ Ответ от сервера:', result);
+
+if (!result.success || !result.description) {
+    throw new Error('Неверный формат ответа от сервера');
+}
         
         // Сохраняем результат
         generatedDescription = result.description;
