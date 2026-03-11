@@ -436,35 +436,30 @@
             }
         }
 
-        // Загрузка описаний из Firebase
-        async function loadDescriptions() {
-            try {
-                const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
-                const q = query(descriptionsRef, orderBy('createdAt', 'desc'));
-                const snapshot = await getDocs(q);
-                
-                allDescriptions = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+       // Загрузка описаний из Firebase
+async function loadDescriptions() {
+    try {
+        const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
+        const q = query(descriptionsRef, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        
+        console.log('📊 Найдено описаний:', snapshot.size); // Добавьте для отладки
+        
+        allDescriptions = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
 
-                // Обновляем статистику
-                updateStats();
-                
-                // Применяем фильтры
-                applyFilters();
+        // Обновляем статистику
+        updateStats();
+        
+        // Применяем фильтры
+        applyFilters();
 
-            } catch (error) {
-                console.error('Ошибка загрузки описаний:', error);
-                document.getElementById('descriptionsList').innerHTML = `
-                    <div class="empty-state">
-                        <div class="icon">📝</div>
-                        <h3>Ошибка загрузки</h3>
-                        <p>Не удалось загрузить историю описаний</p>
-                    </div>
-                `;
-            }
-        }
+    } catch (error) {
+        console.error('Ошибка загрузки описаний:', error);
+    }
+}
 
         // Обновление статистики
         function updateStats() {
