@@ -130,53 +130,135 @@
             margin-top: 5px;
         }
         
-        .competitor-links {
-            background: rgba(255,255,255,0.02);
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 25px;
-        }
-        
-        .competitor-links h4 {
-            margin-bottom: 15px;
-            color: var(--accent);
-            font-size: 16px;
-        }
-        
-        .competitor-input {
-            margin-bottom: 15px;
-            position: relative;
-        }
-        
-        .competitor-input input {
-            padding-left: 45px;
-        }
-        
-        .competitor-input .input-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-        
-        .competitor-note {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-top: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .competitor-note .badge {
-            background: rgba(0,113,227,0.2);
-            color: var(--accent);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
+        /* Улучшенный дизайн для ссылок конкурентов */
+.competitor-links {
+    background: linear-gradient(145deg, rgba(30, 30, 35, 0.8), rgba(25, 25, 30, 0.9));
+    border-radius: 24px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255,255,255,0.03);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.competitor-links h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent);
+    font-size: 18px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.competitor-links h4::before {
+    content: '🔗';
+    font-size: 20px;
+}
+
+.competitor-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.competitor-input {
+    position: relative;
+    transition: var(--transition);
+}
+
+.competitor-input:hover {
+    transform: translateX(5px);
+}
+
+.competitor-input .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: rgba(0,113,227,0.1);
+    border: 1px solid rgba(0,113,227,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.competitor-input:hover .input-icon {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.competitor-input input {
+    width: 100%;
+    padding: 16px 16px 16px 50px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    color: white;
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.competitor-input input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
+    background: rgba(0,113,227,0.05);
+}
+
+.competitor-input input::placeholder {
+    color: rgba(255,255,255,0.2);
+    font-style: italic;
+}
+
+.competitor-note {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: rgba(0,113,227,0.05);
+    border-radius: 16px;
+    margin-top: 15px;
+    border: 1px dashed rgba(0,113,227,0.3);
+}
+
+.competitor-note .badge {
+    background: var(--accent);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0,113,227,0.3);
+}
+
+.competitor-note span:last-child {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .competitor-links {
+        padding: 20px;
+    }
+    
+    .competitor-note {
+        flex-direction: column;
+        text-align: center;
+    }
+}
         
         .keywords-tip {
             display: flex;
