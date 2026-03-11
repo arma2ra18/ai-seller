@@ -5,6 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Генерация карточек — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
+
+<style>
+    /* Фикс для огромных фото */
+    .image-gallery {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .image-gallery img {
+        width: 100% !important;
+        height: 200px !important;
+        object-fit: cover !important;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
+        max-width: none !important;
+    }
+    
+    .image-gallery img:hover {
+        transform: scale(1.05);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    /* Для одиночного фото */
+    .image-gallery:has(img:only-child) {
+        display: flex !important;
+        justify-content: center !important;
+    }
+    
+    .image-gallery img:only-child {
+        width: 300px !important;
+        height: 300px !important;
+        margin: 0 auto;
+    }
+    
+    /* Стили для кнопки регенерации */
+    #regenerateBtn {
+        background: linear-gradient(135deg, #f5b041, #f39c12);
+        color: #000;
+        font-weight: 700;
+        border: none;
+        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+        margin-top: 20px;
+    }
+    
+    #regenerateBtn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(243, 156, 18, 0.5);
+    }
+    
+    .regeneration-info {
+        background: rgba(0, 113, 227, 0.05);
+        border: 1px solid var(--accent);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        animation: fadeIn 0.5s ease;
+    }
+</style>
     
     <!-- Подключаем шрифты для шаблонов -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
@@ -383,79 +445,41 @@
             }
         };
 
-        // Загрузка истории
-        async function loadHistory() {
-            if (!currentUser) return;
-            try {
-                const historyList = document.getElementById('historyList');
-                if (!historyList) return;
-                
-                // Пробуем загрузить из generationSessions (новая структура)
-                let sessionsSnapshot;
-                try {
-                    const sessionsQuery = query(
-                        collection(db, 'users', currentUser.uid, 'generationSessions'), 
-                        orderBy('createdAt', 'desc'), 
-                        limit(10)
-                    );
-                    sessionsSnapshot = await getDocs(sessionsQuery);
-                } catch (e) {
-                    console.log('Коллекция generationSessions не найдена, используем старую историю');
-                    // Fallback на старую коллекцию
-                    const oldQuery = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
-                    const oldSnapshot = await getDocs(oldQuery);
-                    
-                    if (oldSnapshot.empty) {
-                        historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
-                        return;
-                    }
-                    
-                    // Группируем по названию товара
-                    const groupedByProduct = {};
-                    oldSnapshot.forEach(doc => {
-                        const item = doc.data();
-                        const key = item.productName || 'Без названия';
-                        if (!groupedByProduct[key]) {
-                            groupedByProduct[key] = {
-                                id: doc.id,
-                                productName: item.productName,
-                                attempts: 1,
-                                images: item.result?.images || [],
-                                timestamp: item.timestamp,
-                                oldFormat: true
-                            };
-                        } else {
-                            groupedByProduct[key].attempts++;
-                            if (item.result?.images) {
-                                groupedByProduct[key].images.push(...item.result.images);
-                            }
-                        }
-                    });
-                    
-                    displayHistory(Object.values(groupedByProduct));
-                    return;
-                }
-                
-                if (sessionsSnapshot.empty) {
-                    historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
-                    return;
-                }
-                
-                const sessions = [];
-                sessionsSnapshot.forEach(doc => {
-                    sessions.push({ id: doc.id, ...doc.data() });
-                });
-                
-                displayHistory(sessions);
-                
-            } catch (error) {
-                console.error('Ошибка загрузки истории:', error);
-                const historyList = document.getElementById('historyList');
-                if (historyList) {
-                    historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
-                }
-            }
+       // Загрузка истории (только новая структура)
+async function loadHistory() {
+    if (!currentUser) return;
+    try {
+        const historyList = document.getElementById('historyList');
+        if (!historyList) return;
+        
+        const sessionsQuery = query(
+            collection(db, 'users', currentUser.uid, 'generationSessions'), 
+            orderBy('createdAt', 'desc'), 
+            limit(10)
+        );
+        
+        const sessionsSnapshot = await getDocs(sessionsQuery);
+        
+        if (sessionsSnapshot.empty) {
+            historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+            return;
         }
+        
+        const sessions = [];
+        sessionsSnapshot.forEach(doc => {
+            sessions.push({ id: doc.id, ...doc.data() });
+        });
+        
+        displayHistory(sessions);
+        
+    } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+        const historyList = document.getElementById('historyList');
+        if (historyList) {
+            historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
+        }
+    }
+}
 
         // Отображение истории
         function displayHistory(sessions) {
@@ -850,39 +874,45 @@
             }
         }
 
-        // Отображение результатов
-        function displayCardResults(result) {
-            const container = document.getElementById('cardResults');
-            if (!container) return;
-            container.style.display = 'block';
+      // Отображение результатов
+function displayCardResults(result) {
+    const container = document.getElementById('cardResults');
+    if (!container) return;
+    container.style.display = 'block';
 
-            let gallery = document.getElementById('resultImages');
-            if (!gallery) {
-                gallery = document.createElement('div');
-                gallery.id = 'resultImages';
-                gallery.className = 'image-gallery';
-                container.appendChild(gallery);
-            } else {
-                gallery.innerHTML = '';
-            }
+    let gallery = document.getElementById('resultImages');
+    if (!gallery) {
+        gallery = document.createElement('div');
+        gallery.id = 'resultImages';
+        gallery.className = 'image-gallery';
+        container.appendChild(gallery);
+    } else {
+        gallery.innerHTML = '';
+    }
 
-            if (result.images && result.images.length) {
-                result.images.forEach(url => {
-                    const img = document.createElement('img');
-                    img.src = url;
-                    img.alt = `Фото товара`;
-                    img.onclick = () => openLightbox(url);
-                    gallery.appendChild(img);
-                });
-                
-                // Применяем шаблон к результатам
-                if (activeTemplate) {
-                    setTimeout(() => {
-                        applyTemplateToResults(activeTemplate);
-                    }, 100);
-                }
-            }
+    if (result.images && result.images.length) {
+        result.images.forEach(url => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = `Фото товара`;
+            img.onclick = () => openLightbox(url);
+            img.loading = 'lazy'; // Ленивая загрузка
+            gallery.appendChild(img);
+        });
+        
+        // Применяем шаблон к результатам
+        if (activeTemplate) {
+            setTimeout(() => {
+                applyTemplateToResults(activeTemplate);
+            }, 100);
         }
+    }
+    
+    // Прокрутка к результатам
+    setTimeout(() => {
+        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 200);
+}
 
         // Обновление UI повторных генераций
         function updateRegenerationUI() {
