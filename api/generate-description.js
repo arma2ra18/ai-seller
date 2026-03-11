@@ -1,5 +1,4 @@
 import admin from 'firebase-admin';
-import { GoogleGenAI } from '@google/genai';
 
 // Инициализация Firebase Admin SDK
 if (!admin.apps.length) {
@@ -21,7 +20,6 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 export const config = {
   api: {
@@ -88,6 +86,76 @@ async function saveDescription(userId, data) {
   }
 }
 
+/**
+ * Генерация текста через прямой вызов Gemini API
+ */
+async function generateWithGemini(prompt) {
+  const API_KEY = process.env.GOOGLE_API_KEY;
+  
+  if (!API_KEY) {
+    throw new Error('GOOGLE_API_KEY is not set');
+  }
+
+  // Пробуем разные модели
+  const models = [
+    'gemini-2.0-flash-exp',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-pro'
+  ];
+
+  let lastError;
+
+  for (const model of models) {
+    try {
+      console.log(`Trying model: ${model}`);
+      
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${API_KEY}`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+            topP: 0.95,
+            topK: 40
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.log(`Model ${model} failed with status ${response.status}:`, errorData);
+        lastError = new Error(`Model ${model} failed: ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+        const text = data.candidates[0].content.parts[0].text;
+        console.log(`✅ Success with model: ${model}`);
+        return text;
+      } else {
+        console.log(`Model ${model} returned no text`);
+        lastError = new Error(`Model ${model} returned no text`);
+      }
+    } catch (error) {
+      console.log(`Error with model ${model}:`, error.message);
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('All models failed');
+}
+
 export default async function handler(req, res) {
   // Только POST запросы
   if (req.method !== 'POST') {
@@ -102,6 +170,8 @@ export default async function handler(req, res) {
       platform = 'wb',
       userId 
     } = req.body;
+
+    console.log('Received request:', { productName, competitorLinks, keywords, platform, userId });
 
     // Валидация
     if (!productName) {
@@ -121,80 +191,24 @@ export default async function handler(req, res) {
     console.log(`Generating description for: ${productName}`);
 
     // ===== ПРОМПТ ДЛЯ GEMINI =====
-    const systemPrompt = `Ты — профессиональный маркетолог и копирайтер для Wildberries и Ozon. Твоя задача — создавать продающие, структурированные описания товаров, которые соответствуют требованиям маркетплейсов и привлекают покупателей.
+    const prompt = `Ты — профессиональный маркетолог и копирайтер для Wildberries и Ozon. Твоя задача — создавать продающие, структурированные описания товаров.
 
 ## Инструкция
 1. Создай привлекательный заголовок.
-2. В основной части описания подчеркни уникальные характеристики товара.
-3. Если даны ссылки на конкурентов, проанализируй их.
-4. Используй ключевые слова из запроса.
-5. Структурируй описание.
-6. Заверши сильным призывом к действию.
-7. Формат: обычный текст с абзацами.
+2. Подчеркни уникальные характеристики товара.
+3. ${competitorLinks.length > 0 ? 'Проанализируй ссылки конкурентов и сделай описание лучше.' : ''}
+4. Используй ключевые слова: ${keywords || 'не указаны'}.
+5. Структурируй описание (преимущества, характеристики, комплектация, почему стоит купить).
+6. Заверши призывом к действию.
+7. Платформа: ${platform === 'wb' ? 'Wildberries' : 'Ozon'}
 
-Платформа: ${platform === 'wb' ? 'Wildberries' : 'Ozon'}`;
-
-    const userPrompt = `
 Название товара: ${productName}
-${keywords ? `Ключевые слова: ${keywords}` : ''}
-${competitorLinks.length > 0 ? `Ссылки для анализа:\n${competitorLinks.map((link, i) => `${i+1}. ${link}`).join('\n')}` : ''}
+${competitorLinks.length > 0 ? `Ссылки для анализа:\n${competitorLinks.join('\n')}` : ''}
 
 Создай уникальное, продающее описание товара.`;
 
-    // ===== ИСПРАВЛЕНО: правильные названия моделей для @google/genai =====
-    // Варианты:
-    // 1. 'gemini-2.0-flash-exp' - экспериментальная, быстрая
-    // 2. 'gemini-1.5-flash' - стабильная, быстрая
-    // 3. 'gemini-1.5-pro' - для сложных задач
-    // 4. 'gemini-pro' - если ничего не работает
-    
-    let generatedText;
-    try {
-      // Пробуем разные модели по порядку
-      const models = [
-        'gemini-2.0-flash-exp',
-        'gemini-1.5-flash',
-        'gemini-1.5-pro',
-        'gemini-pro'
-      ];
-      
-      let lastError;
-      for (const model of models) {
-        try {
-          console.log(`Trying model: ${model}`);
-          const response = await ai.models.generateContent({
-            model: model, // Без 'models/' префикса!
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: systemPrompt + "\n\n" + userPrompt }]
-              }
-            ],
-            config: {
-              temperature: 0.7,
-              maxOutputTokens: 2048,
-            }
-          });
-          
-          if (response.text) {
-            generatedText = response.text;
-            console.log(`✅ Success with model: ${model}`);
-            break;
-          }
-        } catch (modelError) {
-          console.log(`❌ Model ${model} failed:`, modelError.message);
-          lastError = modelError;
-        }
-      }
-      
-      if (!generatedText) {
-        throw new Error('All models failed: ' + (lastError?.message || 'Unknown error'));
-      }
-
-    } catch (genError) {
-      console.error('Generation error:', genError);
-      throw new Error('Failed to generate description: ' + genError.message);
-    }
+    // Генерируем текст
+    const generatedText = await generateWithGemini(prompt);
 
     if (!generatedText) {
       throw new Error('Generated text is empty');
