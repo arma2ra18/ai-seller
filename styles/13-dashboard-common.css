@@ -22,7 +22,7 @@
     backdrop-filter: blur(25px) saturate(200%);
 }
 
-/* ИСПРАВЛЕНО: Логотип в сайдбаре */
+/* ИСПРАВЛЕНО: Логотип в сайдбаре с анимацией */
 .sidebar-logo-container {
     display: flex;
     align-items: center;
@@ -39,23 +39,40 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    animation: pulse 3s infinite;
 }
 
 .sidebar-logo-icon svg {
     width: 100%;
     height: 100%;
     display: block;
+    filter: drop-shadow(0 0 10px rgba(0,113,227,0.3));
 }
 
 .sidebar-logo-text {
     font-size: 22px;
     font-weight: 700;
-    background: linear-gradient(135deg, #0071e3, #9b5ef0, #f5b041);
+    background: linear-gradient(135deg, #0071e3, #9b5ef0, #f5b041, #0071e3);
+    background-size: 300% 300%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     line-height: 1.2;
     white-space: nowrap;
+    animation: gradientFlow 8s ease infinite;
+}
+
+/* Анимация для градиента */
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes pulse {
+    0% { filter: drop-shadow(0 0 5px rgba(0,113,227,0.3)); }
+    50% { filter: drop-shadow(0 0 15px rgba(0,113,227,0.6)); }
+    100% { filter: drop-shadow(0 0 5px rgba(0,113,227,0.3)); }
 }
 
 .sidebar-nav ul {
