@@ -33,6 +33,12 @@
     box-sizing: border-box;
 }
 
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg-primary);
@@ -87,7 +93,7 @@ body {
 }
 .floating-icon {
     position: absolute;
-    font-size: 3rem;
+    font-size: clamp(2rem, 8vw, 3rem);
     opacity: 0.1;
     filter: drop-shadow(0 0 20px var(--accent));
     animation: float 15s infinite ease-in-out;
@@ -95,12 +101,12 @@ body {
 }
 @keyframes float {
     0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-40px) rotate(10deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
 }
 
 /* ===== АНИМАЦИИ ===== */
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(30px); }
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeIn {
@@ -112,11 +118,11 @@ body {
     to { opacity: 1; transform: scale(1); }
 }
 @keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-30px); }
+    from { opacity: 0; transform: translateX(-20px); }
     to { opacity: 1; transform: translateX(0); }
 }
 @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(30px); }
+    from { opacity: 0; transform: translateX(20px); }
     to { opacity: 1; transform: translateX(0); }
 }
 @keyframes spin {
@@ -130,6 +136,11 @@ body {
 @keyframes rotate3d {
     0% { transform: rotateX(0) rotateY(0); }
     100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+@keyframes gradientFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 /* ===== СТЕКЛЯННЫЙ ЭФФЕКТ ===== */
@@ -277,6 +288,32 @@ body {
     color: white;
 }
 
+/* ===== ЛОГОТИП ===== */
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    animation: pulse 3s infinite;
+}
+.logo-icon svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 10px rgba(0,113,227,0.3));
+}
+.gradient-logo {
+    font-size: 26px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0071e3, #9b5ef0, #f5b041, #0071e3);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientFlow 8s ease infinite;
+}
+
 /* ===== ГЛАВНАЯ ===== */
 .hero {
     min-height: 80vh;
@@ -402,6 +439,7 @@ body {
     opacity: 0;
     max-height: 0;
     transition: all 0.3s;
+    overflow: hidden;
 }
 .feature-card:hover .feature-preview {
     opacity: 1;
@@ -813,10 +851,13 @@ input:checked + .slider:before {
     justify-content: space-between;
     align-items: center;
     padding-top: 30px;
+    flex-wrap: wrap;
+    gap: 15px;
 }
 .footer-legal {
     display: flex;
     gap: 20px;
+    flex-wrap: wrap;
 }
 .footer-legal a {
     color: var(--text-muted);
@@ -829,6 +870,14 @@ input:checked + .slider:before {
 .footer-copyright {
     color: var(--text-muted);
     font-size: 14px;
+}
+.payment-info {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
 }
 
 /* ===== СТРАНИЦА ВХОДА ===== */
@@ -1281,7 +1330,7 @@ input:checked + .slider:before {
     flex-direction: column;
     gap: 12px;
 }
-/* ===== ЕДИНЫЙ СТИЛЬ ДЛЯ ИСТОРИИ (ФИКС) ===== */
+/* ===== ЕДИНЫЙ СТИЛЬ ДЛЯ ИСТОРИИ ===== */
 .history-item {
     display: flex;
     justify-content: space-between;
@@ -1293,7 +1342,7 @@ input:checked + .slider:before {
     transition: var(--transition);
     position: relative;
     overflow: hidden;
-    border: 1px solid transparent; /* Добавим для ровности, но уберем лишние обводки */
+    border: 1px solid transparent;
 }
 .history-item::before {
     content: '';
@@ -1309,7 +1358,7 @@ input:checked + .slider:before {
 .history-item:hover {
     background: rgba(255,255,255,0.08);
     transform: translateX(5px);
-    border-color: var(--accent); /* Подсветка границей при наведении, если нужно */
+    border-color: var(--accent);
 }
 .history-item:hover::before {
     opacity: 1;
@@ -2467,80 +2516,6 @@ input:checked + .slider:before {
     transform: scale(1.05);
     box-shadow: var(--shadow-lg);
 }
-/* Стили для сгруппированной истории */
-.history-item {
-    cursor: pointer;
-    transition: var(--transition);
-    border-radius: 16px;
-    margin-bottom: 15px;
-    background: rgba(255,255,255,0.03);
-    padding: 15px;
-}
-
-.history-item:hover {
-    background: rgba(255,255,255,0.08);
-    transform: translateX(5px);
-}
-
-.history-item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.history-cost {
-    font-weight: 700;
-    color: var(--accent-gold);
-    background: rgba(245, 176, 65, 0.1);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-}
-
-.history-thumbnails {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.history-thumb {
-    width: 60px;
-    height: 60px;
-    object-fit: cover;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: transform 0.2s;
-    border: 2px solid transparent;
-}
-
-.history-thumb:hover {
-    transform: scale(1.1);
-    border-color: var(--accent);
-    z-index: 10;
-}
-
-.more-badge {
-    background: rgba(255,255,255,0.1);
-    padding: 4px 8px;
-    border-radius: 20px;
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-
-/* Адаптивность для истории */
-@media (max-width: 768px) {
-    .history-thumbnails {
-        justify-content: center;
-    }
-    
-    .history-thumb {
-        width: 50px;
-        height: 50px;
-    }
-}
 /* ===== УЛУЧШЕННАЯ КАРУСЕЛЬ С ЦЕНТРИРОВАНИЕМ ===== */
 .examples {
     padding: 60px 0;
@@ -2571,7 +2546,6 @@ input:checked + .slider:before {
     justify-content: center;
     align-items: center;
     padding: 20px 0;
-    /* Убираем свечение с контейнера */
     background: transparent;
     box-shadow: none;
 }
@@ -2583,7 +2557,6 @@ input:checked + .slider:before {
     height: auto;
     object-fit: contain;
     border-radius: 24px;
-    /* Только свечение вокруг самого фото */
     box-shadow: 0 0 30px rgba(0, 113, 227, 0.4);
     transition: box-shadow 0.4s ease, transform 0.4s ease;
     margin: 0 auto;
@@ -2595,14 +2568,6 @@ input:checked + .slider:before {
     transform: scale(1.02);
 }
 
-/* Убираем любые свечения с родительских элементов */
-.carousel-slide::before,
-.carousel-slide::after {
-    display: none;
-    box-shadow: none;
-}
-
-/* Кнопки навигации */
 .carousel-btn {
     position: absolute;
     top: 50%;
@@ -2639,7 +2604,6 @@ input:checked + .slider:before {
     right: 0;
 }
 
-/* Точки навигации */
 .carousel-dots {
     display: flex;
     justify-content: center;
@@ -2688,6 +2652,7 @@ input:checked + .slider:before {
         max-height: 280px;
     }
 }
+
 .sidebar-nav a {
     color: inherit;
     text-decoration: none;
