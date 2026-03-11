@@ -10,6 +10,7 @@ const urlsToCache = [
   '/description.html',
   '/history.html',
   '/description-history.html',
+  '/templates.html',
   '/settings.html',
   '/login.html',
   '/offline.html',
@@ -37,38 +38,40 @@ const urlsToCache = [
   '/styles/20-admin.css',
   '/styles/21-utilities.css',
   '/styles/22-legacy.css',
+  '/styles/23-templates.css',
   '/js/firebase.js',
   '/js/auth.js',
   '/js/dashboard.js',
   '/js/main.js',
+  '/js/cache.js',
+  '/js/templates.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
-  'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js'
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap'
 ];
 
 // Установка Service Worker
 self.addEventListener('install', event => {
-  console.log('Service Worker установлен');
-  
-  // Принудительная активация
+  console.log('Service Worker устанавливается');
   self.skipWaiting();
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Кэширование ресурсов');
-        return cache.addAll(urlsToCache);
-      })
-      .catch(error => {
-        console.error('Ошибка кэширования:', error);
+        return cache.addAll(urlsToCache).catch(error => {
+          console.error('Ошибка кэширования ресурсов:', error);
+          // Продолжаем, даже если некоторые ресурсы не закешировались
+        });
       })
   );
 });
 
 // Активация и очистка старых кэшей
 self.addEventListener('activate', event => {
-  console.log('Service Worker активирован');
+  console.log('Service Worker активируется');
   
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -81,70 +84,84 @@ self.addEventListener('activate', event => {
         })
       );
     }).then(() => {
-      // Немедленно получаем контроль над страницами
       return self.clients.claim();
     })
   );
 });
 
-// Стратегия кэширования: Stale-While-Revalidate для страниц
-// Network First для API, Cache First для статики
+// Стратегия кэширования
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  // Для API запросов - сеть или офлайн-заглушка
+  // Игнорируем chrome-extension запросы
+  if (url.protocol === 'chrome-extension:') {
+    return;
+  }
+  
+  // Для POST запросов - только сеть, без кэширования
+  if (event.request.method === 'POST') {
+    event.respondWith(fetch(event.request).catch(error => {
+      console.error('Ошибка POST запроса:', error);
+      return new Response('Ошибка сети', { status: 503 });
+    }));
+    return;
+  }
+  
+  // Для API запросов - Network First
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Кэшируем успешные ответы API
-          const responseClone = response.clone();
-          caches.open(API_CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+          // Кэшируем только успешные GET запросы
+          if (event.request.method === 'GET' && response.ok) {
+            const responseClone = response.clone();
+            caches.open(API_CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone).catch(err => {
+                console.log('Не удалось закэшировать API ответ');
+              });
+            });
+          }
           return response;
         })
         .catch(() => {
-          // Если сеть недоступна, пытаемся вернуть из кэша
           return caches.match(event.request).then(cachedResponse => {
             if (cachedResponse) {
               return cachedResponse;
             }
-            // Если нет в кэше, показываем офлайн-страницу для навигационных запросов
             if (event.request.mode === 'navigate') {
               return caches.match('/offline.html');
             }
-            return new Response('Нет соединения', {
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: new Headers({
-                'Content-Type': 'text/plain'
-              })
-            });
+            return new Response('Нет соединения', { status: 503 });
           });
         })
     );
     return;
   }
   
-  // Для статических ресурсов (CSS, JS, изображения) - Cache First
+  // Для статических ресурсов - Cache First
   if (url.pathname.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot)$/)) {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         if (cachedResponse) {
           // Обновляем кэш в фоне
           fetch(event.request).then(response => {
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, response);
-            });
-          });
+            if (response.ok) {
+              caches.open(CACHE_NAME).then(cache => {
+                cache.put(event.request, response).catch(err => {});
+              });
+            }
+          }).catch(() => {});
           return cachedResponse;
         }
         return fetch(event.request).then(response => {
-          return caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, response.clone());
-            return response;
-          });
+          if (response.ok) {
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, response.clone()).catch(err => {});
+            });
+          }
+          return response;
+        }).catch(() => {
+          return new Response('Ресурс не найден', { status: 404 });
         });
       })
     );
@@ -157,33 +174,30 @@ self.addEventListener('fetch', event => {
       caches.match(event.request).then(cachedResponse => {
         const fetchPromise = fetch(event.request)
           .then(networkResponse => {
-            // Обновляем кэш
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, networkResponse.clone());
-            });
+            if (networkResponse.ok) {
+              caches.open(CACHE_NAME).then(cache => {
+                cache.put(event.request, networkResponse.clone()).catch(err => {});
+              });
+            }
             return networkResponse;
           })
           .catch(() => {
-            // Если сеть недоступна и нет в кэше, показываем офлайн-страницу
             return caches.match('/offline.html');
           });
         
-        // Возвращаем кэшированную версию сразу, или ждем сеть
         return cachedResponse || fetchPromise;
       })
     );
     return;
   }
   
-  // Для всего остального - Network First с fallback на кэш
+  // Для всего остального - Network First
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Кэшируем успешные ответы
-        if (response.ok) {
-          const responseClone = response.clone();
+        if (event.request.method === 'GET' && response.ok) {
           caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
+            cache.put(event.request, response.clone()).catch(err => {});
           });
         }
         return response;
@@ -191,33 +205,5 @@ self.addEventListener('fetch', event => {
       .catch(() => {
         return caches.match(event.request);
       })
-  );
-});
-
-// Обработка пуш-уведомлений (для будущих обновлений)
-self.addEventListener('push', event => {
-  const data = event.data.json();
-  
-  const options = {
-    body: data.body,
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
-    vibrate: [200, 100, 200],
-    data: {
-      url: data.url || '/'
-    }
-  };
-  
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
-
-// Обработка клика по уведомлению
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  
-  event.waitUntil(
-    clients.openWindow(event.notification.data.url)
   );
 });

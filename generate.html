@@ -257,15 +257,16 @@
         <img class="lightbox-content" id="lightbox-img" alt="">
     </div>
 
-    <script type="module" src="js/dashboard.js"></script>
     <script type="module">
         import { auth, db } from './js/firebase.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-        import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { doc, getDoc, collection, addDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
         import { TEMPLATES, applyTemplateToResults } from './js/templates.js';
 
         let currentUser = null;
+        let userData = null;
         let activeTemplate = null;
+        let currentDescription = '';
 
         // Проверка авторизации
         onAuthStateChanged(auth, async (user) => {
@@ -283,12 +284,14 @@
             try {
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
+                    userData = userDoc.data();
+                    const balance = parseInt(userData.balance) || 0;
+                    document.getElementById('sidebarBalance').textContent = balance;
                     document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
                 }
             } catch (error) {
                 console.error('Ошибка загрузки данных:', error);
+                showNotification('❌ Ошибка загрузки данных', 'error');
             }
         }
 
@@ -296,7 +299,7 @@
         function loadActiveTemplate() {
             try {
                 const saved = localStorage.getItem('activeTemplate');
-                const savedForUser = localStorage.getItem(`template_${currentUser.uid}`);
+                const savedForUser = localStorage.getItem(`template_${currentUser?.uid}`);
                 
                 if (saved) {
                     activeTemplate = JSON.parse(saved);
@@ -324,26 +327,317 @@
             }
         }
 
-        // Функции для навигации
-        function navigateTo(section) {
-            const paths = {
-                'news': '/news.html',
-                'balance': '/balance.html',
-                'generate': '/generate.html',
-                'description': '/description.html',
-                'templates': '/templates.html',
-                'description-history': '/description-history.html',
-                'history': '/history.html',
-                'settings': '/settings.html'
-            };
-            if (paths[section]) {
-                window.location.href = paths[section];
+        // Выбор платформы
+        window.selectPlatform = function(platform) {
+            selectedPlatform = platform;
+            document.getElementById('platformWB').classList.toggle('active', platform === 'wb');
+            document.getElementById('platformOzon').classList.toggle('active', platform === 'ozon');
+        };
+
+        // Счётчик символов
+        window.updateCharCount = function() {
+            const input = document.getElementById('productName');
+            const count = input.value.length;
+            document.getElementById('charCount').textContent = count;
+        };
+
+        // Показать модальное окно
+        function showGenerationModal() {
+            const modal = document.getElementById('generationModal');
+            modal.classList.add('show');
+            document.getElementById('generationProgress').style.width = '0%';
+            document.getElementById('generationTimer').textContent = '0 сек.';
+            window.generationStartTime = Date.now();
+            if (window.generationInterval) clearInterval(window.generationInterval);
+            window.generationInterval = setInterval(updateGenerationTimer, 1000);
+        }
+
+        function hideGenerationModal() {
+            document.getElementById('generationModal').classList.remove('show');
+            if (window.generationInterval) {
+                clearInterval(window.generationInterval);
+                window.generationInterval = null;
             }
         }
 
-        window.logout = async function() {
-            await auth.signOut();
-            window.location.href = '/login.html';
+        function updateGenerationTimer() {
+            const elapsed = Math.floor((Date.now() - window.generationStartTime) / 1000);
+            document.getElementById('generationTimer').textContent = `${elapsed} сек.`;
+            const progress = document.getElementById('generationProgress');
+            const percent = Math.min(100, (elapsed / 30) * 100);
+            progress.style.width = percent + '%';
+        }
+
+        // Уведомления
+        function showNotification(message, type = 'info') {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Генерация карточки
+        window.generateWBCard = async function() {
+            if (!currentUser || !userData) return;
+
+            const fileInput = document.getElementById('wbPhotos');
+            if (!fileInput) {
+                showNotification('Ошибка: элемент загрузки не найден.', 'error');
+                return;
+            }
+            
+            const productName = document.getElementById('wbProductName')?.value.trim();
+            const brand = document.getElementById('wbBrand')?.value.trim();
+            const category = document.getElementById('wbCategory')?.value;
+            const price = document.getElementById('wbPrice')?.value.trim() || '1990';
+            const featuresInput = document.getElementById('wbFeatures')?.value;
+            const features = featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : [];
+            const files = fileInput.files;
+            
+            if (!productName) {
+                showNotification('Введите название товара', 'error');
+                return;
+            }
+            if (files.length === 0) {
+                showNotification('Выберите хотя бы одно фото', 'error');
+                return;
+            }
+
+            // Проверяем баланс
+            const currentBalance = userData.balance || 0;
+            if (currentBalance < 100) {
+                showNotification('Недостаточно средств. Требуется 100 ₽', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('generateWBBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading"></span> Генерация...';
+            }
+
+            showGenerationModal();
+
+            try {
+                const formData = new FormData();
+                for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
+                formData.append('productName', productName);
+                formData.append('brand', brand);
+                formData.append('category', category);
+                formData.append('price', price);
+                formData.append('features', JSON.stringify(features));
+                formData.append('platform', 'wb');
+                formData.append('attempt', 0);
+                
+                // Добавляем шаблон, если он есть
+                if (activeTemplate) {
+                    formData.append('template', JSON.stringify(activeTemplate));
+                    console.log('🎨 Отправляем шаблон:', activeTemplate.name);
+                }
+
+                const response = await fetch('/api/generate-card', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText);
+                }
+                
+                const result = await response.json();
+                
+                // Отображаем результат
+                displayCardResults(result, 'wb');
+
+                await addDoc(collection(db, 'users', currentUser.uid, 'generations'), {
+                    type: 'wb-card',
+                    productName,
+                    result,
+                    template: activeTemplate?.name,
+                    timestamp: new Date().toISOString()
+                });
+
+                // Списываем деньги
+                await updateDoc(doc(db, 'users', currentUser.uid), { 
+                    balance: increment(-100),
+                    usedSpent: increment(100)
+                });
+                
+                const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (updatedDoc.exists()) {
+                    userData = updatedDoc.data();
+                }
+                updateUI();
+                loadHistory();
+                showNotification('Карточка для WB создана!', 'success');
+            } catch (error) {
+                console.error('Ошибка генерации:', error);
+                
+                // Парсим ошибку
+                let errorMessage = 'Неизвестная ошибка';
+                try {
+                    if (error.message) {
+                        const parsed = JSON.parse(error.message);
+                        errorMessage = parsed.error || parsed.message || error.message;
+                    } else {
+                        errorMessage = error.message || 'Ошибка соединения';
+                    }
+                } catch {
+                    errorMessage = error.message || 'Ошибка соединения';
+                }
+                
+                // Показываем понятное сообщение
+                if (errorMessage.includes('API key')) {
+                    showNotification('❌ Ошибка API ключа', 'error');
+                } else if (errorMessage.includes('model')) {
+                    showNotification('❌ Ошибка модели Gemini', 'error');
+                } else if (errorMessage.includes('balance')) {
+                    showNotification('❌ Недостаточно средств', 'error');
+                } else if (errorMessage.includes('500')) {
+                    showNotification('❌ Ошибка сервера. Попробуйте позже.', 'error');
+                } else {
+                    showNotification('❌ ' + errorMessage.substring(0, 100), 'error');
+                }
+            } finally {
+                hideGenerationModal();
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '✨ Создать первое фото (100 ₽)';
+                }
+            }
+        };
+
+        // Отображение результатов
+        function displayCardResults(result, platform) {
+            const container = document.getElementById('cardResults');
+            if (!container) return;
+            container.style.display = 'block';
+
+            const gallery = document.getElementById('resultImages');
+            if (gallery) {
+                gallery.innerHTML = '';
+                if (result.images && result.images.length) {
+                    result.images.forEach(url => {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Generated';
+                        img.onclick = () => window.openLightbox(url);
+                        gallery.appendChild(img);
+                    });
+                    
+                    // Применяем шаблон к результатам
+                    if (activeTemplate) {
+                        setTimeout(() => {
+                            applyTemplateToResults(activeTemplate);
+                        }, 100);
+                    }
+                } else {
+                    gallery.innerHTML = '<p class="text-muted">Изображения не сгенерированы</p>';
+                }
+            }
+        }
+
+        // Обновление UI
+        function updateUI() {
+            if (!userData) return;
+            
+            const currentBalance = userData.balance || 0;
+            const balanceSelectors = [
+                '#remainingGenerations',
+                '#remainingGenerationsDetail',
+                '#sidebarBalance'
+            ];
+            
+            balanceSelectors.forEach(selector => {
+                document.querySelectorAll(selector).forEach(el => {
+                    if (el) el.textContent = currentBalance;
+                });
+            });
+
+            const userEmailEl = document.getElementById('userEmail');
+            if (userEmailEl) {
+                userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
+            }
+        }
+
+        // Загрузка истории
+        async function loadHistory() {
+            if (!currentUser) return;
+            try {
+                const q = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(10));
+                const snapshot = await getDocs(q);
+                const historyList = document.getElementById('historyList');
+                if (!historyList) return;
+                if (snapshot.empty) {
+                    historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
+                    return;
+                }
+                historyList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const date = new Date(item.timestamp).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    const typeLabel = item.type === 'wb-card' ? 'WB' : item.type === 'ozon-card' ? 'Ozon' : 'Фото';
+                    historyList.innerHTML += `
+                        <div class="history-item">
+                            <div>
+                                <strong>${item.productName || 'Без названия'}</strong>
+                                <span class="history-type">${typeLabel}</span>
+                                <div class="history-date">${date}</div>
+                            </div>
+                            <button class="btn btn-small btn-outline" onclick="viewHistoryItem('${doc.id}')">👁️</button>
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+            }
+        }
+
+        // Просмотр истории
+        window.viewHistoryItem = async function(docId) {
+            if (!currentUser) return;
+            try {
+                const docSnap = await getDoc(doc(db, 'users', currentUser.uid, 'generations', docId));
+                if (docSnap.exists()) {
+                    const item = docSnap.data();
+                    if (item.result && item.result.images) {
+                        displayCardResults(item.result, item.type || 'wb-card');
+                        document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        showNotification('Не удалось загрузить результат', 'error');
+                    }
+                } else {
+                    showNotification('Запись не найдена', 'error');
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки истории:', error);
+                showNotification('Ошибка загрузки', 'error');
+            }
+        };
+
+        // Функции для лайтбокса
+        window.openLightbox = function(imageUrl) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            if (!lightbox || !lightboxImg) return;
+            lightboxImg.src = imageUrl;
+            lightbox.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeLightbox = function() {
+            const lightbox = document.getElementById('lightbox');
+            if (!lightbox) return;
+            lightbox.classList.remove('show');
+            document.body.style.overflow = '';
         };
 
         // Функции для модального окна пополнения
@@ -371,21 +665,26 @@
             closeModal();
         };
 
-        // Функции для генерации
-        window.updateFileInfo = function(inputId, infoId) {
-            const input = document.getElementById(inputId);
-            const info = document.getElementById(infoId);
-            if (input.files.length === 0) {
-                info.textContent = 'Файлы не выбраны';
-            } else {
-                const names = Array.from(input.files).map(f => f.name).join(', ');
-                info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
+        // Функции для навигации
+        window.navigateTo = function(section) {
+            const paths = {
+                'news': '/news.html',
+                'balance': '/balance.html',
+                'generate': '/generate.html',
+                'description': '/description.html',
+                'templates': '/templates.html',
+                'description-history': '/description-history.html',
+                'history': '/history.html',
+                'settings': '/settings.html'
+            };
+            if (paths[section]) {
+                window.location.href = paths[section];
             }
         };
 
-        window.closeLightbox = function() {
-            document.getElementById('lightbox').classList.remove('show');
-            document.body.style.overflow = '';
+        window.logout = async function() {
+            await auth.signOut();
+            window.location.href = '/login.html';
         };
 
         // Обработчики меню

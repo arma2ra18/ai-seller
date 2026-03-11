@@ -38,30 +38,54 @@ const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 async function generateGeminiImage(prompt, referenceImage) {
     try {
         const base64Image = referenceImage.toString('base64');
-        const contents = [
-            {
-                inlineData: {
-                    mimeType: 'image/jpeg',
-                    data: base64Image
-                }
+        
+        // Используем правильную модель для генерации изображений
+        const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-exp-image-generation:generateContent?key=' + process.env.GOOGLE_API_KEY, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             },
-            prompt
-        ];
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: contents,
-            config: {
-                responseModalities: ['Image'],
-                aspectRatio: '1:1',
-            }
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        {
+                            text: prompt
+                        },
+                        {
+                            inlineData: {
+                                mimeType: 'image/jpeg',
+                                data: base64Image
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.9,
+                    topK: 40,
+                    topP: 0.95,
+                    maxOutputTokens: 4096,
+                }
+            })
         });
 
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        if (!response.ok) {
+            const error = await response.text();
+            console.error('Gemini API error:', error);
+            throw new Error(`Gemini API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Извлекаем изображение из ответа
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            const parts = data.candidates[0].content.parts;
+            for (const part of parts) {
+                if (part.inlineData) {
+                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                }
             }
         }
+        
         throw new Error('Ответ не содержит изображения');
     } catch (error) {
         console.error('Gemini generation error:', error);
