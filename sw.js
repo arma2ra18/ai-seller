@@ -112,14 +112,18 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Кэшируем только успешные GET запросы
-          if (event.request.method === 'GET' && response.ok) {
-            const responseClone = response.clone();
-            caches.open(API_CACHE_NAME).then(cache => {
-              cache.put(event.request, responseClone).catch(err => {
-                console.log('Не удалось закэшировать API ответ');
+          // Кэшируем только успешные GET запросы и только если тело ответа еще не использовано
+          if (event.request.method === 'GET' && response.ok && response.body) {
+            try {
+              const responseClone = response.clone();
+              caches.open(API_CACHE_NAME).then(cache => {
+                cache.put(event.request, responseClone).catch(err => {
+                  console.log('Не удалось закэшировать API ответ');
+                });
               });
-            });
+            } catch (e) {
+              console.log('Ошибка клонирования ответа:', e);
+            }
           }
           return response;
         })
@@ -143,20 +147,24 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         if (cachedResponse) {
-          // Обновляем кэш в фоне
+          // Обновляем кэш в фоне (только если тело ответа еще не использовано)
           fetch(event.request).then(response => {
-            if (response.ok) {
+            if (response.ok && response.body) {
               caches.open(CACHE_NAME).then(cache => {
-                cache.put(event.request, response).catch(err => {});
+                try {
+                  cache.put(event.request, response.clone()).catch(err => {});
+                } catch (e) {}
               });
             }
           }).catch(() => {});
           return cachedResponse;
         }
         return fetch(event.request).then(response => {
-          if (response.ok) {
+          if (response.ok && response.body) {
             caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, response.clone()).catch(err => {});
+              try {
+                cache.put(event.request, response.clone()).catch(err => {});
+              } catch (e) {}
             });
           }
           return response;
@@ -174,9 +182,11 @@ self.addEventListener('fetch', event => {
       caches.match(event.request).then(cachedResponse => {
         const fetchPromise = fetch(event.request)
           .then(networkResponse => {
-            if (networkResponse.ok) {
+            if (networkResponse.ok && networkResponse.body) {
               caches.open(CACHE_NAME).then(cache => {
-                cache.put(event.request, networkResponse.clone()).catch(err => {});
+                try {
+                  cache.put(event.request, networkResponse.clone()).catch(err => {});
+                } catch (e) {}
               });
             }
             return networkResponse;
@@ -195,9 +205,11 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        if (event.request.method === 'GET' && response.ok) {
+        if (event.request.method === 'GET' && response.ok && response.body) {
           caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, response.clone()).catch(err => {});
+            try {
+              cache.put(event.request, response.clone()).catch(err => {});
+            } catch (e) {}
           });
         }
         return response;
