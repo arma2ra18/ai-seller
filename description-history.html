@@ -1,12 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-// В начало скрипта, после импортов:
-console.log('🔥 Страница истории описаний загружена');
-console.log('Текущий пользователь:', currentUser?.uid);
-
-// В функции loadDescriptions() добавьте:
-console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>История описаний — Prodiger</title>
@@ -450,6 +444,7 @@ async function loadDescriptions() {
         const snapshot = await getDocs(q);
         
         console.log('📊 Найдено описаний:', snapshot.size); // Добавьте для отладки
+console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`);
         
         allDescriptions = snapshot.docs.map(doc => ({
             id: doc.id,
