@@ -5,152 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Генерация карточек — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
-<style>
-    /* Галерея изображений - все фото рядом */
-    .image-gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 20px;
-        margin: 20px 0;
-    }
-    
-    .image-gallery img {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        border: 2px solid transparent;
-    }
-    
-    .image-gallery img:hover {
-        transform: scale(1.05);
-        box-shadow: 0 10px 25px rgba(0,113,227,0.4);
-        border-color: var(--accent);
-    }
-    
-    /* Для случая, когда фото всего одно */
-    .image-gallery:has(img:only-child) {
-        display: flex !important;
-        justify-content: center;
-    }
-    
-    .image-gallery img:only-child {
-        width: 300px;
-        height: 300px;
-    }
-    
-    /* Кнопка повторной генерации */
-    #regenerateBtn {
-        background: linear-gradient(135deg, #f5b041, #f39c12);
-        color: #000;
-        font-weight: 700;
-        border: none;
-        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
-        margin-top: 20px;
-        padding: 12px 30px;
-        border-radius: 40px;
-        font-size: 16px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: inline-block;
-    }
-    
-    #regenerateBtn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(243, 156, 18, 0.5);
-    }
-    
-    /* Информация о сессии */
-    .regeneration-info {
-        background: rgba(0, 113, 227, 0.08);
-        border: 1px solid var(--accent);
-        border-radius: 60px;
-        padding: 15px 25px;
-        margin-bottom: 25px;
-        animation: fadeIn 0.5s ease;
-        backdrop-filter: blur(10px);
-    }
-    
-    /* Результаты */
-    .results-section {
-        margin-top: 30px;
-        padding: 30px;
-        border-radius: 24px;
-    }
-    
-    .results-section h2 {
-        margin-bottom: 20px;
-        font-size: 28px;
-        background: linear-gradient(135deg, #fff, var(--accent));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-</style>
-
-<style>
-    /* Фикс для огромных фото */
-    .image-gallery {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 15px;
-        margin: 20px 0;
-    }
-    
-    .image-gallery img {
-        width: 100% !important;
-        height: 200px !important;
-        object-fit: cover !important;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: var(--transition);
-        box-shadow: var(--shadow-sm);
-        max-width: none !important;
-    }
-    
-    .image-gallery img:hover {
-        transform: scale(1.05);
-        box-shadow: var(--shadow-lg);
-    }
-    
-    /* Для одиночного фото */
-    .image-gallery:has(img:only-child) {
-        display: flex !important;
-        justify-content: center !important;
-    }
-    
-    .image-gallery img:only-child {
-        width: 300px !important;
-        height: 300px !important;
-        margin: 0 auto;
-    }
-    
-    /* Стили для кнопки регенерации */
-    #regenerateBtn {
-        background: linear-gradient(135deg, #f5b041, #f39c12);
-        color: #000;
-        font-weight: 700;
-        border: none;
-        box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
-        margin-top: 20px;
-    }
-    
-    #regenerateBtn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(243, 156, 18, 0.5);
-    }
-    
-    .regeneration-info {
-        background: rgba(0, 113, 227, 0.05);
-        border: 1px solid var(--accent);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 20px;
-        animation: fadeIn 0.5s ease;
-    }
-</style>
     
     <!-- Подключаем шрифты для шаблонов -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
@@ -179,9 +33,189 @@
             });
         }
     </script>
+    
+    <style>
+        /* Галерея изображений - все фото рядом */
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .image-gallery img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border: 2px solid transparent;
+        }
+        
+        .image-gallery img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(0,113,227,0.4);
+            border-color: var(--accent);
+        }
+        
+        /* Для случая, когда фото всего одно */
+        .image-gallery:has(img:only-child) {
+            display: flex !important;
+            justify-content: center;
+        }
+        
+        .image-gallery img:only-child {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Кнопка повторной генерации */
+        #regenerateBtn {
+            background: linear-gradient(135deg, #f5b041, #f39c12);
+            color: #000;
+            font-weight: 700;
+            border: none;
+            box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+            margin-top: 20px;
+            padding: 12px 30px;
+            border-radius: 40px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+        
+        #regenerateBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(243, 156, 18, 0.5);
+        }
+        
+        /* Информация о сессии */
+        .regeneration-info {
+            background: rgba(0, 113, 227, 0.08);
+            border: 1px solid var(--accent);
+            border-radius: 60px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            animation: fadeIn 0.5s ease;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Результаты */
+        .results-section {
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 24px;
+        }
+        
+        .results-section h2 {
+            margin-bottom: 20px;
+            font-size: 28px;
+            background: linear-gradient(135deg, #fff, var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Индикатор шаблона */
+        .template-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: rgba(0,113,227,0.1);
+            border: 1px solid var(--accent);
+            border-radius: 60px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            animation: slideInRight 0.5s ease;
+            margin-bottom: 20px;
+        }
+        
+        .template-indicator a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .template-indicator a:hover {
+            text-decoration: underline;
+            transform: translateX(3px);
+        }
+        
+        /* Блок "Как это работает" */
+        .info-block {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-left: 4px solid var(--accent);
+            border-radius: 16px;
+        }
+        
+        .info-block h3 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stats-mini {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-mini-item {
+            background: rgba(255,255,255,0.03);
+            padding: 15px;
+            border-radius: 12px;
+        }
+        
+        .stat-mini-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-mini-value.accent {
+            color: var(--accent);
+        }
+        
+        .stat-mini-value.gold {
+            color: #f5b041;
+        }
+        
+        .stat-mini-value.success {
+            color: var(--success);
+        }
+        
+        .stat-mini-label {
+            color: var(--text-secondary);
+        }
+        
+        .stat-mini-desc {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        
+        .info-note {
+            margin-top: 15px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+    </style>
 </head>
 <body>
- 
+    <!-- Видеофон -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
 
     <div class="floating-elements">
         <div class="floating-icon" style="top: 10%; left: 5%;">📊</div>
@@ -256,34 +290,34 @@
             </div>
 
             <!-- Индикатор активного шаблона -->
-            <div id="templateIndicator" class="template-indicator" style="display: none; margin-bottom: 20px; padding: 15px; background: rgba(0,113,227,0.1); border: 1px solid var(--accent); border-radius: 60px;">
+            <div id="templateIndicator" class="template-indicator" style="display: none;">
                 <span id="templateIndicatorText"></span>
-                <a href="/templates.html" style="color: var(--accent); margin-left: 10px;">Изменить →</a>
+                <a href="/templates.html">Изменить →</a>
             </div>
 
             <!-- Блок описания процесса -->
-            <div class="info-block glass" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid var(--accent);">
-                <h3 style="color: var(--accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+            <div class="info-block glass">
+                <h3>
                     <span>🎯</span> Как это работает
                 </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                        <div style="font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 5px;">100 ₽</div>
-                        <div style="color: var(--text-secondary);">Первая генерация</div>
-                        <small style="color: var(--text-muted);">1 фото</small>
+                <div class="stats-mini">
+                    <div class="stat-mini-item">
+                        <div class="stat-mini-value accent">100 ₽</div>
+                        <div class="stat-mini-label">Первая генерация</div>
+                        <div class="stat-mini-desc">1 фото</div>
                     </div>
-                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                        <div style="font-size: 24px; font-weight: 700; color: #f5b041; margin-bottom: 5px;">15 ₽</div>
-                        <div style="color: var(--text-secondary);">Повторные генерации</div>
-                        <small style="color: var(--text-muted);">до 4 раз, новые варианты</small>
+                    <div class="stat-mini-item">
+                        <div class="stat-mini-value gold">15 ₽</div>
+                        <div class="stat-mini-label">Повторные генерации</div>
+                        <div class="stat-mini-desc">до 4 раз, новые варианты</div>
                     </div>
-                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                        <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 5px;">5 фото</div>
-                        <div style="color: var(--text-secondary);">Максимум за сессию</div>
-                        <small style="color: var(--text-muted);">100 + 15×4 = 160 ₽</small>
+                    <div class="stat-mini-item">
+                        <div class="stat-mini-value success">5 фото</div>
+                        <div class="stat-mini-label">Максимум за сессию</div>
+                        <div class="stat-mini-desc">100 + 15×4 = 160 ₽</div>
                     </div>
                 </div>
-                <p style="margin-top: 15px; color: var(--text-secondary); font-size: 14px;">
+                <p class="info-note">
                     ✨ После первой генерации вы сможете нажимать "Сделать ещё" и получать новые варианты фото на основе того же товара.
                 </p>
             </div>
@@ -335,14 +369,15 @@
             </div>
 
             <!-- Результаты генерации -->
-            <div id="cardResults" class="results-section glass" style="display: none; margin-top: 30px;">
+            <div id="cardResults" class="results-section glass" style="display: none;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
                     <h3>Изображения</h3>
                     <div class="image-gallery" id="resultImages"></div>
                 </div>
             </div>
-
+        </main>
+    </div>
 
     <!-- Модальное окно пополнения -->
     <div id="paymentModal" class="modal">
@@ -429,26 +464,25 @@
             generatedImages: []        // Массив URL всех фото в этой сессии
         };
 
-     onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-        window.location.href = '/login.html';
-        return;
-    }
-    currentUser = user;
-    
-    try {
-        await loadUserData();
-        loadActiveTemplate();
-        // 👇 УДАЛИТЬ ЭТУ СТРОКУ
-        // await loadHistory();
-    } catch (error) {
-        console.error('Ошибка при загрузке, повтор через 1с:', error);
-        setTimeout(async () => {
-            await loadUserData();
-            loadActiveTemplate();
-        }, 1000);
-    }
-});
+        // Проверка авторизации
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
+            }
+            currentUser = user;
+            
+            try {
+                await loadUserData();
+                loadActiveTemplate();
+            } catch (error) {
+                console.error('Ошибка при загрузке, повтор через 1с:', error);
+                setTimeout(async () => {
+                    await loadUserData();
+                    loadActiveTemplate();
+                }, 1000);
+            }
+        });
 
         // Загрузка данных пользователя с кэшированием
         async function loadUserData(forceRefresh = false) {
@@ -509,141 +543,6 @@
             } else {
                 const names = Array.from(input.files).map(f => f.name).join(', ');
                 info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
-            }
-        };
-
-       // Загрузка истории (только новая структура)
-async function loadHistory() {
-    if (!currentUser) return;
-    try {
-        const historyList = document.getElementById('historyList');
-        if (!historyList) return;
-        
-        const sessionsQuery = query(
-            collection(db, 'users', currentUser.uid, 'generationSessions'), 
-            orderBy('createdAt', 'desc'), 
-            limit(10)
-        );
-        
-        const sessionsSnapshot = await getDocs(sessionsQuery);
-        
-        if (sessionsSnapshot.empty) {
-            historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
-            return;
-        }
-        
-        const sessions = [];
-        sessionsSnapshot.forEach(doc => {
-            sessions.push({ id: doc.id, ...doc.data() });
-        });
-        
-        displayHistory(sessions);
-        
-    } catch (error) {
-        console.error('Ошибка загрузки истории:', error);
-        const historyList = document.getElementById('historyList');
-        if (historyList) {
-            historyList.innerHTML = '<p class="text-muted">Ошибка загрузки истории</p>';
-        }
-    }
-}
-
-        // Отображение истории
-        function displayHistory(sessions) {
-            const historyList = document.getElementById('historyList');
-            if (!historyList) return;
-
-            if (sessions.length === 0) {
-                historyList.innerHTML = '<p class="text-muted">История пуста. Сгенерируйте первую карточку!</p>';
-                return;
-            }
-
-            historyList.innerHTML = '';
-            
-            sessions.forEach(session => {
-                const date = new Date(session.createdAt || session.timestamp).toLocaleString('ru-RU', { 
-                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
-                });
-                
-                const images = session.images || [];
-                const previewImages = images.slice(0, 3).map((url, idx) => 
-                    `<img src="${url}" class="history-thumb" onclick="event.stopPropagation(); viewHistorySession('${session.id}')" title="Фото ${idx + 1}">`
-                ).join('');
-                
-                const moreBadge = images.length > 3 ? `<span class="more-badge">+${images.length - 3}</span>` : '';
-
-                historyList.innerHTML += `
-                    <div class="history-item" onclick="viewHistorySession('${session.id}')">
-                        <div class="history-item-header">
-                            <div>
-                                <strong>${session.productName || 'Без названия'}</strong>
-                                <span class="history-type">${session.attempts || 1} фото</span>
-                                <div class="history-date">${date}</div>
-                            </div>
-                            <div class="history-actions">
-                                <span class="history-cost">${session.totalSpent || session.attempts * 100} ₽</span>
-                                <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); deleteHistorySession('${session.id}')" title="Удалить">🗑️</button>
-                            </div>
-                        </div>
-                        <div class="history-thumbnails">
-                            ${previewImages}
-                            ${moreBadge}
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // Удаление сессии из истории
-        window.deleteHistorySession = async function(sessionId) {
-            if (!currentUser) return;
-            
-            if (!confirm('Вы уверены, что хотите удалить эту сессию генерации? Это действие необратимо.')) {
-                return;
-            }
-            
-            try {
-                await deleteDoc(doc(db, 'users', currentUser.uid, 'generationSessions', sessionId));
-                showNotification('✅ Сессия удалена', 'success');
-                await loadHistory();
-            } catch (error) {
-                console.error('Ошибка удаления сессии:', error);
-                showNotification('❌ Ошибка при удалении', 'error');
-            }
-        };
-
-        // Просмотр сессии из истории
-        window.viewHistorySession = async function(sessionId) {
-            if (!currentUser) return;
-            try {
-                const sessionDoc = await getDoc(doc(db, 'users', currentUser.uid, 'generationSessions', sessionId));
-                if (sessionDoc.exists()) {
-                    const session = sessionDoc.data();
-                    
-                    currentGenerationSession = {
-                        sessionId: sessionId,
-                        productName: session.productName,
-                        brand: session.brand,
-                        category: session.category,
-                        price: session.price,
-                        features: session.features || [],
-                        originalImageId: session.imageIds?.[0] || null,
-                        attemptsMade: session.attempts,
-                        maxAttempts: 5,
-                        generatedImages: session.images || []
-                    };
-                    
-                    displayCardResults({ images: session.images || [] });
-                    updateRegenerationUI();
-                    
-                    const regenBtn = document.getElementById('regenerateBtn');
-                    if (regenBtn) regenBtn.style.display = 'inline-block';
-                    
-                    document.getElementById('cardResults').scrollIntoView({ behavior: 'smooth' });
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки сессии:', error);
-                showNotification('❌ Ошибка загрузки', 'error');
             }
         };
 
@@ -894,7 +793,6 @@ async function loadHistory() {
                 }
                 
                 displayCardResults(result);
-                await loadHistory();
                 
                 const message = attempt === 0 
                     ? '✅ Первое фото готово! Можете сгенерировать ещё за 15 ₽' 
@@ -941,109 +839,103 @@ async function loadHistory() {
             }
         }
 
-  // Отображение результатов (ВСЕ ФОТО РЯДОМ)
-function displayCardResults(result) {
-    const container = document.getElementById('cardResults');
-    if (!container) return;
-    container.style.display = 'block';
+        // Отображение результатов (ВСЕ ФОТО РЯДОМ)
+        function displayCardResults(result) {
+            const container = document.getElementById('cardResults');
+            if (!container) return;
+            container.style.display = 'block';
 
-    let gallery = document.getElementById('resultImages');
-    if (!gallery) {
-        gallery = document.createElement('div');
-        gallery.id = 'resultImages';
-        gallery.className = 'image-gallery';
-        container.appendChild(gallery);
-    }
-
-    // Если пришли новые фото - добавляем их в конец
-    if (result.images && result.images.length) {
-        result.images.forEach(url => {
-            // Проверяем, нет ли уже такого фото
-            const existing = Array.from(gallery.children).some(img => img.src === url);
-            if (!existing) {
-                const img = document.createElement('img');
-                img.src = url;
-                img.alt = `Фото товара ${gallery.children.length + 1}`;
-                img.onclick = () => openLightbox(url);
-                img.loading = 'lazy';
-                gallery.appendChild(img);
+            let gallery = document.getElementById('resultImages');
+            if (!gallery) {
+                gallery = document.createElement('div');
+                gallery.id = 'resultImages';
+                gallery.className = 'image-gallery';
+                container.appendChild(gallery);
             }
-        });
-        
-        // Применяем шаблон
-        if (activeTemplate) {
+
+            // Если пришли новые фото - добавляем их в конец
+            if (result.images && result.images.length) {
+                result.images.forEach(url => {
+                    // Проверяем, нет ли уже такого фото
+                    const existing = Array.from(gallery.children).some(img => img.src === url);
+                    if (!existing) {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = `Фото товара ${gallery.children.length + 1}`;
+                        img.onclick = () => openLightbox(url);
+                        img.loading = 'lazy';
+                        gallery.appendChild(img);
+                    }
+                });
+                
+                // Применяем шаблон
+                if (activeTemplate) {
+                    setTimeout(() => {
+                        applyTemplateToResults(activeTemplate);
+                    }, 100);
+                }
+            }
+            
+            // Плавный скролл к результатам
             setTimeout(() => {
-                applyTemplateToResults(activeTemplate);
-            }, 100);
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 200);
         }
-    }
-    
-    // Плавный скролл к результатам
-    setTimeout(() => {
-        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 200);
-}
-    
-    // Прокрутка к результатам
-    setTimeout(() => {
-        container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 200);
-}
 
-       // Обновление UI повторных генераций
-function updateRegenerationUI() {
-    const container = document.getElementById('cardResults');
-    if (!container) return;
+        // Обновление UI повторных генераций
+        function updateRegenerationUI() {
+            const container = document.getElementById('cardResults');
+            if (!container) return;
 
-    let infoBlock = document.getElementById('regenerationInfo');
-    if (!infoBlock) {
-        infoBlock = document.createElement('div');
-        infoBlock.id = 'regenerationInfo';
-        infoBlock.className = 'regeneration-info';
-        container.insertBefore(infoBlock, container.firstChild);
-    }
+            let infoBlock = document.getElementById('regenerationInfo');
+            if (!infoBlock) {
+                infoBlock = document.createElement('div');
+                infoBlock.id = 'regenerationInfo';
+                infoBlock.className = 'regeneration-info';
+                container.insertBefore(infoBlock, container.firstChild);
+            }
 
-    const remaining = currentGenerationSession.maxAttempts - currentGenerationSession.attemptsMade;
-    const nextCost = 15;
+            const remaining = currentGenerationSession.maxAttempts - currentGenerationSession.attemptsMade;
+            const nextCost = 15;
 
-    infoBlock.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 20px;">📸</span>
-                <div>
-                    <strong style="font-size: 18px;">${currentGenerationSession.productName}</strong>
-                    <span style="color: var(--text-secondary); margin-left: 10px;">
-                        ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
-                    </span>
+            infoBlock.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 20px;">📸</span>
+                        <div>
+                            <strong style="font-size: 18px;">${currentGenerationSession.productName}</strong>
+                            <span style="color: var(--text-secondary); margin-left: 10px;">
+                                ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <span style="color: #f5b041; font-weight: 600;">
+                            Следующая: ${nextCost} ₽
+                        </span>
+                        <span style="color: var(--text-secondary);">
+                            осталось ${remaining}
+                        </span>
+                    </div>
                 </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <span style="color: #f5b041; font-weight: 600;">
-                    Следующая: ${nextCost} ₽
-                </span>
-                <span style="color: var(--text-secondary);">
-                    осталось ${remaining}
-                </span>
-            </div>
-        </div>
-    `;
+            `;
 
-    let regenBtn = document.getElementById('regenerateBtn');
-    if (!regenBtn) {
-        regenBtn = document.createElement('button');
-        regenBtn.id = 'regenerateBtn';
-        regenBtn.onclick = window.regeneratePhoto;
-        container.appendChild(regenBtn);
-    }
+            let regenBtn = document.getElementById('regenerateBtn');
+            if (!regenBtn) {
+                regenBtn = document.createElement('button');
+                regenBtn.id = 'regenerateBtn';
+                regenBtn.onclick = window.regeneratePhoto;
+                container.appendChild(regenBtn);
+            }
 
-    if (remaining > 0 && currentGenerationSession.attemptsMade > 0) {
-        regenBtn.style.display = 'inline-block';
-        regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
-        regenBtn.disabled = false;
-    } else {
-        regenBtn.style.display = 'none';
-    }
-}
+            if (remaining > 0 && currentGenerationSession.attemptsMade > 0) {
+                regenBtn.style.display = 'inline-block';
+                regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
+                regenBtn.disabled = false;
+            } else {
+                regenBtn.style.display = 'none';
+            }
+        }
 
         // Лайтбокс
         window.openLightbox = function(url) {
