@@ -84,6 +84,11 @@
                             ✨ Генерация
                         </a>
                     </li>
+                    <li class="menu-item" data-section="description">
+                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📝 Описание
+                        </a>
+                    </li>
                     <li class="menu-item active" data-section="history">
                         <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
                             📜 История
@@ -174,16 +179,16 @@
     <script>
         // Навигация
         function navigateTo(section) {
-            if (section === 'news') {
-                window.location.href = '/news.html';
-            } else if (section === 'balance') {
-                window.location.href = '/balance.html';
-            } else if (section === 'wb') {
-                window.location.href = '/dashboard.html';
-            } else if (section === 'history') {
-                window.location.href = '/history.html';
-            } else if (section === 'settings') {
-                window.location.href = '/settings.html';
+            const paths = {
+                'news': '/news.html',
+                'balance': '/balance.html',
+                'generate': '/generate.html',
+                'description': '/description.html',
+                'history': '/history.html',
+                'settings': '/settings.html'
+            };
+            if (paths[section]) {
+                window.location.href = paths[section];
             }
         }
         
