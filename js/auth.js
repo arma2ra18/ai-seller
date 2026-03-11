@@ -101,8 +101,8 @@ window.verifyPhoneCode = async function() {
                 email: user.email || '',
                 displayName: user.displayName || '',
                 plan: 'start',
-                balance: 30,
-                usedGenerations: 0,
+                balance: 500,
+                usedSpent: 0,
                 createdAt: new Date().toISOString()
             });
         } else {
@@ -119,7 +119,7 @@ window.verifyPhoneCode = async function() {
         
         // Небольшая задержка перед редиректом
         setTimeout(() => {
-            window.location.href = '/news.html';
+            window.location.href = '/news.html';  // Изменено с dashboard.html на news.html
         }, 1500);
     } catch (error) {
         console.error('Verification error:', error);
@@ -155,15 +155,15 @@ window.handleGoogleLogin = async function() {
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 plan: 'start',
-                balance: 30,
-                usedGenerations: 0,
+                balance: 500,
+                usedSpent: 0,
                 createdAt: new Date().toISOString()
             });
         }
         
         messageEl.textContent = '✅ Вход выполнен! Перенаправляем...';
         messageEl.className = 'auth-message success';
-        setTimeout(() => window.location.href = '/dashboard.html', 1500);
+        setTimeout(() => window.location.href = '/news.html', 1500);  // Изменено с dashboard.html на news.html
     } catch (error) {
         console.error('Google sign-in error:', error);
         messageEl.textContent = '❌ Ошибка входа через Google: ' + error.message;
