@@ -119,7 +119,7 @@ window.verifyPhoneCode = async function() {
         
         // Небольшая задержка перед редиректом
         setTimeout(() => {
-            window.location.href = '/dashboard.html';
+            window.location.href = '/news.html';
         }, 1500);
     } catch (error) {
         console.error('Verification error:', error);
