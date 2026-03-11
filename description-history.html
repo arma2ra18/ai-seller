@@ -1,362 +1,813 @@
-<script type="module">
-    import { auth, db } from './js/firebase.js';
-    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-    import { 
-        doc, getDoc, collection, query, orderBy, getDocs, limit, startAfter 
-    } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-
-    let currentUser = null;
-    let lastVisible = null; // Для пагинации
-    let hasMore = true; // Есть ли ещё данные
-    let allDescriptions = []; // Кэш для фильтрации
-    let currentPage = 1;
-    const DESCRIPTIONS_PER_PAGE = 10;
-
-    console.log('🚀 Скрипт истории описаний загружен');
-
-    // Функция для безопасного экранирования HTML
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    // Проверка авторизации
-    onAuthStateChanged(auth, async (user) => {
-        console.log('👤 Auth state changed:', user ? user.uid : 'no user');
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Генерация описаний — Prodiger</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <style>
+        .description-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
         
-        if (!user) {
-            window.location.href = '/login.html';
-            return;
+        /* Информационный баннер */
+        .beta-banner {
+            background: linear-gradient(135deg, rgba(0,113,227,0.2), rgba(155,94,240,0.2));
+            border: 1px solid var(--accent);
+            border-radius: 60px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.6s ease;
         }
-        currentUser = user;
-        await loadUserData();
-        await loadInitialDescriptions(); // Загружаем только первые 10
-    });
-
-    // Загрузка данных пользователя
-    async function loadUserData() {
-        try {
-            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (userDoc.exists()) {
-                const userData = userDoc.data();
-                document.getElementById('sidebarBalance').textContent = userData.balance || 0;
-                document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки данных:', error);
-        }
-    }
-
-    // Загрузка первых 10 описаний
-    async function loadInitialDescriptions() {
-        try {
-            console.log('📥 Загружаем первые описания...');
-            
-            const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
-            const q = query(descriptionsRef, orderBy('createdAt', 'desc'), limit(DESCRIPTIONS_PER_PAGE));
-            const snapshot = await getDocs(q);
-            
-            console.log('📊 Загружено документов:', snapshot.size);
-            
-            if (snapshot.empty) {
-                showEmptyState();
-                return;
-            }
-            
-            // Сохраняем последний документ для следующей загрузки
-            lastVisible = snapshot.docs[snapshot.docs.length - 1];
-            hasMore = snapshot.docs.length === DESCRIPTIONS_PER_PAGE;
-            
-            // Преобразуем документы
-            allDescriptions = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-
-            // Обновляем статистику (нужно отдельно получить общее количество)
-            await loadTotalStats();
-            
-            // Отображаем
-            filteredDescriptions = [...allDescriptions];
-            displayDescriptions();
-
-        } catch (error) {
-            console.error('❌ Ошибка загрузки описаний:', error);
-            showErrorState(error.message);
-        }
-    }
-
-    // Загрузка следующих 10 описаний
-    async function loadMoreDescriptions() {
-        if (!hasMore || !lastVisible) return;
         
-        try {
-            console.log('📥 Загружаем следующие описания...');
-            
-            const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
-            const q = query(
-                descriptionsRef, 
-                orderBy('createdAt', 'desc'), 
-                startAfter(lastVisible),
-                limit(DESCRIPTIONS_PER_PAGE)
-            );
-            const snapshot = await getDocs(q);
-            
-            console.log('📊 Загружено еще документов:', snapshot.size);
-            
-            if (snapshot.empty) {
-                hasMore = false;
-                return;
+        .beta-badge {
+            background: var(--accent-gold);
+            color: #000;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .beta-text {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+        
+        .beta-text strong {
+            color: white;
+        }
+        
+        /* Основная сетка */
+        .description-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        /* Левая колонка - форма */
+        .form-card {
+            background: rgba(28, 28, 30, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 32px;
+            padding: 30px;
+            animation: fadeInUp 0.7s ease;
+        }
+        
+        .form-card h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .form-card .subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        .feature-highlight {
+            background: rgba(0,113,227,0.1);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        
+        .feature-highlight p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .feature-highlight strong {
+            color: var(--accent);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 16px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            color: white;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .char-counter {
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+        
+        /* Улучшенный дизайн для ссылок конкурентов */
+.competitor-links {
+    background: linear-gradient(145deg, rgba(30, 30, 35, 0.8), rgba(25, 25, 30, 0.9));
+    border-radius: 24px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255,255,255,0.03);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.competitor-links h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent);
+    font-size: 18px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.competitor-links h4::before {
+    content: '🔗';
+    font-size: 20px;
+}
+
+.competitor-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.competitor-input {
+    position: relative;
+    transition: var(--transition);
+}
+
+.competitor-input:hover {
+    transform: translateX(5px);
+}
+
+.competitor-input .input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    background: rgba(0,113,227,0.1);
+    border: 1px solid rgba(0,113,227,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    transition: var(--transition);
+}
+
+.competitor-input:hover .input-icon {
+    background: var(--accent);
+    color: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.competitor-input input {
+    width: 100%;
+    padding: 16px 16px 16px 50px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px;
+    color: white;
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.competitor-input input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
+    background: rgba(0,113,227,0.05);
+}
+
+.competitor-input input::placeholder {
+    color: rgba(255,255,255,0.2);
+    font-style: italic;
+}
+
+.competitor-note {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    background: rgba(0,113,227,0.05);
+    border-radius: 16px;
+    margin-top: 15px;
+    border: 1px dashed rgba(0,113,227,0.3);
+}
+
+.competitor-note .badge {
+    background: var(--accent);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0,113,227,0.3);
+}
+
+.competitor-note span:last-child {
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .competitor-links {
+        padding: 20px;
+    }
+    
+    .competitor-note {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+        
+        .keywords-tip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        
+        .btn-large {
+            padding: 18px;
+            font-size: 18px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        
+        /* Правая колонка - результат */
+        .result-card {
+            background: rgba(28, 28, 30, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 32px;
+            padding: 30px;
+            animation: fadeInUp 0.8s ease;
+            position: sticky;
+            top: 100px;
+        }
+        
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .result-header h3 {
+            font-size: 20px;
+        }
+        
+        .result-content {
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+            padding: 25px;
+            min-height: 400px;
+            white-space: pre-wrap;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            font-size: 15px;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        
+        .result-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        
+        .result-placeholder .icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .result-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .result-actions button {
+            flex: 1;
+        }
+        
+        .platform-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .platform-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 40px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+            text-align: center;
+        }
+        
+        .platform-btn:hover {
+            background: rgba(0,113,227,0.1);
+            border-color: var(--accent);
+        }
+        
+        .platform-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .description-grid {
+                grid-template-columns: 1fr;
             }
             
-            lastVisible = snapshot.docs[snapshot.docs.length - 1];
-            hasMore = snapshot.docs.length === DESCRIPTIONS_PER_PAGE;
+            .beta-banner {
+                flex-direction: column;
+                text-align: center;
+            }
             
-            const newDescriptions = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            
-            allDescriptions = [...allDescriptions, ...newDescriptions];
-            filteredDescriptions = [...allDescriptions];
-            
-            displayDescriptions();
-
-        } catch (error) {
-            console.error('❌ Ошибка загрузки следующих описаний:', error);
+            .result-card {
+                position: static;
+            }
         }
-    }
+    </style>
+</head>
+<body>
+    <!-- Видеофон -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
 
-    // Получение общего количества для статистики (быстрый подсчет)
-    async function loadTotalStats() {
-        try {
-            // Используем aggregation query (если Firebase поддерживает)
-            // Или просто считаем то, что загрузили + показываем "более X"
-            const totalCount = allDescriptions.length;
-            const totalSpent = allDescriptions.reduce((sum, desc) => sum + (desc.cost || 50), 0);
-            
-            document.getElementById('totalDescriptions').textContent = totalCount + (hasMore ? '+' : '');
-            document.getElementById('totalSpent').textContent = totalSpent + (hasMore ? '+' : '');
-            
-            const lastDate = allDescriptions.length > 0 && allDescriptions[0].createdAt
-                ? new Date(allDescriptions[0].createdAt).toLocaleDateString('ru-RU')
-                : '—';
-            document.getElementById('lastDate').textContent = lastDate;
-            
-        } catch (error) {
-            console.error('Ошибка подсчета статистики:', error);
-        }
-    }
-
-    function showEmptyState() {
-        document.getElementById('descriptionsList').innerHTML = `
-            <div class="empty-state">
-                <div class="icon">📝</div>
-                <h3>История пуста</h3>
-                <p>Сгенерируйте первое описание товара</p>
-                <a href="/description.html" class="btn btn-primary">✨ Создать описание</a>
-            </div>
-        `;
-        document.getElementById('pagination').innerHTML = '';
-    }
-
-    function showErrorState(message) {
-        document.getElementById('descriptionsList').innerHTML = `
-            <div class="empty-state">
-                <div class="icon">⚠️</div>
-                <h3>Ошибка загрузки</h3>
-                <p>${message}</p>
-            </div>
-        `;
-    }
-
-    // Отображение описаний
-    function displayDescriptions() {
-        const list = document.getElementById('descriptionsList');
-        
-        if (filteredDescriptions.length === 0) {
-            list.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">🔍</div>
-                    <h3>Ничего не найдено</h3>
-                    <p>Попробуйте изменить параметры поиска</p>
+    <div class="dashboard-wrapper">
+        <!-- Сайдбар -->
+        <aside class="sidebar glass">
+            <div class="sidebar-logo-container">
+                <div class="sidebar-logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="16" cy="16" r="14" stroke="url(#grad2)" stroke-width="2" fill="none"/>
+                        <path d="M10 16L14 20L22 12" stroke="url(#grad2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#0071e3" />
+                                <stop offset="50%" stop-color="#9b5ef0" />
+                                <stop offset="100%" stop-color="#f5b041" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
                 </div>
-            `;
-            return;
-        }
+                <div class="sidebar-logo-text gradient-logo">Prodiger</div>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="menu-item" data-section="news">
+                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📰 Новости
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="balance">
+                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            💰 Баланс
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="generate">
+                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ✨ Генерация фото
+                        </a>
+                    </li>
+                    <li class="menu-item active" data-section="description">
+                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📝 Описание товара
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="history">
+                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📜 История
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="settings">
+                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ⚙️ Настройки
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-balance">
+                    <span>Баланс: <span id="sidebarBalance">0</span> ₽</span>
+                    <button class="btn btn-small btn-primary" onclick="window.location.href='/balance.html'">Пополнить</button>
+                </div>
+                <div class="user-info">
+                    <span class="user-email" id="userEmail">Загрузка...</span>
+                </div>
+                <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
+                <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
+            </div>
+        </aside>
 
-        list.innerHTML = filteredDescriptions.map(desc => {
-            // Безопасное форматирование даты
-            let dateStr = 'Дата неизвестна';
-            if (desc.createdAt) {
-                try {
-                    const date = new Date(desc.createdAt);
-                    if (!isNaN(date.getTime())) {
-                        dateStr = date.toLocaleString('ru-RU', {
-                            day: '2-digit', month: '2-digit', year: 'numeric',
-                            hour: '2-digit', minute: '2-digit'
-                        });
-                    }
-                } catch (e) {}
-            }
-            
-            // Безопасное получение preview
-            let preview = 'Описание отсутствует';
-            if (desc.description && typeof desc.description === 'string') {
-                preview = desc.description.length > 300 
-                    ? desc.description.substring(0, 300) + '...' 
-                    : desc.description;
-            }
-            
-            const productName = desc.productName || 'Без названия';
-            const platform = desc.platform === 'ozon' ? 'ozon' : 'wb';
-            const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
-            const platformClass = platform === 'wb' ? 'wb' : 'ozon';
-            const cost = desc.cost || 50;
-            
-            return `
-                <div class="description-item" onclick="openDescription('${desc.id}')">
-                    <div class="description-header">
-                        <div class="description-title">
-                            <h3>${escapeHtml(productName)}</h3>
-                            <span class="platform-badge ${platformClass}">
-                                ${platformName}
-                            </span>
+        <!-- Основной контент -->
+        <main class="main-content">
+            <div class="welcome-block">
+                <h1 class="gradient-text">📝 Генерация описаний</h1>
+                <p>Создайте профессиональное описание товара для Wildberries или Ozon</p>
+            </div>
+
+            <div class="description-container">
+                <!-- Бета-баннер -->
+                <div class="beta-banner">
+                    <span class="beta-badge">🔥 БЕТА-ЗАПУСК</span>
+                    <span class="beta-text">Новые функции уже доступны! <strong>Генерация описаний</strong> — теперь в боковом меню</span>
+                </div>
+
+                <div class="description-grid">
+                    <!-- Левая колонка: форма -->
+                    <div class="form-card">
+                        <h2>Параметры генерации</h2>
+                        <div class="subtitle">Заполните данные для создания уникального описания</div>
+                        
+                        <div class="feature-highlight">
+                            <p>⚡ <strong>Умный текст, который продаёт</strong> — подбор стиля, ключевых слов и эмоциональных акцентов</p>
+                            <p style="margin-top: 8px; color: var(--text-muted);">CTR и конверсия растут — время на описание 30 секунд</p>
                         </div>
-                        <div class="description-meta">
-                            <span>📅 ${escapeHtml(dateStr)}</span>
-                            <span>💰 ${cost} ₽</span>
+                        
+                        <!-- Выбор платформы -->
+                        <div class="platform-selector">
+                            <div class="platform-btn active" id="platformWB" onclick="selectPlatform('wb')">Wildberries</div>
+                            <div class="platform-btn" id="platformOzon" onclick="selectPlatform('ozon')">Ozon</div>
                         </div>
+                        
+                        <!-- Название товара -->
+                        <div class="form-group">
+                            <label>Название товара <span style="color: var(--accent);">*</span></label>
+                            <input type="text" id="productName" placeholder="Например: Беспроводные наушники AirPods" maxlength="150" oninput="updateCharCount()">
+                            <div class="char-counter"><span id="charCount">0</span>/150 символов</div>
+                        </div>
+                        
+                        <!-- Ссылки на конкурентов (УЛУЧШЕННЫЙ ДИЗАЙН) -->
+<div class="competitor-links">
+    <h4>Анализ конкурентов</h4>
+    
+    <div class="competitor-grid">
+        <div class="competitor-input">
+            <span class="input-icon">1</span>
+            <input type="url" id="competitor1" placeholder="Ссылка на конкурента 1">
+        </div>
+        
+        <div class="competitor-input">
+            <span class="input-icon">2</span>
+            <input type="url" id="competitor2" placeholder="Ссылка на конкурента 2">
+        </div>
+        
+        <div class="competitor-input">
+            <span class="input-icon">3</span>
+            <input type="url" id="competitor3" placeholder="Ссылка на конкурента 3">
+        </div>
+    </div>
+    
+    <div class="competitor-note">
+        <span class="badge">AI Анализ</span>
+        <span>Нейросеть изучит описания конкурентов и выделит ключевые преимущества для вашего товара</span>
+    </div>
+</div>
+                        
+                        <!-- Ключевые слова -->
+                        <div class="form-group">
+                            <label>Ключевые слова</label>
+                            <input type="text" id="keywords" placeholder="Например: беспроводные, шумоподавление, быстрая зарядка">
+                            <div class="keywords-tip">
+                                <span>💡</span>
+                                <span>Разделите запятыми (необязательно)</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Кнопка генерации -->
+                        <button class="btn btn-primary btn-large glow" id="generateDescBtn" onclick="generateDescription()">
+                            ✨ Сгенерировать описание (50 ₽)
+                        </button>
                     </div>
                     
-                    <div class="description-preview">
-                        ${escapeHtml(preview)}
-                    </div>
-                    
-                    <div class="description-footer">
-                        <div class="description-actions">
-                            <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); copyDescription('${desc.id}')">📋 Копировать</button>
-                            <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); openDescription('${desc.id}')">🔍 Подробнее</button>
+                    <!-- Правая колонка: результат -->
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h3>Готовое описание</h3>
+                            <span class="badge" style="background: rgba(0,113,227,0.2); color: var(--accent);">WB/OZON</span>
+                        </div>
+                        
+                        <div id="resultContent" class="result-content">
+                            <div class="result-placeholder">
+                                <div class="icon">📝</div>
+                                <p>Описание появится после генерации</p>
+                                <p style="font-size: 13px; margin-top: 10px;">Нажмите кнопку "Сгенерировать"</p>
+                            </div>
+                        </div>
+                        
+                        <div class="result-actions">
+                            <button class="btn btn-outline" onclick="copyDescription()" disabled id="copyBtn">📋 Копировать</button>
+                            <button class="btn btn-outline" onclick="saveDescription()" disabled id="saveBtn">💾 Сохранить</button>
                         </div>
                     </div>
                 </div>
-            `;
-        }).join('');
+            </div>
+        </main>
+    </div>
 
-        // Добавляем кнопку "Загрузить ещё", если есть данные
-        if (hasMore) {
-            const loadMoreBtn = document.createElement('div');
-            loadMoreBtn.style.textAlign = 'center';
-            loadMoreBtn.style.marginTop = '30px';
-            loadMoreBtn.innerHTML = '<button class="btn btn-outline" onclick="loadMore()">⬇️ Загрузить ещё</button>';
-            list.appendChild(loadMoreBtn);
-        }
-    }
+    <!-- Модальное окно загрузки -->
+    <div id="generationModal" class="modal">
+        <div class="modal-content glass loading-content">
+            <h2 class="gradient-text">✨ Генерация описания</h2>
+            <div class="loading-animation">
+                <div class="spinner"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="generationProgress" style="width: 0%;"></div>
+                </div>
+            </div>
+            <p>Нейросеть создаёт продающий текст...</p>
+            <p class="timer" id="generationTimer">0 сек.</p>
+        </div>
+    </div>
 
-    // Загрузка ещё
-    window.loadMore = async function() {
-        await loadMoreDescriptions();
-    };
+    <script type="module">
+        import { auth, db } from './js/firebase.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { 
+            doc, getDoc, collection, addDoc, updateDoc, increment 
+        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
-    // Фильтрация (только по загруженным данным)
-    window.applyFilters = function() {
-        const platform = document.getElementById('platformFilter').value;
-        const search = document.getElementById('searchInput').value.toLowerCase();
+        let currentUser = null;
+        let userData = null;
+        let selectedPlatform = 'wb';
+        let currentDescription = '';
 
-        filteredDescriptions = allDescriptions.filter(desc => {
-            if (platform !== 'all' && desc.platform !== platform) return false;
-            if (search && desc.productName && !desc.productName.toLowerCase().includes(search)) return false;
-            return true;
+        // Проверка авторизации
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
+            }
+            currentUser = user;
+            await loadUserData();
         });
 
-        displayDescriptions();
-    };
-
-    // Копирование описания
-    window.copyDescription = async function(id) {
-        const desc = allDescriptions.find(d => d.id === id);
-        if (desc && desc.description) {
-            await navigator.clipboard.writeText(desc.description);
-            alert('✅ Описание скопировано в буфер обмена');
-        } else {
-            alert('❌ Описание отсутствует');
-        }
-    };
-
-    // Открытие модального окна
-    window.openDescription = function(id) {
-        const desc = allDescriptions.find(d => d.id === id);
-        if (desc) {
-            document.getElementById('modalProductName').textContent = desc.productName || 'Без названия';
-            
-            const platform = desc.platform === 'ozon' ? 'ozon' : 'wb';
-            document.getElementById('modalPlatform').textContent = platform === 'wb' ? 'Wildberries' : 'Ozon';
-            document.getElementById('modalPlatform').className = `platform-badge ${platform === 'wb' ? 'wb' : 'ozon'}`;
-            
-            let dateStr = 'Дата неизвестна';
-            if (desc.createdAt) {
-                try {
-                    const date = new Date(desc.createdAt);
-                    if (!isNaN(date.getTime())) {
-                        dateStr = date.toLocaleString('ru-RU');
-                    }
-                } catch (e) {}
+        // Загрузка данных пользователя
+        async function loadUserData() {
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    userData = userDoc.data();
+                    const balance = parseInt(userData.balance) || 0;
+                    document.getElementById('sidebarBalance').textContent = balance;
+                    document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
             }
-            document.getElementById('modalDate').textContent = dateStr;
-            
-            document.getElementById('modalPrice').textContent = desc.cost || 50;
-            document.getElementById('modalDescription').textContent = desc.description || 'Описание отсутствует';
-            
-            document.getElementById('descriptionModal').classList.add('show');
         }
-    };
 
-    window.copyModalDescription = async function() {
-        const text = document.getElementById('modalDescription').textContent;
-        await navigator.clipboard.writeText(text);
-        alert('✅ Описание скопировано');
-    };
-
-    window.closeModal = function() {
-        document.getElementById('descriptionModal').classList.remove('show');
-    };
-
-    // Навигация
-    window.navigateTo = function(section) {
-        const paths = {
-            'news': '/news.html',
-            'balance': '/balance.html',
-            'generate': '/generate.html',
-            'description': '/description.html',
-            'description-history': '/description-history.html',
-            'history': '/history.html',
-            'settings': '/settings.html'
+        // Выбор платформы
+        window.selectPlatform = function(platform) {
+            selectedPlatform = platform;
+            document.getElementById('platformWB').classList.toggle('active', platform === 'wb');
+            document.getElementById('platformOzon').classList.toggle('active', platform === 'ozon');
         };
-        if (paths[section]) {
-            window.location.href = paths[section];
+
+        // Счётчик символов
+        window.updateCharCount = function() {
+            const input = document.getElementById('productName');
+            const count = input.value.length;
+            document.getElementById('charCount').textContent = count;
+        };
+
+        // Показать модальное окно
+        function showGenerationModal() {
+            const modal = document.getElementById('generationModal');
+            modal.classList.add('show');
+            document.getElementById('generationProgress').style.width = '0%';
+            document.getElementById('generationTimer').textContent = '0 сек.';
+            window.generationStartTime = Date.now();
+            if (window.generationInterval) clearInterval(window.generationInterval);
+            window.generationInterval = setInterval(updateGenerationTimer, 1000);
         }
-    };
 
-    window.logout = async function() {
-        await auth.signOut();
-        window.location.href = '/login.html';
-    };
+        function hideGenerationModal() {
+            document.getElementById('generationModal').classList.remove('show');
+            if (window.generationInterval) {
+                clearInterval(window.generationInterval);
+                window.generationInterval = null;
+            }
+        }
 
-    // Обработчики фильтров
-    document.addEventListener('DOMContentLoaded', function() {
-        const platformFilter = document.getElementById('platformFilter');
-        const searchInput = document.getElementById('searchInput');
-        
-        if (platformFilter) platformFilter.addEventListener('change', applyFilters);
-        if (searchInput) searchInput.addEventListener('input', applyFilters);
-        
-        document.querySelectorAll('.menu-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                const section = this.dataset.section;
-                navigateTo(section);
+        function updateGenerationTimer() {
+            const elapsed = Math.floor((Date.now() - window.generationStartTime) / 1000);
+            document.getElementById('generationTimer').textContent = `${elapsed} сек.`;
+            const progress = document.getElementById('generationProgress');
+            const percent = Math.min(100, (elapsed / 30) * 100);
+            progress.style.width = percent + '%';
+        }
+
+        // Генерация описания (обновленная функция)
+window.generateDescription = async function() {
+    const productName = document.getElementById('productName').value.trim();
+    
+    if (!productName) {
+        alert('Введите название товара');
+        return;
+    }
+
+    // Проверка баланса (50 ₽)
+    const balance = parseInt(userData.balance) || 0;
+    if (balance < 50) {
+        alert('Недостаточно средств. Требуется 50 ₽');
+        return;
+    }
+
+    const btn = document.getElementById('generateDescBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading"></span> Генерация...';
+    
+    showGenerationModal();
+
+    try {
+        // Собираем данные
+        const competitors = [
+            document.getElementById('competitor1').value.trim(),
+            document.getElementById('competitor2').value.trim(),
+            document.getElementById('competitor3').value.trim()
+        ].filter(url => url);
+
+        const keywords = document.getElementById('keywords').value.trim()
+            .split(',').map(k => k.trim()).filter(k => k);
+
+        // Отправляем запрос к API
+        const response = await fetch('/api/generate-description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                productName,
+                platform: selectedPlatform,
+                competitors,
+                keywords
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+
+        const result = await response.json();
+        currentDescription = result.description;
+
+        // ========== СОХРАНЕНИЕ В FIREBASE ==========
+        try {
+            // Сохраняем в коллекцию descriptions
+            await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
+                productName: productName,
+                platform: selectedPlatform,
+                description: currentDescription,
+                keywords: keywords,
+                competitors: competitors,
+                createdAt: new Date().toISOString(),
+                cost: 50
+            });
+            console.log('✅ Описание сохранено в историю');
+        } catch (saveError) {
+            console.error('❌ Ошибка сохранения в историю:', saveError);
+            // Не прерываем выполнение, если не удалось сохранить
+        }
+
+        // ========== СПИСЫВАЕМ ДЕНЬГИ ==========
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+            balance: increment(-50),
+            usedSpent: increment(50)
+        });
+
+        // Обновляем баланс на странице
+        const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (updatedDoc.exists()) {
+            userData = updatedDoc.data();
+            document.getElementById('sidebarBalance').textContent = userData.balance || 0;
+        }
+
+        // Отображаем результат
+        const resultDiv = document.getElementById('resultContent');
+        resultDiv.innerHTML = `<div style="white-space: pre-wrap;">${currentDescription}</div>`;
+
+        // Активируем кнопки
+        document.getElementById('copyBtn').disabled = false;
+        document.getElementById('saveBtn').disabled = false;
+
+        hideGenerationModal();
+        alert('✅ Описание готово и сохранено в историю!');
+
+    } catch (error) {
+        console.error('Ошибка генерации:', error);
+        alert('Ошибка: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Сгенерировать описание (50 ₽)';
+        hideGenerationModal();
+    }
+};
+
+        // Копирование описания
+        window.copyDescription = function() {
+            if (!currentDescription) return;
+            navigator.clipboard.writeText(currentDescription);
+            alert('✅ Описание скопировано в буфер обмена');
+        };
+
+        // Сохранение описания
+        window.saveDescription = function() {
+            if (!currentDescription) return;
+            const blob = new Blob([currentDescription], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `description_${Date.now()}.txt`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+
+        // Навигация
+        window.navigateTo = function(section) {
+            const paths = {
+                'news': '/news.html',
+                'balance': '/balance.html',
+                'generate': '/generate.html',
+                'description': '/description.html',
+                'history': '/history.html',
+                'settings': '/settings.html'
+            };
+            if (paths[section]) {
+                window.location.href = paths[section];
+            }
+        };
+
+        window.logout = async function() {
+            await auth.signOut();
+            window.location.href = '/login.html';
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    const section = this.dataset.section;
+                    navigateTo(section);
+                });
             });
         });
-    });
-</script>
+    </script>
+</body>
+</html>
