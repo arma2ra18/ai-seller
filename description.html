@@ -535,7 +535,7 @@
                         
                         <!-- Кнопка генерации -->
                         <button class="btn btn-primary btn-large glow" id="generateDescBtn" onclick="generateDescription()">
-                            ✨ Сгенерировать описание (100 ₽)
+                            ✨ Сгенерировать описание (50 ₽)
                         </button>
                     </div>
                     
@@ -668,8 +668,8 @@
 
             // Проверка баланса
             const balance = parseInt(userData.balance) || 0;
-            if (balance < 100) {
-                alert('Недостаточно средств. Требуется 100 ₽');
+            if (balance < 50) {
+                alert('Недостаточно средств. Требуется 50 ₽');
                 return;
             }
 
@@ -724,8 +724,8 @@ const response = await fetch('/api/generate-description', {
 
                 // Списываем деньги
                 await updateDoc(doc(db, 'users', currentUser.uid), {
-                    balance: increment(-100),
-                    usedSpent: increment(100)
+                    balance: increment(-50),
+                    usedSpent: increment(50)
                 });
 
                 // Сохраняем в историю
