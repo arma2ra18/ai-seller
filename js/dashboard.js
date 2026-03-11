@@ -1169,3 +1169,21 @@ window.onclick = function(event) {
     const generationModal = document.getElementById('generationModal');
     if (event.target === generationModal) hideGenerationModal();
 };
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
+    currentUser = user;
+    await loadUserData();
+    
+    const path = window.location.pathname;
+    // Не загружаем историю на странице новостей
+    if (!path.includes('news.html')) {
+        if (path.includes('history.html')) {
+            await loadAllHistory();
+        } else {
+            await loadRecentHistory();
+        }
+    }
+});
