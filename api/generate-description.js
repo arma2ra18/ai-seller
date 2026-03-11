@@ -1,4 +1,5 @@
 import admin from 'firebase-admin';
+import { v4 as uuidv4 } from 'uuid';
 
 // Инициализация Firebase Admin SDK
 if (!admin.apps.length) {
@@ -27,6 +28,95 @@ export const config = {
     maxDuration: 60,
   },
 };
+
+/**
+ * Получение токена доступа для GigaChat API
+ * @param {string} authKey - ключ авторизации (Base64 от Client ID:Client Secret)
+ */
+async function getGigaChatToken(authKey) {
+  const url = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
+  const rqUid = uuidv4(); // Уникальный идентификатор запроса
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+        'RqUID': rqUid,
+        'Authorization': `Basic ${authKey}`
+      },
+      body: new URLSearchParams({
+        scope: 'GIGACHAT_API_PERS' // или GIGACHAT_API_B2B для ИП/юрлиц
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('GigaChat token error:', response.status, errorText);
+      throw new Error(`GigaChat token error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.access_token;
+  } catch (error) {
+    console.error('Error getting GigaChat token:', error);
+    throw error;
+  }
+}
+
+/**
+ * Генерация описания через GigaChat API
+ */
+async function generateWithGigaChat(prompt, authKey) {
+  // Получаем токен доступа
+  const accessToken = await getGigaChatToken(authKey);
+  
+  const url = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions';
+  
+  const requestBody = {
+    model: 'GigaChat-2-Pro', // или GigaChat-2, GigaChat-2-Max
+    messages: [
+      {
+        role: 'user',
+        content: prompt
+      }
+    ],
+    temperature: 0.7,
+    max_tokens: 2048,
+    top_p: 0.9,
+    repetition_penalty: 1.1
+  };
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${accessToken}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('GigaChat generation error:', response.status, errorText);
+      throw new Error(`GigaChat generation error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.choices && data.choices[0]?.message?.content) {
+      return data.choices[0].message.content;
+    } else {
+      throw new Error('GigaChat returned no content');
+    }
+  } catch (error) {
+    console.error('Error calling GigaChat:', error);
+    throw error;
+  }
+}
 
 /**
  * Проверка баланса пользователя
@@ -109,6 +199,13 @@ export default async function handler(req, res) {
       userId 
     });
 
+    // Проверяем наличие ключа GigaChat
+    const GIGACHAT_AUTH_KEY = process.env.GIGACHAT_AUTH_KEY;
+    if (!GIGACHAT_AUTH_KEY) {
+      console.error('❌ GIGACHAT_AUTH_KEY not set in environment');
+      return res.status(500).json({ error: 'GigaChat API key not configured' });
+    }
+
     // Валидация
     if (!productName) {
       return res.status(400).json({ error: 'Название товара обязательно' });
@@ -126,66 +223,35 @@ export default async function handler(req, res) {
 
     console.log(`💰 Баланс пользователя: ${balanceCheck.balance} ₽`);
 
-    // ===== ПРОМПТ ДЛЯ GEMINI =====
-    const prompt = `Ты профессиональный копирайтер для Wildberries и Ozon. Напиши продающее описание товара.
+    // ===== ПРОМПТ ДЛЯ GIGACHAT =====
+    // Формируем системный промпт и пользовательский запрос
+    const systemPrompt = `Ты профессиональный копирайтер для Wildberries и Ozon. Твоя задача — создавать продающие, структурированные описания товаров, которые соответствуют требованиям маркетплейсов и привлекают покупателей.
 
-Правила:
-- Заголовок должен быть ярким и привлекательным
-- Описание должно быть структурированным (используй эмодзи, списки)
-- Подчеркни преимущества товара
-- Добавь призыв к действию в конце
-- Не используй шаблонные фразы
+## Инструкция
+1. Создай привлекательный заголовок (можно с эмодзи).
+2. В основной части описания подчеркни уникальные характеристики товара, преимущества, материалы, особенности.
+3. Используй ключевые слова из запроса, если они есть.
+4. Структурируй описание: преимущества, характеристики, комплектация, почему стоит купить.
+5. Заверши сильным призывом к действию.
+6. Формат: обычный текст с абзацами, можно использовать эмодзи для визуального выделения.
 
-Товар: ${productName}
-Платформа: ${platform === 'wb' ? 'Wildberries' : 'Ozon'}
+Платформа: ${platform === 'wb' ? 'Wildberries' : 'Ozon'}`;
+
+    const userPrompt = `Название товара: ${productName}
 ${keywords ? `Ключевые слова: ${keywords}` : ''}
-${competitorLinks.length > 0 ? 'Проанализируй конкурентов по ссылкам и сделай описание лучше' : ''}
+${competitorLinks.length > 0 ? `Ссылки для анализа (проанализируй их и сделай описание лучше):\n${competitorLinks.map((link, i) => `${i+1}. ${link}`).join('\n')}` : ''}
 
-Напиши описание:`;
+Создай уникальное, продающее описание товара.`;
 
-    // Используем ТОЛЬКО gemini-1.5-flash (самая стабильная)
-    const API_KEY = process.env.GOOGLE_API_KEY;
-    
-    if (!API_KEY) {
-      throw new Error('GOOGLE_API_KEY не задан');
-    }
+    const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-    console.log('🚀 Отправляем запрос к Gemini API...');
+    console.log('🚀 Отправляем запрос к GigaChat API...');
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          temperature: 0.8,
-          maxOutputTokens: 2048,
-          topP: 0.95,
-          topK: 40
-        }
-      })
-    });
+    // Генерируем текст через GigaChat
+    const generatedText = await generateWithGigaChat(fullPrompt, GIGACHAT_AUTH_KEY);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Gemini API ошибка:', response.status, errorText);
-      throw new Error(`Gemini API вернул ошибку ${response.status}`);
-    }
-
-    const data = await response.json();
-    
-    // Извлекаем текст из ответа
-    const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    
     if (!generatedText) {
-      console.error('❌ Пустой ответ от Gemini:', data);
-      throw new Error('Gemini не вернул текст');
+      throw new Error('Generated text is empty');
     }
 
     console.log('✅ Описание успешно сгенерировано, длина:', generatedText.length);
