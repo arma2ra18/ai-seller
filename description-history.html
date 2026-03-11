@@ -623,19 +623,27 @@ function escapeHtml(text) {
             }
         };
 
-        // Открытие модального окна с полным описанием
-        window.openDescription = function(id) {
-            const desc = allDescriptions.find(d => d.id === id);
-            if (desc) {
-                document.getElementById('modalProductName').textContent = desc.productName || 'Без названия';
-                document.getElementById('modalPlatform').textContent = desc.platform === 'wb' ? 'Wildberries' : 'Ozon';
-                document.getElementById('modalPlatform').className = `platform-badge ${desc.platform === 'wb' ? 'wb' : 'ozon'}`;
-                document.getElementById('modalDate').textContent = new Date(desc.createdAt).toLocaleString('ru-RU');
-                document.getElementById('modalPrice').textContent = '50';
-                document.getElementById('modalDescription').textContent = desc.description;
-                document.getElementById('descriptionModal').classList.add('show');
-            }
-        };
+       // Открытие модального окна с полным описанием (ИСПРАВЛЕННАЯ)
+window.openDescription = function(id) {
+    const desc = allDescriptions.find(d => d.id === id);
+    if (desc) {
+        document.getElementById('modalProductName').textContent = desc.productName || 'Без названия';
+        
+        const platform = desc.platform || 'wb';
+        document.getElementById('modalPlatform').textContent = platform === 'wb' ? 'Wildberries' : 'Ozon';
+        document.getElementById('modalPlatform').className = `platform-badge ${platform === 'wb' ? 'wb' : 'ozon'}`;
+        
+        const date = desc.createdAt 
+            ? new Date(desc.createdAt).toLocaleString('ru-RU')
+            : 'Дата неизвестна';
+        document.getElementById('modalDate').textContent = date;
+        
+        document.getElementById('modalPrice').textContent = desc.cost || 50;
+        document.getElementById('modalDescription').textContent = desc.description || 'Описание отсутствует';
+        
+        document.getElementById('descriptionModal').classList.add('show');
+    }
+};
 
         window.copyModalDescription = async function() {
             const text = document.getElementById('modalDescription').textContent;
