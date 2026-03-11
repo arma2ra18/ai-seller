@@ -58,18 +58,6 @@
     white-space: nowrap;
 }
 
-/* Удаляем старый .sidebar-logo так как он больше не используется */
-/* .sidebar-logo {
-    font-size: 24px;
-    font-weight: 700;
-    padding: 0 20px 20px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-    background: var(--accent-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-} */
-
 .sidebar-nav ul {
     list-style: none;
 }
