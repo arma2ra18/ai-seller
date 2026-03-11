@@ -10,6 +10,25 @@
     
     <!-- Jivo Chat Widget -->
     <script src="//code.jivo.ru/widget/dxg5looTDX" async></script>
+<!-- Firebase -->
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+    
+    const firebaseConfig = {
+        apiKey: "AIzaSyAllWDGr8TKYeqtjgpM9EWWf5hqSfPJqoI",
+        authDomain: "ai-seller-prod-4c0c9.firebaseapp.com",
+        projectId: "ai-seller-prod-4c0c9",
+        storageBucket: "ai-seller-prod-4c0c9.firebasestorage.app",
+        messagingSenderId: "951491114415",
+        appId: "1:951491114415:web:de94518305c12d56602b5a"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.getDoc = getDoc;
+    window.doc = doc;
+</script>
 </head>
 <body>
     <!-- Видеофон -->
@@ -315,21 +334,55 @@
     <script src="js/main.js"></script>
     <script>
        <script>
+<script>
     // ===== КАРУСЕЛЬ С ПОДДЕРЖКОЙ НАСТРОЕК =====
     let carouselImages = [];
     let currentIndex = 0;
     const track = document.getElementById('carouselTrack');
     const dotsContainer = document.getElementById('carouselDots');
 
-    // Функция обновления карусели
-    window.updateCarouselTrack = function() {
-        if (!track || !dotsContainer) return;
-        
-        track.innerHTML = '';
-        dotsContainer.innerHTML = '';
-        
-        if (carouselImages.length === 0) {
-            // Фото по умолчанию, если ничего не загружено
+    // Функция загрузки настроек из Firestore
+    async function loadCarouselSettings() {
+        try {
+            // Проверяем, доступна ли Firebase
+            if (typeof firebase !== 'undefined' || window.db) {
+                const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+                if (settingsDoc.exists()) {
+                    const settings = settingsDoc.data();
+                    if (settings.carouselImages && settings.carouselImages.length > 0) {
+                        carouselImages = settings.carouselImages;
+                    } else {
+                        carouselImages = [
+                            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+                            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+                            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+                            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+                            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
+                        ];
+                    }
+                } else {
+                    // Фото по умолчанию
+                    carouselImages = [
+                        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+                        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+                        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+                        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+                        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
+                    ];
+                }
+            } else {
+                // Фото по умолчанию, если Firebase не доступен
+                carouselImages = [
+                    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+                    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+                    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+                    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+                    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
+                ];
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки настроек карусели:', error);
+            // Фото по умолчанию при ошибке
             carouselImages = [
                 "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
                 "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
@@ -338,6 +391,17 @@
                 "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
             ];
         }
+        
+        // Обновляем карусель после загрузки
+        updateCarousel();
+    }
+
+    // Функция обновления карусели
+    function updateCarousel() {
+        if (!track || !dotsContainer) return;
+        
+        track.innerHTML = '';
+        dotsContainer.innerHTML = '';
         
         // Создаём слайды
         carouselImages.forEach((src, index) => {
@@ -356,50 +420,39 @@
             // Создаём точки
             const dot = document.createElement('span');
             dot.className = 'dot' + (index === 0 ? ' active' : '');
-            dot.onclick = () => goToSlide(index);
+            dot.onclick = function() { goToSlide(index); };
             dotsContainer.appendChild(dot);
         });
         
         goToSlide(0);
-    };
-
-    // Используем загруженные изображения, если они есть
-    if (window.pendingCarouselImages) {
-        carouselImages = window.pendingCarouselImages;
-        window.pendingCarouselImages = null;
-    }
-    
-    window.updateCarouselTrack();
-
-    const slides = () => document.querySelectorAll('.carousel-slide');
-    const totalSlides = () => slides().length;
-
-    function updateDots() {
-        document.querySelectorAll('.dot').forEach((dot, index) => {
-            dot.classList.toggle('active', index === currentIndex);
-        });
     }
 
     function goToSlide(index) {
-        const slidesList = slides();
-        if (index < 0 || index >= slidesList.length) return;
+        const slides = document.querySelectorAll('.carousel-slide');
+        if (index < 0 || index >= slides.length) return;
         currentIndex = index;
         
-        const slideWidth = slidesList[0]?.offsetWidth + 20 || 0;
+        const slideWidth = slides[0]?.offsetWidth + 20 || 0;
         if (track) track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
         
-        updateDots();
+        // Обновляем точки
+        document.querySelectorAll('.dot').forEach((dot, i) => {
+            dot.classList.toggle('active', i === currentIndex);
+        });
     }
 
     window.moveCarousel = function(direction) {
         goToSlide(currentIndex + direction);
     };
 
-    window.addEventListener('resize', () => {
+    // Загружаем настройки при загрузке страницы
+    loadCarouselSettings();
+
+    // Обновляем при изменении размера окна
+    window.addEventListener('resize', function() {
         goToSlide(currentIndex);
     });
-
-    goToSlide(0);
+</script>
 </script>
 </body>
 </html>
