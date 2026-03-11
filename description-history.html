@@ -23,40 +23,67 @@
         
         .history-filters select,
         .history-filters input {
-            padding: 10px 15px;
+            padding: 12px 18px;
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 40px;
             color: white;
             font-size: 14px;
+            transition: var(--transition);
+            min-width: 200px;
+        }
+        
+        .history-filters select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 40px;
+        }
+        
+        .history-filters input:focus,
+        .history-filters select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
         }
         
         .history-filters input {
-            min-width: 250px;
+            min-width: 280px;
         }
         
         .history-stats {
-            background: rgba(0,113,227,0.1);
-            border: 1px solid var(--accent);
+            background: linear-gradient(135deg, rgba(0,113,227,0.1), rgba(155,94,240,0.1));
+            border: 1px solid rgba(0,113,227,0.3);
             border-radius: 60px;
-            padding: 12px 25px;
+            padding: 15px 30px;
             display: inline-flex;
             align-items: center;
-            gap: 20px;
+            gap: 30px;
             margin-bottom: 30px;
             flex-wrap: wrap;
+            backdrop-filter: blur(10px);
         }
         
         .history-stats-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             color: var(--text-secondary);
+            font-size: 15px;
         }
         
         .history-stats-item span {
             color: white;
             font-weight: 600;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+        
+        .descriptions-list {
+            min-height: 400px;
         }
         
         .description-item {
@@ -68,12 +95,31 @@
             margin-bottom: 20px;
             transition: var(--transition);
             cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.5s ease;
+        }
+        
+        .description-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
         
         .description-item:hover {
-            transform: translateY(-3px);
+            transform: translateY(-3px) translateX(5px);
             border-color: var(--accent);
-            box-shadow: 0 10px 30px rgba(0,113,227,0.2);
+            box-shadow: 0 15px 40px rgba(0,113,227,0.2);
+        }
+        
+        .description-item:hover::before {
+            opacity: 1;
         }
         
         .description-header {
@@ -95,23 +141,25 @@
         .description-title h3 {
             font-size: 20px;
             color: white;
-        }
-        
-        .platform-badge {
-            padding: 6px 15px;
-            border-radius: 40px;
-            font-size: 13px;
             font-weight: 600;
         }
         
+        .platform-badge {
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
         .platform-badge.wb {
-            background: rgba(114, 46, 209, 0.2);
+            background: rgba(114, 46, 209, 0.15);
             color: #8b5cf6;
             border: 1px solid rgba(139, 92, 246, 0.3);
         }
         
         .platform-badge.ozon {
-            background: rgba(0, 159, 227, 0.2);
+            background: rgba(0, 159, 227, 0.15);
             color: #009fe3;
             border: 1px solid rgba(0, 159, 227, 0.3);
         }
@@ -122,6 +170,9 @@
             gap: 20px;
             color: var(--text-muted);
             font-size: 13px;
+            background: rgba(255,255,255,0.02);
+            padding: 8px 16px;
+            border-radius: 40px;
         }
         
         .description-meta span {
@@ -136,10 +187,12 @@
             padding: 20px;
             margin: 15px 0;
             color: var(--text-secondary);
-            line-height: 1.6;
-            max-height: 150px;
+            line-height: 1.7;
+            max-height: 120px;
             overflow: hidden;
             position: relative;
+            font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.02);
         }
         
         .description-preview::after {
@@ -149,7 +202,7 @@
             left: 0;
             right: 0;
             height: 50px;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
             pointer-events: none;
         }
         
@@ -162,24 +215,15 @@
             gap: 15px;
         }
         
-        .description-keywords {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        
-        .keyword-tag {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 30px;
-            padding: 4px 12px;
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-        
         .description-actions {
             display: flex;
-            gap: 8px;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+            border-radius: 30px;
         }
         
         .pagination {
@@ -191,7 +235,7 @@
         }
         
         .pagination button {
-            padding: 10px 16px;
+            padding: 10px 18px;
             background: rgba(255,255,255,0.03);
             border: 1px solid var(--border);
             border-radius: 12px;
@@ -199,13 +243,21 @@
             cursor: pointer;
             transition: var(--transition);
             min-width: 45px;
+            font-weight: 500;
         }
         
-        .pagination button:hover,
+        .pagination button:hover {
+            background: rgba(0,113,227,0.2);
+            border-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
         .pagination button.active {
             background: var(--accent);
             border-color: var(--accent);
             color: white;
+            box-shadow: 0 5px 15px rgba(0,113,227,0.3);
         }
         
         .empty-state {
@@ -213,53 +265,95 @@
             padding: 80px 20px;
             background: rgba(28, 28, 30, 0.3);
             border-radius: 32px;
-            border: 1px dashed var(--border);
+            border: 2px dashed var(--border);
+            backdrop-filter: blur(10px);
         }
         
         .empty-state .icon {
-            font-size: 64px;
+            font-size: 72px;
             margin-bottom: 20px;
-            opacity: 0.3;
+            opacity: 0.5;
+            animation: float 6s infinite ease-in-out;
         }
         
         .empty-state h3 {
-            font-size: 24px;
-            margin-bottom: 10px;
+            font-size: 28px;
+            margin-bottom: 15px;
             color: white;
         }
         
         .empty-state p {
             color: var(--text-secondary);
             margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .loading-spinner .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0,113,227,0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
         }
         
         @media (max-width: 768px) {
+            .history-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .history-filters {
+                flex-direction: column;
+            }
+            
+            .history-filters input,
+            .history-filters select {
+                width: 100%;
+            }
+            
+            .history-stats {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+                width: 100%;
+            }
+            
             .description-header {
                 flex-direction: column;
                 align-items: flex-start;
             }
             
-            .history-filters {
-                flex-direction: column;
+            .description-meta {
                 width: 100%;
-            }
-            
-            .history-filters input {
-                width: 100%;
+                justify-content: space-between;
             }
             
             .description-footer {
                 flex-direction: column;
-                align-items: flex-start;
+                align-items: stretch;
+            }
+            
+            .description-actions {
+                justify-content: space-between;
             }
         }
     </style>
-// В начало скрипта, после импортов:
-console.log('🔥 Страница истории описаний загружена');
-console.log('Текущий пользователь:', currentUser?.uid);
-
-// В функции loadDescriptions() добавьте:
-console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`);
 </head>
 <body>
     <!-- Видеофон -->
@@ -370,13 +464,16 @@ console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`)
                         <option value="wb">Wildberries</option>
                         <option value="ozon">Ozon</option>
                     </select>
-                    <input type="text" id="searchInput" placeholder="🔍 Поиск по товару...">
+                    <input type="text" id="searchInput" placeholder="🔍 Поиск по названию товара...">
                 </div>
             </div>
 
             <!-- Список описаний -->
             <div id="descriptionsList" class="descriptions-list">
-                <!-- Будут загружаться из Firebase -->
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Загрузка истории описаний...</p>
+                </div>
             </div>
 
             <!-- Пагинация -->
@@ -386,20 +483,20 @@ console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`)
 
     <!-- Модальное окно просмотра описания -->
     <div id="descriptionModal" class="modal">
-        <div class="modal-content glass" style="max-width: 800px;">
+        <div class="modal-content glass" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
             <button class="modal-close" onclick="closeModal()">&times;</button>
-            <h2 id="modalProductName" class="gradient-text"></h2>
-            <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
+            <h2 id="modalProductName" class="gradient-text" style="margin-bottom: 15px;"></h2>
+            <div style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; align-items: center;">
                 <span class="platform-badge" id="modalPlatform">Wildberries</span>
-                <span class="description-meta" style="color: var(--text-secondary);">
+                <div style="display: flex; gap: 20px; color: var(--text-secondary);">
                     <span>📅 <span id="modalDate"></span></span>
                     <span>💰 <span id="modalPrice">50</span> ₽</span>
-                </span>
+                </div>
             </div>
-            <div id="modalDescription" class="result-content" style="background: rgba(0,0,0,0.3); padding: 25px; border-radius: 20px; max-height: 500px; overflow-y: auto; white-space: pre-wrap;"></div>
+            <div id="modalDescription" style="background: rgba(0,0,0,0.3); padding: 25px; border-radius: 20px; max-height: 500px; overflow-y: auto; white-space: pre-wrap; line-height: 1.7; color: var(--text-secondary);"></div>
             <div style="display: flex; gap: 10px; margin-top: 25px;">
-                <button class="btn btn-primary" onclick="copyModalDescription()">📋 Копировать</button>
-                <button class="btn btn-outline" onclick="closeModal()">Закрыть</button>
+                <button class="btn btn-primary" onclick="copyModalDescription()" style="flex: 1;">📋 Копировать</button>
+                <button class="btn btn-outline" onclick="closeModal()" style="flex: 1;">Закрыть</button>
             </div>
         </div>
     </div>
@@ -408,7 +505,7 @@ console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`)
         import { auth, db } from './js/firebase.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
         import { 
-            doc, getDoc, collection, query, orderBy, getDocs, limit, where 
+            doc, getDoc, collection, query, orderBy, getDocs, limit, startAfter 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 
         let currentUser = null;
@@ -416,6 +513,9 @@ console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`)
         let filteredDescriptions = [];
         let currentPage = 1;
         const DESCRIPTIONS_PER_PAGE = 10;
+        let lastVisible = null;
+        let loading = false;
+        let hasMore = true;
 
         // Проверка авторизации
         onAuthStateChanged(auth, async (user) => {
@@ -425,7 +525,7 @@ console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`)
             }
             currentUser = user;
             await loadUserData();
-            await loadDescriptions();
+            await loadDescriptions(true); // true = первая загрузка
         });
 
         // Загрузка данных пользователя
@@ -442,36 +542,79 @@ console.log('Загружаем из:', `users/${currentUser.uid}/descriptions`)
             }
         }
 
-       // Загрузка описаний из Firebase
-async function loadDescriptions() {
-    try {
-        const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
-        const q = query(descriptionsRef, orderBy('createdAt', 'desc'));
-        const snapshot = await getDocs(q);
-        
-        console.log('📊 Найдено описаний:', snapshot.size); // Добавьте для отладки
-        
-        allDescriptions = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        // Загрузка описаний из Firebase с пагинацией
+        async function loadDescriptions(isFirstLoad = false) {
+            if (loading) return;
+            loading = true;
 
-        // Обновляем статистику
-        updateStats();
-        
-        // Применяем фильтры
-        applyFilters();
+            try {
+                const descriptionsRef = collection(db, 'users', currentUser.uid, 'descriptions');
+                let q;
+                
+                if (isFirstLoad) {
+                    q = query(descriptionsRef, orderBy('createdAt', 'desc'), limit(DESCRIPTIONS_PER_PAGE));
+                } else {
+                    if (!lastVisible || !hasMore) {
+                        loading = false;
+                        return;
+                    }
+                    q = query(descriptionsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(DESCRIPTIONS_PER_PAGE));
+                }
 
-    } catch (error) {
-        console.error('Ошибка загрузки описаний:', error);
-    }
-}
+                const snapshot = await getDocs(q);
+                
+                if (isFirstLoad) {
+                    allDescriptions = [];
+                }
+
+                const newDescriptions = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                allDescriptions = [...allDescriptions, ...newDescriptions];
+                
+                if (snapshot.docs.length > 0) {
+                    lastVisible = snapshot.docs[snapshot.docs.length - 1];
+                }
+                
+                hasMore = snapshot.docs.length === DESCRIPTIONS_PER_PAGE;
+
+                // Обновляем статистику
+                updateStats();
+                
+                // Применяем фильтры
+                applyFilters();
+
+            } catch (error) {
+                console.error('Ошибка загрузки описаний:', error);
+                document.getElementById('descriptionsList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">⚠️</div>
+                        <h3>Ошибка загрузки</h3>
+                        <p>${error.message}</p>
+                        <button class="btn btn-primary" onclick="location.reload()">🔄 Повторить</button>
+                    </div>
+                `;
+            } finally {
+                loading = false;
+            }
+        }
+
+        // Загрузка следующих страниц
+        window.loadMore = function() {
+            if (!loading && hasMore) {
+                loadDescriptions(false);
+            }
+        };
 
         // Обновление статистики
         function updateStats() {
+            // Для статистики используем только загруженные данные
+            // В реальном проекте можно сделать отдельный запрос для подсчета общего количества
             const total = allDescriptions.length;
-            const totalSpent = allDescriptions.length * 50; // 50₽ за каждое
-            const lastDate = allDescriptions.length > 0 
+            const totalSpent = allDescriptions.reduce((sum, desc) => sum + (desc.cost || 50), 0);
+            const lastDate = allDescriptions.length > 0 && allDescriptions[0].createdAt
                 ? new Date(allDescriptions[0].createdAt).toLocaleDateString('ru-RU')
                 : '—';
 
@@ -483,19 +626,11 @@ async function loadDescriptions() {
         // Применение фильтров
         window.applyFilters = function() {
             const platform = document.getElementById('platformFilter').value;
-            const search = document.getElementById('searchInput').value.toLowerCase();
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
 
             filteredDescriptions = allDescriptions.filter(desc => {
-                // Фильтр по платформе
-                if (platform !== 'all' && desc.platform !== platform) {
-                    return false;
-                }
-                
-                // Поиск по названию товара
-                if (search && !desc.productName.toLowerCase().includes(search)) {
-                    return false;
-                }
-                
+                if (platform !== 'all' && desc.platform !== platform) return false;
+                if (search && !desc.productName?.toLowerCase().includes(search)) return false;
                 return true;
             });
 
@@ -503,91 +638,97 @@ async function loadDescriptions() {
             displayDescriptions();
         };
 
-       // Отображение описаний (ИСПРАВЛЕННАЯ)
-function displayDescriptions() {
-    const list = document.getElementById('descriptionsList');
-    
-    if (filteredDescriptions.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">🔍</div>
-                <h3>Ничего не найдено</h3>
-                <p>Попробуйте изменить параметры поиска</p>
-            </div>
-        `;
-        document.getElementById('pagination').innerHTML = '';
-        return;
-    }
-
-    const start = (currentPage - 1) * DESCRIPTIONS_PER_PAGE;
-    const paginated = filteredDescriptions.slice(start, start + DESCRIPTIONS_PER_PAGE);
-
-    list.innerHTML = paginated.map(desc => {
-        const date = desc.createdAt 
-            ? new Date(desc.createdAt).toLocaleString('ru-RU', {
-                day: '2-digit', month: '2-digit', year: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-              })
-            : 'Дата неизвестна';
-        
-        // Безопасное получение preview с проверкой на undefined
-        let preview = 'Описание отсутствует';
-        if (desc.description && typeof desc.description === 'string') {
-            preview = desc.description.length > 300 
-                ? desc.description.substring(0, 300) + '...' 
-                : desc.description;
+        // Экранирование HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
-        
-        // Безопасное получение названия товара
-        const productName = desc.productName || 'Без названия';
-        
-        // Безопасное получение платформы
-        const platform = desc.platform || 'wb';
-        const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
-        const platformClass = platform === 'wb' ? 'wb' : 'ozon';
-        
-        // Безопасное получение стоимости
-        const cost = desc.cost || 50;
-        
-        return `
-            <div class="description-item" onclick="openDescription('${desc.id}')">
-                <div class="description-header">
-                    <div class="description-title">
-                        <h3>${escapeHtml(productName)}</h3>
-                        <span class="platform-badge ${platformClass}">
-                            ${platformName}
-                        </span>
-                    </div>
-                    <div class="description-meta">
-                        <span>📅 ${date}</span>
-                        <span>💰 ${cost} ₽</span>
-                    </div>
-                </div>
-                
-                <div class="description-preview">
-                    ${escapeHtml(preview)}
-                </div>
-                
-                <div class="description-footer">
-                    <div class="description-actions">
-                        <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); copyDescription('${desc.id}')">📋 Копировать</button>
-                        <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); openDescription('${desc.id}')">🔍 Подробнее</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
 
-    updatePagination();
-}
+        // Отображение описаний
+        function displayDescriptions() {
+            const list = document.getElementById('descriptionsList');
+            
+            if (filteredDescriptions.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">🔍</div>
+                        <h3>Ничего не найдено</h3>
+                        <p>Попробуйте изменить параметры поиска</p>
+                        <a href="/description.html" class="btn btn-primary">✨ Создать описание</a>
+                    </div>
+                `;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
 
-// Добавьте функцию для экранирования HTML (безопасность)
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+            const start = (currentPage - 1) * DESCRIPTIONS_PER_PAGE;
+            const paginated = filteredDescriptions.slice(start, start + DESCRIPTIONS_PER_PAGE);
+
+            list.innerHTML = paginated.map(desc => {
+                const date = desc.createdAt 
+                    ? new Date(desc.createdAt).toLocaleString('ru-RU', {
+                        day: '2-digit', month: '2-digit', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                      })
+                    : 'Дата неизвестна';
+                
+                let preview = 'Описание отсутствует';
+                if (desc.description && typeof desc.description === 'string') {
+                    preview = desc.description.length > 300 
+                        ? desc.description.substring(0, 300) + '...' 
+                        : desc.description;
+                }
+                
+                const productName = desc.productName || 'Без названия';
+                const platform = desc.platform || 'wb';
+                const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
+                const platformClass = platform === 'wb' ? 'wb' : 'ozon';
+                const cost = desc.cost || 50;
+                
+                return `
+                    <div class="description-item" onclick="openDescription('${desc.id}')">
+                        <div class="description-header">
+                            <div class="description-title">
+                                <h3>${escapeHtml(productName)}</h3>
+                                <span class="platform-badge ${platformClass}">
+                                    ${platformName}
+                                </span>
+                            </div>
+                            <div class="description-meta">
+                                <span>📅 ${date}</span>
+                                <span>💰 ${cost} ₽</span>
+                            </div>
+                        </div>
+                        
+                        <div class="description-preview">
+                            ${escapeHtml(preview)}
+                        </div>
+                        
+                        <div class="description-footer">
+                            <div class="description-actions">
+                                <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); copyDescription('${desc.id}')">📋 Копировать</button>
+                                <button class="btn btn-small btn-outline" onclick="event.stopPropagation(); openDescription('${desc.id}')">🔍 Подробнее</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Добавляем кнопку "Загрузить ещё" если есть ещё данные
+            if (hasMore && filteredDescriptions.length >= DESCRIPTIONS_PER_PAGE * currentPage) {
+                list.innerHTML += `
+                    <div style="text-align: center; margin: 30px 0;">
+                        <button class="btn btn-outline" onclick="loadMore()" ${loading ? 'disabled' : ''}>
+                            ${loading ? 'Загрузка...' : '📥 Загрузить ещё'}
+                        </button>
+                    </div>
+                `;
+            }
+
+            updatePagination();
+        }
 
         // Обновление пагинации
         function updatePagination() {
@@ -617,43 +758,58 @@ function escapeHtml(text) {
         // Копирование описания
         window.copyDescription = async function(id) {
             const desc = allDescriptions.find(d => d.id === id);
-            if (desc) {
+            if (desc && desc.description) {
                 await navigator.clipboard.writeText(desc.description);
-                alert('✅ Описание скопировано в буфер обмена');
+                showNotification('✅ Описание скопировано в буфер обмена', 'success');
             }
         };
 
-       // Открытие модального окна с полным описанием (ИСПРАВЛЕННАЯ)
-window.openDescription = function(id) {
-    const desc = allDescriptions.find(d => d.id === id);
-    if (desc) {
-        document.getElementById('modalProductName').textContent = desc.productName || 'Без названия';
-        
-        const platform = desc.platform || 'wb';
-        document.getElementById('modalPlatform').textContent = platform === 'wb' ? 'Wildberries' : 'Ozon';
-        document.getElementById('modalPlatform').className = `platform-badge ${platform === 'wb' ? 'wb' : 'ozon'}`;
-        
-        const date = desc.createdAt 
-            ? new Date(desc.createdAt).toLocaleString('ru-RU')
-            : 'Дата неизвестна';
-        document.getElementById('modalDate').textContent = date;
-        
-        document.getElementById('modalPrice').textContent = desc.cost || 50;
-        document.getElementById('modalDescription').textContent = desc.description || 'Описание отсутствует';
-        
-        document.getElementById('descriptionModal').classList.add('show');
-    }
-};
+        // Открытие модального окна
+        window.openDescription = function(id) {
+            const desc = allDescriptions.find(d => d.id === id);
+            if (desc) {
+                document.getElementById('modalProductName').textContent = desc.productName || 'Без названия';
+                
+                const platform = desc.platform || 'wb';
+                document.getElementById('modalPlatform').textContent = platform === 'wb' ? 'Wildberries' : 'Ozon';
+                document.getElementById('modalPlatform').className = `platform-badge ${platform === 'wb' ? 'wb' : 'ozon'}`;
+                
+                const date = desc.createdAt 
+                    ? new Date(desc.createdAt).toLocaleString('ru-RU')
+                    : 'Дата неизвестна';
+                document.getElementById('modalDate').textContent = date;
+                
+                document.getElementById('modalPrice').textContent = desc.cost || 50;
+                document.getElementById('modalDescription').textContent = desc.description || 'Описание отсутствует';
+                
+                document.getElementById('descriptionModal').classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+        };
 
+        // Копирование из модального окна
         window.copyModalDescription = async function() {
             const text = document.getElementById('modalDescription').textContent;
-            await navigator.clipboard.writeText(text);
-            alert('✅ Описание скопировано');
+            if (text) {
+                await navigator.clipboard.writeText(text);
+                showNotification('✅ Описание скопировано', 'success');
+            }
         };
 
+        // Закрытие модального окна
         window.closeModal = function() {
             document.getElementById('descriptionModal').classList.remove('show');
+            document.body.style.overflow = '';
         };
+
+        // Уведомления
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
 
         // Навигация
         window.navigateTo = function(section) {
@@ -676,10 +832,18 @@ window.openDescription = function(id) {
             window.location.href = '/login.html';
         };
 
-        // Обработчики фильтров
+        // Обработчики событий
         document.getElementById('platformFilter').addEventListener('change', applyFilters);
         document.getElementById('searchInput').addEventListener('input', applyFilters);
 
+        // Закрытие модального окна по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Обработчики меню
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.addEventListener('click', function(e) {
