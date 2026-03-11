@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Главная — Prodiger</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <!-- Видеофон -->
+    <div class="video-background">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <!-- Сайдбар (такой же как в generate.html) -->
+        <aside class="sidebar glass">
+            <!-- ... логотип ... -->
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="menu-item" data-section="news">
+                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                            📰 Новости
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="balance">
+                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                            💰 Баланс
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="generate">
+                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                            ✨ Генерация
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="history">
+                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                            📜 История
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="settings">
+                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                            ⚙️ Настройки
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <!-- ... футер сайдбара ... -->
+        </aside>
+
+        <!-- Основной контент -->
+        <main class="main-content">
+            <div class="welcome-block">
+                <h1 class="gradient-text">Добро пожаловать в Prodiger!</h1>
+                <p>Ваш личный AI-помощник для создания карточек товаров</p>
+            </div>
+
+            <!-- Быстрые действия -->
+            <div class="stats-grid" style="margin-bottom: 40px;">
+                <div class="stat-card glass card-hover" onclick="window.location.href='/generate.html'" style="cursor: pointer;">
+                    <div class="stat-icon">✨</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Новая генерация</span>
+                        <span class="stat-value">Создать фото</span>
+                    </div>
+                </div>
+                <div class="stat-card glass card-hover" onclick="window.location.href='/history.html'" style="cursor: pointer;">
+                    <div class="stat-icon">📜</div>
+                    <div class="stat-info">
+                        <span class="stat-label">История</span>
+                        <span class="stat-value">Все генерации</span>
+                    </div>
+                </div>
+                <div class="stat-card glass card-hover" onclick="window.location.href='/balance.html'" style="cursor: pointer;">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Баланс</span>
+                        <span class="stat-value" id="dashboardBalance">0 ₽</span>
+                    </div>
+                </div>
+                <div class="stat-card glass card-hover" onclick="window.location.href='/news.html'" style="cursor: pointer;">
+                    <div class="stat-icon">📰</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Новости</span>
+                        <span class="stat-value">5 новых</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Последние новости (кратко) -->
+            <div class="content-area glass">
+                <h2 style="margin-bottom: 20px;">📰 Последние новости</h2>
+                <div style="display: grid; gap: 15px;">
+                    <div class="news-item" style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                        <div style="color: var(--accent); font-size: 13px; margin-bottom: 5px;">11 марта 2026</div>
+                        <div style="font-weight: 600;">🚀 Официальный запуск Prodiger!</div>
+                    </div>
+                    <div class="news-item" style="padding: 15px; background: rgba(255,255,255,0.03); border-radius: 12px;">
+                        <div style="color: var(--accent); font-size: 13px; margin-bottom: 5px;">10 марта 2026</div>
+                        <div style="font-weight: 600;">⚡ Новая функция: повторная генерация за 15 ₽</div>
+                    </div>
+                </div>
+                <a href="/news.html" class="btn btn-outline" style="margin-top: 20px;">Все новости →</a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Навигация
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                const section = this.dataset.section;
+                const paths = {
+                    'news': '/news.html',
+                    'balance': '/balance.html',
+                    'generate': '/generate.html',
+                    'history': '/history.html',
+                    'settings': '/settings.html'
+                };
+                if (paths[section]) {
+                    window.location.href = paths[section];
+                }
+            });
+        });
+
+        // Загрузка баланса
+        document.getElementById('dashboardBalance').textContent = '1 250 ₽';
+    </script>
+</body>
+</html>
