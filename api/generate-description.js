@@ -1,7 +1,7 @@
 import admin from 'firebase-admin';
 import { GoogleGenAI } from '@google/genai';
 
-// Инициализация Firebase Admin SDK (как в generate-card.js)
+// Инициализация Firebase Admin SDK
 if (!admin.apps.length) {
   try {
     const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -25,7 +25,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 export const config = {
   api: {
-    bodyParser: true, // Для JSON используем bodyParser
+    bodyParser: true,
     maxDuration: 60,
   },
 };
@@ -85,7 +85,6 @@ async function saveDescription(userId, data) {
     });
   } catch (error) {
     console.error('Error saving description:', error);
-    // Не прерываем основной поток, если не удалось сохранить
   }
 }
 
@@ -100,8 +99,8 @@ export default async function handler(req, res) {
       productName, 
       competitorLinks = [], 
       keywords = '',
-      platform = 'wb', // wb или ozon
-      userId // ID пользователя из запроса
+      platform = 'wb',
+      userId 
     } = req.body;
 
     // Валидация
@@ -122,19 +121,16 @@ export default async function handler(req, res) {
     console.log(`Generating description for: ${productName}`);
 
     // ===== ПРОМПТ ДЛЯ GEMINI =====
-    // Используем подход с system prompt, как в документации GigaChat [citation:2]
-    
     const systemPrompt = `Ты — профессиональный маркетолог и копирайтер для Wildberries и Ozon. Твоя задача — создавать продающие, структурированные описания товаров, которые соответствуют требованиям маркетплейсов и привлекают покупателей.
 
 ## Инструкция
-1. Создай привлекательный заголовок, который сразу привлечет внимание.
-2. В основной части описания подчеркни уникальные характеристики товара, преимущества, материалы, особенности.
-3. Если даны ссылки на конкурентов, проанализируй их описания и выдели ключевые моменты, но сделай текст уникальным и лучше.
+1. Создай привлекательный заголовок.
+2. В основной части описания подчеркни уникальные характеристики товара.
+3. Если даны ссылки на конкурентов, проанализируй их.
 4. Используй ключевые слова из запроса.
-5. Структурируй описание: преимущества, характеристики, комплектация, почему стоит купить.
+5. Структурируй описание.
 6. Заверши сильным призывом к действию.
-7. Не используй шаблонные фразы, будь конкретным.
-8. Формат: обычный текст без markdown, с абзацами.
+7. Формат: обычный текст с абзацами.
 
 Платформа: ${platform === 'wb' ? 'Wildberries' : 'Ozon'}`;
 
@@ -145,9 +141,9 @@ ${competitorLinks.length > 0 ? `Ссылки для анализа:\n${competito
 
 Создай уникальное, продающее описание товара.`;
 
-    // Генерация через Gemini
+    // ИСПРАВЛЕНО: правильное название модели
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash', // Для текста используем обычную модель
+      model: 'models/gemini-1.5-flash', // или 'models/gemini-1.5-pro'
       contents: [
         {
           role: 'user',
@@ -166,14 +162,13 @@ ${competitorLinks.length > 0 ? `Ссылки для анализа:\n${competito
       throw new Error('Failed to generate description');
     }
 
-    // Списание средств (ТОЛЬКО после успешной генерации)
+    // Списание средств
     const deductResult = await deductBalance(userId, 100);
     if (!deductResult.success) {
       console.error('Failed to deduct balance:', deductResult.error);
-      // Продолжаем, но логируем ошибку
     }
 
-    // Сохраняем в историю (опционально)
+    // Сохраняем в историю
     await saveDescription(userId, {
       productName,
       description: generatedText,
@@ -186,7 +181,7 @@ ${competitorLinks.length > 0 ? `Ссылки для анализа:\n${competito
     res.status(200).json({
       success: true,
       description: generatedText,
-      balance: balanceCheck.balance - 100 // Новый баланс
+      balance: balanceCheck.balance - 100
     });
 
   } catch (error) {
