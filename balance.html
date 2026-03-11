@@ -10,6 +10,26 @@
             max-width: 700px;
             margin: 0 auto;
         }
+// Функция для отладки - покажет, что приходит из Firestore
+async function debugGenerations() {
+    try {
+        const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
+        console.log('📊 Найдено сессий:', sessionsSnapshot.size);
+        
+        let total = 0;
+        sessionsSnapshot.forEach(doc => {
+            const data = doc.data();
+            console.log('Сессия:', data.productName, 'попыток:', data.attempts);
+            total += data.attempts || 0;
+        });
+        
+        console.log('✅ ИТОГО генераций:', total);
+        return total;
+    } catch (e) {
+        console.log('Коллекция generationSessions не найдена');
+        return 0;
+    }
+}
         
         /* Главная карточка баланса */
         .balance-hero {
@@ -601,42 +621,54 @@
         });
 
         // Загрузка данных пользователя из Firestore
-        async function loadUserData() {
+async function loadUserData() {
+    try {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // Баланс
+            const balance = userData.balance || 0;
+            document.getElementById('balanceAmount').textContent = balance.toLocaleString();
+            document.getElementById('sidebarBalance').textContent = balance;
+            
+            // Всего потрачено
+            const spent = userData.usedSpent || 0;
+            document.getElementById('totalSpent').textContent = spent.toLocaleString();
+            
+            // Количество генераций - ТОЛЬКО ЧИСЛО
+            let totalGenerations = 0;
             try {
-                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    
-                    // Баланс
-                    const balance = userData.balance || 0;
-                    document.getElementById('balanceAmount').textContent = balance.toLocaleString();
-                    document.getElementById('sidebarBalance').textContent = balance;
-                    
-                    // Всего потрачено
-                    const spent = userData.usedSpent || 0;
-                    document.getElementById('totalSpent').textContent = spent.toLocaleString();
-                    
-                    // Загрузка количества генераций
-let totalGenerations = 0;
-try {
-    const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
-    totalGenerations = sessionsSnapshot.docs.reduce((sum, doc) => sum + (doc.data().attempts || 0), 0);
-} catch (e) {
-    console.log('Коллекция generationSessions не найдена');
-}
-document.getElementById('totalGenerations').textContent = totalGenerations;  // Просто число
-                    
-                    // Бонусы
-                    const bonus = userData.bonusBalance || 0;
-                    document.getElementById('bonusBalance').textContent = bonus;
-                    
-                    // Email
-                    document.getElementById('userEmail').textContent = userData.email || userData.phoneNumber || 'Пользователь';
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
+                const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
+                sessionsSnapshot.forEach(doc => {
+                    totalGenerations += doc.data().attempts || 0;
+                });
+            } catch (e) {
+                console.log('Коллекция generationSessions не найдена');
             }
+            
+            // УБЕДИМСЯ, ЧТО ТУТ ТОЛЬКО ЧИСЛО
+            document.getElementById('totalGenerations').textContent = totalGenerations;
+            
+            // Бонусы
+            const bonus = userData.bonusBalance || 0;
+            document.getElementById('bonusBalance').textContent = bonus;
+            
+            // Email
+            document.getElementById('userEmail').textContent = userData.email || userData.phoneNumber || 'Пользователь';
+            
+            // Отладка в консоль
+            console.log('✅ Баланс загружен:', {
+                balance: balance,
+                spent: spent,
+                generations: totalGenerations,
+                bonus: bonus
+            });
         }
+    } catch (error) {
+        console.error('❌ Ошибка загрузки данных:', error);
+    }
+}
 
         // Загрузка истории транзакций
         async function loadTransactions() {
