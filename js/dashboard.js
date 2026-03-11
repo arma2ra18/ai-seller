@@ -58,7 +58,7 @@ async function loadUserData() {
         if (userDoc.exists()) {
             userData = userDoc.data();
             updateUI();
-            loadHistory();  // Загружаем сгруппированную историю
+            loadHistory();
             updateStats();
         } else {
             await setDoc(doc(db, 'users', currentUser.uid), {
@@ -122,7 +122,7 @@ function updateStats() {
     if (statVideos) statVideos.textContent = 0;
     
     const statDescriptions = document.getElementById('statDescriptions');
-    if (statDescriptions) statDescriptions.textContent = 0; // Больше не генерируем описания
+    if (statDescriptions) statDescriptions.textContent = 0;
     
     const statHistory = document.getElementById('statHistory');
     if (statHistory) statHistory.textContent = 0;
@@ -237,7 +237,6 @@ function updateRegenerationUI() {
     const resultsContainer = document.getElementById('cardResults');
     if (!resultsContainer) return;
 
-    // Информационный блок
     let infoBlock = document.getElementById('regenerationInfo');
     if (!infoBlock) {
         infoBlock = document.createElement('div');
@@ -250,49 +249,33 @@ function updateRegenerationUI() {
     const nextCost = 15;
 
     infoBlock.innerHTML = `
-        <h3>🎯 Сессия генерации</h3>
-        <p><strong>Товар:</strong> ${currentGenerationSession.productName}</p>
-        <p><strong>Сгенерировано фото:</strong> ${currentGenerationSession.attemptsMade} из ${currentGenerationSession.maxAttempts}</p>
-        <p><strong>Осталось попыток:</strong> ${remaining}</p>
-        <p><strong>Стоимость следующей генерации:</strong> ${remaining > 0 ? nextCost + ' ₽' : '—'}</p>
-        <p><small>✨ Первая генерация: 100 ₽. Каждая следующая: 15 ₽. Максимум 5 фото за сессию.</small></p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <strong>${currentGenerationSession.productName}</strong> · 
+                ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
+            </div>
+            <div>
+                Следующая: ${nextCost} ₽ · осталось ${remaining}
+            </div>
+        </div>
     `;
 
-    // Кнопка "Сделать ещё"
     let regenBtn = document.getElementById('regenerateBtn');
     if (!regenBtn) {
         regenBtn = document.createElement('button');
         regenBtn.id = 'regenerateBtn';
-        regenBtn.className = 'btn btn-primary btn-large glow';
+        regenBtn.className = 'btn btn-primary';
+        regenBtn.style.marginTop = '15px';
         regenBtn.onclick = window.regeneratePhoto;
         resultsContainer.appendChild(regenBtn);
     }
 
     if (remaining > 0) {
         regenBtn.style.display = 'inline-block';
-        regenBtn.innerHTML = `🔄 Сделать ещё (15 ₽) [Осталось: ${remaining}]`;
+        regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
         regenBtn.disabled = false;
     } else {
         regenBtn.style.display = 'none';
-    }
-
-    // Обновляем галерею
-    const gallery = document.getElementById('resultImages');
-    if (gallery && currentGenerationSession.generatedImages.length > 0) {
-        gallery.innerHTML = '';
-        currentGenerationSession.generatedImages.forEach((url, index) => {
-            const img = document.createElement('img');
-            img.src = url;
-            img.alt = `Фото ${index + 1}`;
-            img.onclick = () => window.openLightbox(url);
-            gallery.appendChild(img);
-            
-            // Добавляем подпись с номером фото
-            const caption = document.createElement('div');
-            caption.className = 'photo-caption';
-            caption.textContent = `Фото ${index + 1}`;
-            img.parentNode.insertBefore(caption, img.nextSibling);
-        });
     }
 }
 
@@ -323,21 +306,18 @@ window.generateWBCard = async function() {
         return;
     }
 
-    // Проверка на email в поле features
     if (featuresInput && featuresInput.includes('@')) {
         document.getElementById('wbFeatures').value = '';
         showNotification('Пожалуйста, введите характеристики товара, а не email', 'warning');
         return;
     }
 
-    // Проверяем баланс
     const currentBalance = userData.balance || 0;
     if (currentBalance < 100) {
         showNotification('Недостаточно средств. Требуется 100 ₽', 'error');
         return;
     }
 
-    // Сбрасываем сессию и создаём новую
     resetGenerationSession();
     currentGenerationSession.productName = productName;
     currentGenerationSession.brand = brand;
@@ -362,7 +342,6 @@ window.regeneratePhoto = async function() {
         return;
     }
 
-    // Проверяем баланс
     const cost = 15;
     const currentBalance = userData.balance || 0;
     if (currentBalance < cost) {
@@ -411,12 +390,10 @@ async function performGeneration(files, attempt) {
         }
         const result = await response.json();
 
-        // Сохраняем ID оригинала
         if (result.originalImageId) {
             currentGenerationSession.originalImageId = result.originalImageId;
         }
 
-        // Добавляем изображение в сессию
         if (result.images && result.images.length) {
             currentGenerationSession.generatedImages.push(result.images[0]);
             currentGenerationSession.imageIds.push(`generated/${result.images[0].split('/').pop()}`);
@@ -425,7 +402,6 @@ async function performGeneration(files, attempt) {
         const newAttemptCount = attempt + 1;
         currentGenerationSession.attemptsMade = newAttemptCount;
 
-        // Если это первая генерация - создаём новую сессию в истории
         if (attempt === 0) {
             const sessionData = {
                 type: 'product-session',
@@ -445,7 +421,6 @@ async function performGeneration(files, attempt) {
             const sessionRef = await addDoc(collection(db, 'users', currentUser.uid, 'generationSessions'), sessionData);
             currentGenerationSession.sessionId = sessionRef.id;
         } 
-        // Если это повторная - обновляем существующую сессию
         else if (currentGenerationSession.sessionId) {
             const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
             await updateDoc(sessionRef, {
@@ -457,19 +432,19 @@ async function performGeneration(files, attempt) {
             });
         }
 
-        // Списываем деньги
         await updateDoc(doc(db, 'users', currentUser.uid), { 
             balance: increment(-cost),
             usedSpent: increment(cost)
         });
 
-        // Обновляем данные пользователя
         const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (updatedDoc.exists()) {
             userData = updatedDoc.data();
         }
         updateUI();
-        loadHistory(); // Перезагружаем историю
+        loadHistory();
+        
+        displayCardResults(result, attempt);
         
         const message = attempt === 0 
             ? '✅ Первое фото готово! Можете сгенерировать ещё за 15 ₽' 
@@ -491,13 +466,12 @@ async function performGeneration(files, attempt) {
     }
 }
 
-// ----- Отображение результатов (только фото, без лишних надписей) -----
+// ----- ИСПРАВЛЕННАЯ функция отображения результатов -----
 function displayCardResults(result, attempt) {
     const container = document.getElementById('cardResults');
     if (!container) return;
     container.style.display = 'block';
 
-    // Галерея - создаём один раз
     let gallery = document.getElementById('resultImages');
     if (!gallery) {
         gallery = document.createElement('div');
@@ -506,10 +480,8 @@ function displayCardResults(result, attempt) {
         container.appendChild(gallery);
     }
 
-    // Добавляем новое фото в существующую галерею
     if (result.images && result.images.length) {
         result.images.forEach(url => {
-            // Проверяем, нет ли уже такого фото (по URL)
             const existingImages = Array.from(gallery.children).map(img => img.src);
             if (!existingImages.includes(url)) {
                 const img = document.createElement('img');
@@ -521,13 +493,11 @@ function displayCardResults(result, attempt) {
         });
     }
 
-    // Полностью удаляем блок с описаниями, если он есть
     const descList = document.getElementById('resultDescriptions');
     if (descList) {
-        descList.remove(); // Удаляем из DOM
+        descList.remove();
     }
 
-    // Убираем любые другие лишние элементы с текстом
     const unwantedSelectors = [
         '.photo-caption',
         '.result-item',
@@ -548,7 +518,6 @@ async function loadHistory() {
         const historyList = document.getElementById('historyList');
         if (!historyList) return;
 
-        // Пробуем загрузить сгруппированные сессии
         let sessionsSnapshot;
         try {
             const sessionsQuery = query(
@@ -559,7 +528,6 @@ async function loadHistory() {
             sessionsSnapshot = await getDocs(sessionsQuery);
         } catch (e) {
             console.warn('Коллекция generationSessions не найдена, используем старую историю');
-            // Если нет новой коллекции, загружаем старую историю
             const oldQuery = query(collection(db, 'users', currentUser.uid, 'generations'), orderBy('timestamp', 'desc'), limit(20));
             const oldSnapshot = await getDocs(oldQuery);
             
@@ -568,7 +536,6 @@ async function loadHistory() {
                 return;
             }
             
-            // Группируем старую историю по товарам (приблизительно)
             const groupedByProduct = {};
             oldSnapshot.forEach(doc => {
                 const item = doc.data();
@@ -597,7 +564,6 @@ async function loadHistory() {
             return;
         }
 
-        // Отображаем сгруппированные сессии
         const sessions = [];
         sessionsSnapshot.forEach(doc => {
             sessions.push({ id: doc.id, ...doc.data() });
@@ -622,10 +588,9 @@ function displayGroupedHistory(sessions) {
             day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' 
         });
         
-        // Создаем мини-галерею из первых 3 фото
         const images = session.images || [];
         const previewImages = images.slice(0, 3).map(url => 
-            `<img src="${url}" class="history-thumb" onclick="viewHistorySession('${session.id}')" title="Фото ${images.indexOf(url) + 1}">`
+            `<img src="${url}" class="history-thumb" onclick="event.stopPropagation(); viewHistorySession('${session.id}')" title="Фото ${images.indexOf(url) + 1}">`
         ).join('');
         
         const moreBadge = images.length > 3 ? `<span class="more-badge">+${images.length - 3}</span>` : '';
@@ -657,7 +622,6 @@ window.viewHistorySession = async function(sessionId) {
         if (sessionDoc.exists()) {
             const session = sessionDoc.data();
             
-            // Восстанавливаем сессию для просмотра
             currentGenerationSession = {
                 sessionId: sessionId,
                 productName: session.productName,
@@ -665,13 +629,12 @@ window.viewHistorySession = async function(sessionId) {
                 category: session.category,
                 price: session.price,
                 features: session.features || [],
-                originalImageId: null, // Не нужно для просмотра
+                originalImageId: null,
                 attemptsMade: session.attempts,
                 maxAttempts: 5,
                 generatedImages: session.images || []
             };
             
-            // Отображаем галерею
             const container = document.getElementById('cardResults');
             container.style.display = 'block';
             
@@ -687,15 +650,13 @@ window.viewHistorySession = async function(sessionId) {
             session.images.forEach((url, index) => {
                 const img = document.createElement('img');
                 img.src = url;
-                img.alt = `Фото ${index + 1}`;
+                img.alt = `Фото товара`;
                 img.onclick = () => window.openLightbox(url);
                 gallery.appendChild(img);
             });
             
-            // Обновляем информацию о сессии
             updateRegenerationUI();
             
-            // Прячем кнопку "Сделать ещё" при просмотре истории
             const regenBtn = document.getElementById('regenerateBtn');
             if (regenBtn) regenBtn.style.display = 'none';
             
@@ -966,16 +927,11 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-// Очистка полей при загрузке
 document.addEventListener('DOMContentLoaded', function() {
     const wbFeatures = document.getElementById('wbFeatures');
-    const ozonFeatures = document.getElementById('ozonFeatures');
-    
     if (wbFeatures) wbFeatures.value = '';
-    if (ozonFeatures) ozonFeatures.value = '';
 });
 
-// Закрытие модальных окон по клику вне их
 window.onclick = function(event) {
     const paymentModal = document.getElementById('paymentModal');
     if (event.target === paymentModal) closeModal();
