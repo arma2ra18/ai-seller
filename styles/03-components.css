@@ -247,3 +247,29 @@ input, textarea {
     -webkit-user-select: auto;
     user-select: auto;
 }
+/* Индикатор шаблона */
+.template-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    background: rgba(0,113,227,0.1);
+    border: 1px solid var(--accent);
+    border-radius: 60px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    backdrop-filter: blur(10px);
+    animation: slideInRight 0.5s ease;
+}
+
+.template-indicator a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.template-indicator a:hover {
+    text-decoration: underline;
+    transform: translateX(3px);
+}

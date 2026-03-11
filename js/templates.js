@@ -722,3 +722,149 @@ export function applyTemplateToElement(element, template) {
     element.style.animation = '';
     element.classList.add('card-animation');
 }
+// Добавьте в конец файла:
+
+/**
+ * Получить CSS-строку для вставки в HTML
+ */
+export function getTemplateStyleString(template) {
+    const colors = template.colors;
+    const fonts = template.fonts;
+    
+    return `
+        <style id="template-styles">
+            .generated-card {
+                background: ${colors.cardBg || colors.background};
+                color: ${colors.text};
+                border-radius: 24px;
+                overflow: hidden;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+                font-family: ${fonts.features};
+            }
+            .generated-card .card-title {
+                font-family: ${fonts.title};
+                color: ${colors.primary};
+                font-size: 28px;
+                font-weight: 700;
+                margin-bottom: 15px;
+            }
+            .generated-card .card-price {
+                font-family: ${fonts.price};
+                color: ${colors.secondary};
+                font-size: 36px;
+                font-weight: 700;
+                margin-bottom: 20px;
+            }
+            .generated-card .card-features {
+                font-family: ${fonts.features};
+                color: ${colors.text};
+                list-style: none;
+                padding: 0;
+            }
+            .generated-card .card-features li {
+                margin: 10px 0;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .generated-card .card-features li::before {
+                content: '✓';
+                color: ${colors.accent};
+                font-weight: 700;
+                font-size: 16px;
+            }
+            
+            /* Layout */
+            .layout-centered {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .layout-left {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+                text-align: left;
+            }
+            .layout-right {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                text-align: right;
+            }
+            .layout-asymmetric {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 20px;
+            }
+            
+            /* Анимации */
+            @keyframes cardFade {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes cardSlide {
+                from { 
+                    opacity: 0;
+                    transform: translateX(30px);
+                }
+                to { 
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+            }
+            @keyframes cardScale {
+                from { 
+                    opacity: 0;
+                    transform: scale(0.9);
+                }
+                to { 
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+            @keyframes cardPulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.02); }
+                100% { transform: scale(1); }
+            }
+            .card-animation-fade {
+                animation: cardFade 0.5s ease;
+            }
+            .card-animation-slide {
+                animation: cardSlide 0.5s ease;
+            }
+            .card-animation-scale {
+                animation: cardScale 0.5s ease;
+            }
+            .card-animation-pulse {
+                animation: cardPulse 2s infinite;
+            }
+        </style>
+    `;
+}
+
+/**
+ * Применить шаблон к результатам генерации
+ */
+export function applyTemplateToResults(template) {
+    // Добавляем CSS в head
+    const styleId = 'template-styles';
+    let styleEl = document.getElementById(styleId);
+    
+    if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = styleId;
+        document.head.appendChild(styleEl);
+    }
+    
+    styleEl.textContent = getTemplateStyleString(template).replace(/<\/?style>/g, '');
+    
+    // Применяем классы к результатам
+    const results = document.querySelectorAll('.result-image, .generated-card');
+    results.forEach(el => {
+        el.classList.add(`layout-${template.layout}`);
+        el.classList.add(`card-animation-${template.animation}`);
+    });
+}

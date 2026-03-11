@@ -6,8 +6,32 @@
     <title>Генерация карточек — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
     
+    <!-- Подключаем шрифты для шаблонов -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <!-- Jivo Chat Widget -->
     <script src="//code.jivo.ru/widget/dxg5looTDX" async></script>
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
+            });
+        }
+    </script>
 </head>
 <body>
     <!-- Видеофон -->
@@ -45,39 +69,28 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item" data-section="news">
-                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📰 Новости
-                        </a>
+                        <a href="/news.html">📰 Новости</a>
                     </li>
                     <li class="menu-item" data-section="balance">
-                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            💰 Баланс
-                        </a>
+                        <a href="/balance.html">💰 Баланс</a>
                     </li>
                     <li class="menu-item active" data-section="generate">
-                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ✨ Генерация фото
-                        </a>
+                        <a href="/generate.html">✨ Генерация фото</a>
                     </li>
- <li class="menu-item" data-section="description">
-                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📝 Описание товара
-                        </a>
+                    <li class="menu-item" data-section="description">
+                        <a href="/description.html">📝 Описание товара</a>
                     </li>
-<li class="menu-item" data-section="description-history">
-                        <a href="/description-history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📚 История описаний
-                        </a>
+                    <li class="menu-item" data-section="templates">
+                        <a href="/templates.html">🎨 Шаблоны</a>
+                    </li>
+                    <li class="menu-item" data-section="description-history">
+                        <a href="/description-history.html">📚 История описаний</a>
                     </li>
                     <li class="menu-item" data-section="history">
-                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📜 История фото
-                        </a>
+                        <a href="/history.html">📜 История фото</a>
                     </li>
                     <li class="menu-item" data-section="settings">
-                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ⚙️ Настройки
-                        </a>
+                        <a href="/settings.html">⚙️ Настройки</a>
                     </li>
                 </ul>
             </nav>
@@ -101,7 +114,13 @@
                 <p>Загрузите фото и получите готовые изображения с инфографикой</p>
             </div>
 
-            <!-- Блок описания процесса (как в dashboard) -->
+            <!-- Индикатор активного шаблона -->
+            <div id="templateIndicator" class="template-indicator" style="display: none; margin-bottom: 20px; padding: 15px; background: rgba(0,113,227,0.1); border: 1px solid var(--accent); border-radius: 60px;">
+                <span id="templateIndicatorText"></span>
+                <a href="/templates.html" style="color: var(--accent); margin-left: 10px;">Изменить →</a>
+            </div>
+
+            <!-- Блок описания процесса -->
             <div class="info-block glass" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid var(--accent);">
                 <h3 style="color: var(--accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
                     <span>🎯</span> Как это работает
@@ -128,7 +147,7 @@
                 </p>
             </div>
 
-            <!-- Форма генерации (скопирована из dashboard) -->
+            <!-- Форма генерации -->
             <div class="content-area glass">
                 <div class="generation-form">
                     <div class="form-group">
@@ -239,13 +258,81 @@
     </div>
 
     <script type="module" src="js/dashboard.js"></script>
-    <script>
+    <script type="module">
+        import { auth, db } from './js/firebase.js';
+        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+        import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+        import { TEMPLATES, applyTemplateToResults } from './js/templates.js';
+
+        let currentUser = null;
+        let activeTemplate = null;
+
+        // Проверка авторизации
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = '/login.html';
+                return;
+            }
+            currentUser = user;
+            await loadUserData();
+            loadActiveTemplate();
+        });
+
+        // Загрузка данных пользователя
+        async function loadUserData() {
+            try {
+                const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
+                    document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+            }
+        }
+
+        // Загрузка активного шаблона
+        function loadActiveTemplate() {
+            try {
+                const saved = localStorage.getItem('activeTemplate');
+                const savedForUser = localStorage.getItem(`template_${currentUser.uid}`);
+                
+                if (saved) {
+                    activeTemplate = JSON.parse(saved);
+                } else if (savedForUser) {
+                    activeTemplate = JSON.parse(savedForUser);
+                } else {
+                    activeTemplate = TEMPLATES.premium;
+                }
+                
+                // Показываем индикатор
+                const indicator = document.getElementById('templateIndicator');
+                const indicatorText = document.getElementById('templateIndicatorText');
+                
+                if (activeTemplate) {
+                    indicator.style.display = 'flex';
+                    indicatorText.innerHTML = `🎨 Активный шаблон: <strong>${activeTemplate.name}</strong>`;
+                    
+                    // Применяем стили шаблона
+                    applyTemplateToResults(activeTemplate);
+                }
+                
+                console.log('🎨 Активный шаблон загружен:', activeTemplate.name);
+            } catch (error) {
+                console.error('Ошибка загрузки шаблона:', error);
+            }
+        }
+
         // Функции для навигации
         function navigateTo(section) {
             const paths = {
                 'news': '/news.html',
                 'balance': '/balance.html',
                 'generate': '/generate.html',
+                'description': '/description.html',
+                'templates': '/templates.html',
+                'description-history': '/description-history.html',
                 'history': '/history.html',
                 'settings': '/settings.html'
             };
@@ -254,7 +341,8 @@
             }
         }
 
-        window.logout = function() {
+        window.logout = async function() {
+            await auth.signOut();
             window.location.href = '/login.html';
         };
 
@@ -283,7 +371,7 @@
             closeModal();
         };
 
-        // Функции для генерации (будут использоваться из dashboard.js)
+        // Функции для генерации
         window.updateFileInfo = function(inputId, infoId) {
             const input = document.getElementById(inputId);
             const info = document.getElementById(infoId);
@@ -300,20 +388,8 @@
             document.body.style.overflow = '';
         };
 
-        // Загрузка данных пользователя
-        async function loadUserData() {
-            try {
-                // Здесь будет загрузка из Firebase
-                document.getElementById('sidebarBalance').textContent = '1250';
-                document.getElementById('userEmail').textContent = 'user@example.com';
-            } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
-            }
-        }
-
+        // Обработчики меню
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserData();
-            
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.addEventListener('click', function(e) {
                     const section = this.dataset.section;
@@ -322,19 +398,5 @@
             });
         });
     </script>
-<!-- Подключаем поддержку шаблонов -->
-<script type="module">
-    import { TEMPLATES } from './js/templates.js';
-    
-    // Загружаем активный шаблон
-    const savedTemplate = localStorage.getItem('activeTemplate');
-    if (savedTemplate) {
-        const template = JSON.parse(savedTemplate);
-        console.log('🎨 Активный шаблон:', template.name);
-        
-        // Здесь можно применить шаблон к генерации
-        // В следующем обновлении добавим интеграцию с API
-    }
-</script>
 </body>
 </html>

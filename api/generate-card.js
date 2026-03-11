@@ -49,7 +49,7 @@ async function generateGeminiImage(prompt, referenceImage) {
         ];
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-image-preview',
+            model: 'gemini-2.5-flash',
             contents: contents,
             config: {
                 responseModalities: ['Image'],
@@ -116,6 +116,17 @@ export default async function handler(req, res) {
         const platform = fields.platform?.[0] || 'wb';
         const attempt = parseInt(fields.attempt?.[0]) || 0;
         const originalImageId = fields.originalImageId?.[0] || null;
+        
+        // Получаем шаблон, если он передан
+        let template = null;
+        if (fields.template?.[0]) {
+            try {
+                template = JSON.parse(fields.template[0]);
+                console.log('🎨 Получен шаблон:', template.name);
+            } catch (e) {
+                console.error('Ошибка парсинга шаблона:', e);
+            }
+        }
 
         if (!productName) {
             return res.status(400).json({ error: 'Product name is required' });
@@ -130,6 +141,9 @@ export default async function handler(req, res) {
             if (photoArray.length) {
                 referenceBuffer = fs.readFileSync(photoArray[0].filepath);
                 console.log(`Loaded reference image: ${photoArray[0].originalFilename}`);
+                
+                // Удаляем временный файл после чтения
+                fs.unlinkSync(photoArray[0].filepath);
             }
         } else if (originalImageId) {
             // Загружаем оригинал из Storage для повторных генераций
@@ -163,7 +177,7 @@ export default async function handler(req, res) {
             }
         }
 
-        // УЛЬТРА-ПРОМПТ
+        // Базовый промпт
         const basePrompt = `Ты — ведущий дизайнер инфографики для Wildberries. Твоя задача создать фото-карточку товара, которая привлечет максимум внимания и увеличит продажи.
 
 **Товар:** "${productName}"
@@ -176,8 +190,8 @@ export default async function handler(req, res) {
 1.  **Используй свои знания.** На основе названия "${productName}", найди в своей базе данных реальные характеристики, технические детали и преимущества этого товара. Добавь их на карточку в виде иконок или коротких надписей. Обязательно используй эту информацию.
 
 2.  **Цветовая стратегия (выбери подходящую):**
-    *   Если товар премиальный или технологичный, используй глубокий, насыщенный фон (тёмно-синий, чёрный, изумрудный). Товар должен светиться на нём.
-    *   Если товар для дома, уюта или еда, используй тёплые, "вкусные" тона (бежевый, терракотовый, мягкий зелёный).
+    *   Если товар премиальный или технологичный, используй глубокий, насыщенный фон. Товар должен светиться на нём.
+    *   Если товар для дома, уюта или еда, используй тёплые, "вкусные" тона.
     *   Если товар для молодёжи или спорта, добавь яркие, контрастные цвета.
 
 3.  **3D и объём:** Добавь мягкие, но заметные 3D-эффекты. Товар должен выглядеть объёмно. Тени должны быть реалистичными.
@@ -194,12 +208,32 @@ export default async function handler(req, res) {
     *   **Внизу:** Цена и кнопка призыва к покупке (стилизованно).
     *   Используй выноски и указатели, чтобы связать текст с деталями товара.
 
-6.  **Запрещено:** Белый фон, скучный минимализм, мелкий нечитаемый текст, пустота. Карточка должна быть насыщенной, но гармоничной.
+6.  **Запрещено:** Белый фон, скучный минимализм, мелкий нечитаемый текст, пустота. Карточка должна быть насыщенной, но гармоничной.`;
 
-Создай фото-карточку, от которой невозможно оторвать взгляд.`;
+        // Добавляем информацию о шаблоне, если он есть
+        let templatePrompt = '';
+        if (template) {
+            templatePrompt = `
+
+### **Дополнительные требования к дизайну (строго соблюдай):**
+- Основной цвет (для заголовков): ${template.colors.primary}
+- Вторичный цвет (для цены): ${template.colors.secondary}
+- Акцентный цвет (для иконок и галочек): ${template.colors.accent}
+- Цвет фона: ${template.colors.background}
+- Цвет карточки: ${template.colors.cardBg || template.colors.background}
+- Стиль шаблона: ${template.name}
+- Расположение текста: ${template.layout === 'centered' ? 'по центру' : 
+                         template.layout === 'left' ? 'слева' : 
+                         template.layout === 'right' ? 'справа' : 'асимметричное'}
+- Шрифт заголовка: ${template.fonts.title}
+- Шрифт цены: ${template.fonts.price}
+- Шрифт особенностей: ${template.fonts.features}
+
+Используй эти цвета и шрифты в карточке. Основной цвет применяй для заголовка, вторичный для цены, акцентный для иконок и галочек.`;
+        }
 
         const variation = ` (Попытка ${attempt + 1}. Вариант ${attempt + 1} из 5: используй другое расположение текста, цветовую гамму или композицию, но сохрани все ключевые элементы товара)`;
-        const finalPrompt = basePrompt + variation;
+        const finalPrompt = basePrompt + templatePrompt + variation;
 
         let imageDataUrl;
         try {
@@ -213,26 +247,13 @@ export default async function handler(req, res) {
         // Загружаем в Storage
         const fileName = `card_${Date.now()}_${attempt}.jpg`;
         const publicUrl = await uploadToStorage(imageDataUrl, fileName);
-        
-        // Генерируем описания (можно варьировать в зависимости от попытки)
-        const descriptions = []; // Больше не генерируем описания
-
-        // Удаляем временные файлы
-        if (files.photos) {
-            const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
-            photoArray.forEach(file => {
-                if (file.filepath && fs.existsSync(file.filepath)) {
-                    fs.unlinkSync(file.filepath);
-                }
-            });
-        }
 
         console.log('✅ Успешно сгенерировано изображение');
         res.status(200).json({ 
             images: [publicUrl], 
-            descriptions,
             originalImageId: savedOriginalId,
-            attempt: attempt
+            attempt: attempt,
+            template: template ? template.name : null
         });
     } catch (error) {
         console.error('❌ Ошибка в handler:', error);
