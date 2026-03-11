@@ -141,25 +141,63 @@ ${competitorLinks.length > 0 ? `Ссылки для анализа:\n${competito
 
 Создай уникальное, продающее описание товара.`;
 
-    // ИСПРАВЛЕНО: правильное название модели
-    const response = await ai.models.generateContent({
-      model: 'models/gemini-1.5-flash', // или 'models/gemini-1.5-pro'
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: systemPrompt + "\n\n" + userPrompt }]
+    // ===== ИСПРАВЛЕНО: правильные названия моделей для @google/genai =====
+    // Варианты:
+    // 1. 'gemini-2.0-flash-exp' - экспериментальная, быстрая
+    // 2. 'gemini-1.5-flash' - стабильная, быстрая
+    // 3. 'gemini-1.5-pro' - для сложных задач
+    // 4. 'gemini-pro' - если ничего не работает
+    
+    let generatedText;
+    try {
+      // Пробуем разные модели по порядку
+      const models = [
+        'gemini-2.0-flash-exp',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'gemini-pro'
+      ];
+      
+      let lastError;
+      for (const model of models) {
+        try {
+          console.log(`Trying model: ${model}`);
+          const response = await ai.models.generateContent({
+            model: model, // Без 'models/' префикса!
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: systemPrompt + "\n\n" + userPrompt }]
+              }
+            ],
+            config: {
+              temperature: 0.7,
+              maxOutputTokens: 2048,
+            }
+          });
+          
+          if (response.text) {
+            generatedText = response.text;
+            console.log(`✅ Success with model: ${model}`);
+            break;
+          }
+        } catch (modelError) {
+          console.log(`❌ Model ${model} failed:`, modelError.message);
+          lastError = modelError;
         }
-      ],
-      config: {
-        temperature: 0.7,
-        maxOutputTokens: 2048,
       }
-    });
+      
+      if (!generatedText) {
+        throw new Error('All models failed: ' + (lastError?.message || 'Unknown error'));
+      }
 
-    const generatedText = response.text;
+    } catch (genError) {
+      console.error('Generation error:', genError);
+      throw new Error('Failed to generate description: ' + genError.message);
+    }
 
     if (!generatedText) {
-      throw new Error('Failed to generate description');
+      throw new Error('Generated text is empty');
     }
 
     // Списание средств
