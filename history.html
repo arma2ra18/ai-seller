@@ -620,14 +620,6 @@
 
         document.getElementById('sortSelect').addEventListener('change', applySort);
 
-        // Бесконечный скролл
-        window.addEventListener('scroll', () => {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 1000) {
-                if (!isLoading && hasMore && filteredSessions.length === allSessions.length) {
-                    loadSessions(false);
-                }
-            }
-        });
 
         // Обработчики меню
         document.addEventListener('DOMContentLoaded', function() {
