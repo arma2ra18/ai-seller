@@ -5,6 +5,159 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Настройки — Prodiger Admin</title>
     <link rel="stylesheet" href="../styles/main.css">
+    <style>
+        .settings-section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .settings-section h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            color: var(--accent);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        
+        .image-list {
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+        
+        .image-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .image-item:hover {
+            border-color: var(--accent);
+            background: rgba(0,113,227,0.05);
+        }
+        
+        .image-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .image-item input {
+            flex: 1;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+        }
+        
+        .image-item input:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+        
+        .image-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .btn-icon {
+            padding: 6px 10px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-icon:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        
+        .btn-icon.delete:hover {
+            background: var(--error);
+            border-color: var(--error);
+        }
+        
+        .add-image {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .add-image input {
+            flex: 1;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .preview-item {
+            text-align: center;
+        }
+        
+        .preview-item img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .preview-item img:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+        
+        .preview-item span {
+            display: block;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+        
+        .info-note {
+            background: rgba(0,113,227,0.1);
+            border-left: 4px solid var(--accent);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
+        .info-note strong {
+            color: var(--accent);
+        }
+    </style>
 </head>
 <body>
     <div class="admin-wrapper">
@@ -27,62 +180,99 @@
                 <h1>Настройки сайта</h1>
             </div>
             
-            <div class="settings-grid">
-                <!-- Основные настройки -->
-                <div class="settings-card glass">
-                    <h3>Основные</h3>
-                    
-                    <div class="form-group">
-                        <label>Название сайта</label>
-                        <input type="text" id="siteName" value="Prodiger">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Бесплатных рублей при регистрации</label>
-                        <input type="number" id="welcomeBonus" value="500" min="0">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Стоимость генерации (₽)</label>
-                        <input type="number" id="genPrice" value="100" min="1" readonly disabled>
-                        <small>Фиксированная цена</small>
-                    </div>
+            <!-- ===== НАСТРОЙКИ КУБА ===== -->
+            <div class="settings-section">
+                <h2>🎲 3D Куб на главной</h2>
+                
+                <div class="info-note">
+                    <strong>Как работает:</strong> Фото автоматически распределяются по 6 граням куба. Если фото больше 6, они меняются случайным образом при каждой загрузке страницы.
                 </div>
                 
-                <!-- Технические настройки -->
-                <div class="settings-card glass">
-                    <h3>Технические</h3>
-                    
-                    <div class="form-group">
-                        <label>Статус API Gemini</label>
-                        <div class="status-badge" id="apiStatus">Проверка...</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Последний деплой</label>
-                        <div id="lastDeploy">—</div>
-                    </div>
-                    
-                    <button class="btn btn-outline" onclick="testGemini()">Тест Gemini</button>
-                    <button class="btn btn-outline" onclick="clearCache()">Очистить кэш</button>
+                <div class="image-list" id="cubeImagesList">
+                    <!-- Сюда будут добавляться изображения -->
                 </div>
                 
-                <!-- Безопасность -->
-                <div class="settings-card glass">
-                    <h3>Безопасность</h3>
-                    
-                    <div class="form-group">
-                        <label>Требовать 2FA для админов</label>
-                        <input type="checkbox" id="require2FA">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Блокировка после неудачных попыток</label>
-                        <input type="number" id="maxLoginAttempts" value="5" min="1">
-                    </div>
-                    
-                    <button class="btn btn-primary" onclick="saveSettings()">Сохранить все</button>
+                <div class="add-image">
+                    <input type="text" id="newCubeImage" placeholder="https://... ссылка на фото">
+                    <button class="btn btn-primary" onclick="addCubeImage()">➕ Добавить</button>
                 </div>
+                
+                <div class="preview-grid" id="cubePreview">
+                    <!-- Превью существующих фото -->
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-success" onclick="saveCubeSettings()">💾 Сохранить настройки куба</button>
+                    <button class="btn btn-outline" onclick="resetCubeToDefault()">↺ Сбросить к фото по умолчанию</button>
+                </div>
+            </div>
+            
+            <!-- ===== НАСТРОЙКИ КАРУСЕЛИ ===== -->
+            <div class="settings-section">
+                <h2>🖼️ Карусель примеров</h2>
+                
+                <div class="info-note">
+                    <strong>Как работает:</strong> Все добавленные фото будут показываться в карусели на главной в порядке добавления.
+                </div>
+                
+                <div class="image-list" id="carouselImagesList">
+                    <!-- Сюда будут добавляться изображения -->
+                </div>
+                
+                <div class="add-image">
+                    <input type="text" id="newCarouselImage" placeholder="https://... ссылка на фото">
+                    <button class="btn btn-primary" onclick="addCarouselImage()">➕ Добавить</button>
+                </div>
+                
+                <div class="preview-grid" id="carouselPreview">
+                    <!-- Превью существующих фото -->
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-success" onclick="saveCarouselSettings()">💾 Сохранить настройки карусели</button>
+                    <button class="btn btn-outline" onclick="resetCarouselToDefault()">↺ Сбросить к фото по умолчанию</button>
+                </div>
+            </div>
+            
+            <!-- ===== ОСНОВНЫЕ НАСТРОЙКИ (бывшие) ===== -->
+            <div class="settings-section">
+                <h2>⚙️ Основные настройки</h2>
+                
+                <div class="form-group">
+                    <label>Название сайта</label>
+                    <input type="text" id="siteName" value="Prodiger">
+                </div>
+                
+                <div class="form-group">
+                    <label>Бесплатных рублей при регистрации</label>
+                    <input type="number" id="welcomeBonus" value="500" min="0">
+                </div>
+                
+                <div class="form-group">
+                    <label>Стоимость генерации (₽)</label>
+                    <input type="number" id="genPrice" value="100" min="1" readonly disabled>
+                    <small>Фиксированная цена</small>
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveMainSettings()">Сохранить основные настройки</button>
+            </div>
+            
+            <!-- ===== ТЕХНИЧЕСКИЕ НАСТРОЙКИ ===== -->
+            <div class="settings-section">
+                <h2>🔧 Технические</h2>
+                
+                <div class="form-group">
+                    <label>Статус API Gemini</label>
+                    <div class="status-badge" id="apiStatus">Проверка...</div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Последний деплой</label>
+                    <div id="lastDeploy">—</div>
+                </div>
+                
+                <button class="btn btn-outline" onclick="testGemini()">Тест Gemini</button>
+                <button class="btn btn-outline" onclick="clearCache()">Очистить кэш</button>
             </div>
         </div>
     </div>

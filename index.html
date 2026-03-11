@@ -314,21 +314,33 @@
 
     <script src="js/main.js"></script>
     <script>
-        // ===== КАРУСЕЛЬ =====
-        const images = [
-            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
-            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
-            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
-            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
-            "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
-        ];
+       <script>
+    // ===== КАРУСЕЛЬ С ПОДДЕРЖКОЙ НАСТРОЕК =====
+    let carouselImages = [];
+    let currentIndex = 0;
+    const track = document.getElementById('carouselTrack');
+    const dotsContainer = document.getElementById('carouselDots');
 
-        let currentIndex = 0;
-        const track = document.getElementById('carouselTrack');
-        const dotsContainer = document.getElementById('carouselDots');
-
+    // Функция обновления карусели
+    window.updateCarouselTrack = function() {
+        if (!track || !dotsContainer) return;
+        
+        track.innerHTML = '';
+        dotsContainer.innerHTML = '';
+        
+        if (carouselImages.length === 0) {
+            // Фото по умолчанию, если ничего не загружено
+            carouselImages = [
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
+            ];
+        }
+        
         // Создаём слайды
-        images.forEach((src, index) => {
+        carouselImages.forEach((src, index) => {
             const slide = document.createElement('div');
             slide.className = 'carousel-slide';
             
@@ -336,6 +348,7 @@
             img.src = src;
             img.alt = `Пример ${index + 1}`;
             img.loading = 'lazy';
+            img.onerror = function() { this.src = 'https://placehold.co/600x400/2c2c2e/666?text=Prodiger'; };
             
             slide.appendChild(img);
             track.appendChild(slide);
@@ -346,35 +359,47 @@
             dot.onclick = () => goToSlide(index);
             dotsContainer.appendChild(dot);
         });
-
-        const slides = document.querySelectorAll('.carousel-slide');
-        const totalSlides = slides.length;
-
-        function updateDots() {
-            document.querySelectorAll('.dot').forEach((dot, index) => {
-                dot.classList.toggle('active', index === currentIndex);
-            });
-        }
-
-        function goToSlide(index) {
-            if (index < 0 || index >= totalSlides) return;
-            currentIndex = index;
-            
-            const slideWidth = slides[0].offsetWidth + 20;
-            track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
-            
-            updateDots();
-        }
-
-        window.moveCarousel = function(direction) {
-            goToSlide(currentIndex + direction);
-        };
-
-        window.addEventListener('resize', () => {
-            goToSlide(currentIndex);
-        });
-
+        
         goToSlide(0);
-    </script>
+    };
+
+    // Используем загруженные изображения, если они есть
+    if (window.pendingCarouselImages) {
+        carouselImages = window.pendingCarouselImages;
+        window.pendingCarouselImages = null;
+    }
+    
+    window.updateCarouselTrack();
+
+    const slides = () => document.querySelectorAll('.carousel-slide');
+    const totalSlides = () => slides().length;
+
+    function updateDots() {
+        document.querySelectorAll('.dot').forEach((dot, index) => {
+            dot.classList.toggle('active', index === currentIndex);
+        });
+    }
+
+    function goToSlide(index) {
+        const slidesList = slides();
+        if (index < 0 || index >= slidesList.length) return;
+        currentIndex = index;
+        
+        const slideWidth = slidesList[0]?.offsetWidth + 20 || 0;
+        if (track) track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+        
+        updateDots();
+    }
+
+    window.moveCarousel = function(direction) {
+        goToSlide(currentIndex + direction);
+    };
+
+    window.addEventListener('resize', () => {
+        goToSlide(currentIndex);
+    });
+
+    goToSlide(0);
+</script>
 </body>
 </html>

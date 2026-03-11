@@ -1635,3 +1635,321 @@ document.addEventListener('DOMContentLoaded', function() {
         initLogsFilters();
     }
 });
+// ========== НАСТРОЙКИ КУБА И КАРУСЕЛИ ==========
+
+// Фото по умолчанию для куба (те, что уже используются)
+const DEFAULT_CUBE_IMAGES = [
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg"
+];
+
+// Фото по умолчанию для карусели (те, что уже используются)
+const DEFAULT_CAROUSEL_IMAGES = [
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
+];
+
+let cubeImages = [...DEFAULT_CUBE_IMAGES];
+let carouselImages = [...DEFAULT_CAROUSEL_IMAGES];
+
+// Загрузка настроек (дополнить существующую функцию loadSettings)
+async function loadSettings() {
+    try {
+        const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+        if (settingsDoc.exists()) {
+            const settings = settingsDoc.data();
+            
+            // Основные настройки
+            document.getElementById('siteName').value = settings.siteName || 'Prodiger';
+            document.getElementById('welcomeBonus').value = settings.welcomeBonus || 500;
+            document.getElementById('genPrice').value = settings.genPrice || 100;
+            
+            // Настройки куба
+            if (settings.cubeImages && Array.isArray(settings.cubeImages)) {
+                cubeImages = settings.cubeImages;
+            } else {
+                cubeImages = [...DEFAULT_CUBE_IMAGES];
+            }
+            
+            // Настройки карусели
+            if (settings.carouselImages && Array.isArray(settings.carouselImages)) {
+                carouselImages = settings.carouselImages;
+            } else {
+                carouselImages = [...DEFAULT_CAROUSEL_IMAGES];
+            }
+        } else {
+            // Если документа нет, используем значения по умолчанию
+            document.getElementById('siteName').value = 'Prodiger';
+            document.getElementById('welcomeBonus').value = '500';
+            document.getElementById('genPrice').value = '100';
+            cubeImages = [...DEFAULT_CUBE_IMAGES];
+            carouselImages = [...DEFAULT_CAROUSEL_IMAGES];
+        }
+        
+        // Отображаем списки изображений
+        renderCubeImages();
+        renderCarouselImages();
+        
+        document.getElementById('apiStatus').innerHTML = '<span class="badge badge-success">Работает</span>';
+        
+        const deployDate = new Date().toLocaleString('ru-RU');
+        document.getElementById('lastDeploy').innerHTML = deployDate;
+        
+    } catch (error) {
+        console.error('Ошибка загрузки настроек:', error);
+        // Используем значения по умолчанию при ошибке
+        document.getElementById('siteName').value = 'Prodiger';
+        document.getElementById('welcomeBonus').value = '500';
+        document.getElementById('genPrice').value = '100';
+        cubeImages = [...DEFAULT_CUBE_IMAGES];
+        carouselImages = [...DEFAULT_CAROUSEL_IMAGES];
+        renderCubeImages();
+        renderCarouselImages();
+        document.getElementById('apiStatus').innerHTML = '<span class="badge badge-warning">Проверка...</span>';
+    }
+}
+
+// Отрисовка списка изображений для куба
+function renderCubeImages() {
+    const listEl = document.getElementById('cubeImagesList');
+    const previewEl = document.getElementById('cubePreview');
+    
+    if (!listEl || !previewEl) return;
+    
+    listEl.innerHTML = '';
+    previewEl.innerHTML = '';
+    
+    cubeImages.forEach((url, index) => {
+        // Элемент списка для редактирования
+        listEl.innerHTML += `
+            <div class="image-item" data-index="${index}">
+                <img src="${url}" alt="Cube ${index + 1}" onerror="this.src='https://placehold.co/60x60/2c2c2e/666?text=Error'">
+                <input type="text" value="${url}" placeholder="URL фото" onchange="updateCubeImage(${index}, this.value)">
+                <div class="image-actions">
+                    <button class="btn-icon" onclick="moveCubeImage(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>↑</button>
+                    <button class="btn-icon" onclick="moveCubeImage(${index}, 'down')" ${index === cubeImages.length - 1 ? 'disabled' : ''}>↓</button>
+                    <button class="btn-icon delete" onclick="deleteCubeImage(${index})">🗑️</button>
+                </div>
+            </div>
+        `;
+        
+        // Превью
+        previewEl.innerHTML += `
+            <div class="preview-item">
+                <img src="${url}" alt="Preview ${index + 1}" onerror="this.src='https://placehold.co/100x100/2c2c2e/666?text=Error'">
+                <span>Грань ${index + 1}</span>
+            </div>
+        `;
+    });
+    
+    if (cubeImages.length === 0) {
+        listEl.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">Нет изображений. Добавьте хотя бы одно.</p>';
+        previewEl.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">Нет изображений для предпросмотра</p>';
+    }
+}
+
+// Отрисовка списка изображений для карусели
+function renderCarouselImages() {
+    const listEl = document.getElementById('carouselImagesList');
+    const previewEl = document.getElementById('carouselPreview');
+    
+    if (!listEl || !previewEl) return;
+    
+    listEl.innerHTML = '';
+    previewEl.innerHTML = '';
+    
+    carouselImages.forEach((url, index) => {
+        // Элемент списка для редактирования
+        listEl.innerHTML += `
+            <div class="image-item" data-index="${index}">
+                <img src="${url}" alt="Carousel ${index + 1}" onerror="this.src='https://placehold.co/60x60/2c2c2e/666?text=Error'">
+                <input type="text" value="${url}" placeholder="URL фото" onchange="updateCarouselImage(${index}, this.value)">
+                <div class="image-actions">
+                    <button class="btn-icon" onclick="moveCarouselImage(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>↑</button>
+                    <button class="btn-icon" onclick="moveCarouselImage(${index}, 'down')" ${index === carouselImages.length - 1 ? 'disabled' : ''}>↓</button>
+                    <button class="btn-icon delete" onclick="deleteCarouselImage(${index})">🗑️</button>
+                </div>
+            </div>
+        `;
+        
+        // Превью
+        previewEl.innerHTML += `
+            <div class="preview-item">
+                <img src="${url}" alt="Preview ${index + 1}" onerror="this.src='https://placehold.co/100x100/2c2c2e/666?text=Error'">
+                <span>Слайд ${index + 1}</span>
+            </div>
+        `;
+    });
+    
+    if (carouselImages.length === 0) {
+        listEl.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">Нет изображений. Добавьте хотя бы одно.</p>';
+        previewEl.innerHTML = '<p class="text-muted" style="padding: 20px; text-align: center;">Нет изображений для предпросмотра</p>';
+    }
+}
+
+// ===== ФУНКЦИИ ДЛЯ КУБА =====
+window.addCubeImage = function() {
+    const input = document.getElementById('newCubeImage');
+    const url = input.value.trim();
+    
+    if (!url) {
+        showNotification('Введите URL изображения', 'warning');
+        return;
+    }
+    
+    cubeImages.push(url);
+    renderCubeImages();
+    input.value = '';
+    showNotification('Изображение добавлено', 'success');
+};
+
+window.updateCubeImage = function(index, newUrl) {
+    if (index >= 0 && index < cubeImages.length) {
+        cubeImages[index] = newUrl;
+        renderCubeImages();
+        showNotification('Изображение обновлено', 'success');
+    }
+};
+
+window.deleteCubeImage = function(index) {
+    if (index >= 0 && index < cubeImages.length) {
+        cubeImages.splice(index, 1);
+        renderCubeImages();
+        showNotification('Изображение удалено', 'success');
+    }
+};
+
+window.moveCubeImage = function(index, direction) {
+    if (direction === 'up' && index > 0) {
+        [cubeImages[index - 1], cubeImages[index]] = [cubeImages[index], cubeImages[index - 1]];
+    } else if (direction === 'down' && index < cubeImages.length - 1) {
+        [cubeImages[index], cubeImages[index + 1]] = [cubeImages[index + 1], cubeImages[index]];
+    }
+    renderCubeImages();
+};
+
+window.saveCubeSettings = async function() {
+    try {
+        await setDoc(doc(db, 'settings', 'general'), {
+            cubeImages: cubeImages
+        }, { merge: true });
+        
+        await addAdminLog('update_settings', { 
+            changes: { cubeImages: cubeImages.length + ' фото' } 
+        });
+        
+        showNotification('Настройки куба сохранены', 'success');
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+};
+
+window.resetCubeToDefault = function() {
+    if (confirm('Сбросить к фото по умолчанию?')) {
+        cubeImages = [...DEFAULT_CUBE_IMAGES];
+        renderCubeImages();
+        showNotification('Сброшено к фото по умолчанию', 'success');
+    }
+};
+
+// ===== ФУНКЦИИ ДЛЯ КАРУСЕЛИ =====
+window.addCarouselImage = function() {
+    const input = document.getElementById('newCarouselImage');
+    const url = input.value.trim();
+    
+    if (!url) {
+        showNotification('Введите URL изображения', 'warning');
+        return;
+    }
+    
+    carouselImages.push(url);
+    renderCarouselImages();
+    input.value = '';
+    showNotification('Изображение добавлено в карусель', 'success');
+};
+
+window.updateCarouselImage = function(index, newUrl) {
+    if (index >= 0 && index < carouselImages.length) {
+        carouselImages[index] = newUrl;
+        renderCarouselImages();
+        showNotification('Изображение обновлено', 'success');
+    }
+};
+
+window.deleteCarouselImage = function(index) {
+    if (index >= 0 && index < carouselImages.length) {
+        carouselImages.splice(index, 1);
+        renderCarouselImages();
+        showNotification('Изображение удалено из карусели', 'success');
+    }
+};
+
+window.moveCarouselImage = function(index, direction) {
+    if (direction === 'up' && index > 0) {
+        [carouselImages[index - 1], carouselImages[index]] = [carouselImages[index], carouselImages[index - 1]];
+    } else if (direction === 'down' && index < carouselImages.length - 1) {
+        [carouselImages[index], carouselImages[index + 1]] = [carouselImages[index + 1], carouselImages[index]];
+    }
+    renderCarouselImages();
+};
+
+window.saveCarouselSettings = async function() {
+    try {
+        await setDoc(doc(db, 'settings', 'general'), {
+            carouselImages: carouselImages
+        }, { merge: true });
+        
+        await addAdminLog('update_settings', { 
+            changes: { carouselImages: carouselImages.length + ' фото' } 
+        });
+        
+        showNotification('Настройки карусели сохранены', 'success');
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+};
+
+window.resetCarouselToDefault = function() {
+    if (confirm('Сбросить к фото по умолчанию?')) {
+        carouselImages = [...DEFAULT_CAROUSEL_IMAGES];
+        renderCarouselImages();
+        showNotification('Сброшено к фото по умолчанию', 'success');
+    }
+};
+
+// Сохранение основных настроек
+window.saveMainSettings = async function() {
+    const siteName = document.getElementById('siteName').value;
+    const bonus = parseInt(document.getElementById('welcomeBonus').value);
+    
+    if (isNaN(bonus)) {
+        showNotification('Проверьте введённые данные', 'error');
+        return;
+    }
+    
+    try {
+        await setDoc(doc(db, 'settings', 'general'), {
+            siteName: siteName,
+            welcomeBonus: bonus,
+            genPrice: 100
+        }, { merge: true });
+        
+        await addAdminLog('update_settings', { 
+            changes: { siteName, bonus } 
+        });
+        
+        showNotification('Основные настройки сохранены', 'success');
+    } catch (error) {
+        console.error('Ошибка сохранения:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+};
