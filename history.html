@@ -5,6 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>История генераций — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
+    <style>
+        .history-pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .history-pagination button {
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 40px;
+        }
+        
+        .history-pagination button:hover {
+            background: rgba(0,113,227,0.2);
+            border-color: var(--accent);
+            color: white;
+        }
+        
+        .history-pagination button.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
     <!-- Видеофон -->
@@ -36,22 +69,42 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="menu-item" data-section="news">📰 Новости</li>
-                    <li class="menu-item" data-section="balance">💰 Баланс</li>
-                    <li class="menu-item" data-section="wb">📦 Карточки товара</li>
-                    <li class="menu-item active" data-section="history">📜 История</li>
-                    <li class="menu-item" data-section="settings">⚙️ Настройки</li>
+                    <li class="menu-item" data-section="news">
+                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📰 Новости
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="balance">
+                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            💰 Баланс
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="wb">
+                        <a href="/dashboard.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📦 Карточки товара
+                        </a>
+                    </li>
+                    <li class="menu-item active" data-section="history">
+                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📜 История
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="settings">
+                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ⚙️ Настройки
+                        </a>
+                    </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-balance">
                     <span>Баланс: <span id="sidebarBalance">0</span> ₽</span>
-                    <button class="btn btn-small btn-primary" onclick="window.showPaymentModal()">Пополнить</button>
+                    <button class="btn btn-small btn-primary" onclick="window.location.href='/balance.html'">Пополнить</button>
                 </div>
                 <div class="user-info">
                     <span class="user-email" id="userEmail">Загрузка...</span>
                 </div>
-                <button class="btn btn-small btn-outline" onclick="window.logout()">Выйти</button>
+                <button class="btn btn-small btn-outline" onclick="logout()">Выйти</button>
                 <a href="/" class="btn btn-small btn-outline" style="margin-top: 10px;">🏠 На главную</a>
             </div>
         </aside>
@@ -59,7 +112,7 @@
         <!-- Основной контент -->
         <main class="main-content">
             <div class="welcome-block">
-                <h1 class="gradient-text">История генераций</h1>
+                <h1 class="gradient-text">📜 История генераций</h1>
                 <p>Все созданные вами карточки товаров</p>
             </div>
 
@@ -88,7 +141,7 @@
     <!-- Модальное окно пополнения -->
     <div id="paymentModal" class="modal">
         <div class="modal-content glass payment-modal">
-            <button class="modal-close" onclick="window.closeModal()">&times;</button>
+            <button class="modal-close" onclick="window.closeModal && closeModal()">&times;</button>
             <h2 class="gradient-text">Пополнение баланса</h2>
             
             <div class="payment-options">
@@ -97,7 +150,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Сумма (₽)</label>
-                            <input type="number" id="customRubles" min="100" value="500" step="100" oninput="window.calculatePrice()">
+                            <input type="number" id="customRubles" min="100" value="500" step="100" oninput="window.calculatePrice && calculatePrice()">
                         </div>
                     </div>
                 </div>
@@ -111,33 +164,43 @@
             <p class="text-muted" style="margin: 0 0 20px; text-align: center;">После оплаты средства поступят на ваш баланс автоматически.</p>
             
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-primary glow" onclick="window.confirmPayment()" style="flex: 1;">Пополнить</button>
-                <button class="btn btn-outline" onclick="window.closeModal()" style="flex: 1;">Отмена</button>
+                <button class="btn btn-primary glow" onclick="window.confirmPayment && confirmPayment()" style="flex: 1;">Пополнить</button>
+                <button class="btn btn-outline" onclick="window.closeModal && closeModal()" style="flex: 1;">Отмена</button>
             </div>
         </div>
-    </div>
-
-    <!-- Модальное окно загрузки (генерация) -->
-    <div id="generationModal" class="modal">
-        <div class="modal-content glass loading-content">
-            <h2 class="gradient-text">✨ Генерация ✨</h2>
-            <div class="loading-animation">
-                <div class="spinner"></div>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="generationProgress" style="width: 0%;"></div>
-                </div>
-            </div>
-            <p>Подождите, создаём шедевры...</p>
-            <p class="timer" id="generationTimer">0 сек.</p>
-        </div>
-    </div>
-
-    <!-- Лайтбокс для изображений -->
-    <div id="lightbox" class="lightbox" onclick="window.closeLightbox()">
-        <span class="lightbox-close">&times;</span>
-        <img class="lightbox-content" id="lightbox-img" alt="">
     </div>
 
     <script type="module" src="js/dashboard.js"></script>
+    <script>
+        // Навигация
+        function navigateTo(section) {
+            if (section === 'news') {
+                window.location.href = '/news.html';
+            } else if (section === 'balance') {
+                window.location.href = '/balance.html';
+            } else if (section === 'wb') {
+                window.location.href = '/dashboard.html';
+            } else if (section === 'history') {
+                window.location.href = '/history.html';
+            } else if (section === 'settings') {
+                window.location.href = '/settings.html';
+            }
+        }
+        
+        // Выход
+        window.logout = function() {
+            window.location.href = '/login.html';
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Добавляем обработчики для пунктов меню
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    const section = this.dataset.section;
+                    navigateTo(section);
+                });
+            });
+        });
+    </script>
 </body>
 </html>

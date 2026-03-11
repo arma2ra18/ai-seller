@@ -183,6 +183,11 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
+                    <li class="menu-item" data-section="news">
+                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📰 Новости
+                        </a>
+                    </li>
                     <li class="menu-item" data-section="balance">
                         <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
                             💰 Баланс
@@ -196,11 +201,6 @@
                     <li class="menu-item" data-section="history">
                         <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
                             📜 История
-                        </a>
-                    </li>
-                    <li class="menu-item" data-section="news">
-                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📰 Новости
                         </a>
                     </li>
                     <li class="menu-item active" data-section="settings">
@@ -332,13 +332,9 @@
 
     <script type="module" src="js/dashboard.js"></script>
     <script>
-        // Функции для работы с настройками
-        
         // Загрузка данных пользователя
         async function loadUserSettings() {
             try {
-                // Здесь будут данные из Firebase
-                // Пока тестовые данные
                 document.getElementById('displayName').value = 'Алексей';
                 document.getElementById('userEmailSettings').value = 'alex@example.com';
                 document.getElementById('phoneNumber').value = '+7 999 123-45-67';
@@ -353,7 +349,6 @@
             }
         }
 
-        // Показать уведомление
         function showSettingsMessage(text, isSuccess = true) {
             const msgEl = document.getElementById('settingsSuccessMessage');
             msgEl.textContent = text;
@@ -370,7 +365,6 @@
             setTimeout(() => msgEl.classList.remove('show'), 3000);
         }
 
-        // Обновление имени
         window.updateDisplayName = function() {
             const newName = document.getElementById('displayName').value.trim();
             if (!newName) {
@@ -380,7 +374,6 @@
             showSettingsMessage('Имя обновлено!');
         };
 
-        // Смена email
         window.changeEmail = function() {
             document.getElementById('emailModal').classList.add('show');
         };
@@ -405,7 +398,6 @@
             document.getElementById('userEmailSettings').value = newEmail;
         };
 
-        // Обновление телефона
         window.updatePhoneNumber = function() {
             const newPhone = document.getElementById('phoneNumber').value.trim();
             if (!newPhone) {
@@ -415,7 +407,6 @@
             showSettingsMessage('Номер телефона обновлён!');
         };
 
-        // Смена пароля
         window.changePassword = function() {
             const newPassword = document.getElementById('newPassword').value;
             
@@ -433,7 +424,6 @@
             document.getElementById('newPassword').value = '';
         };
 
-        // Удаление аккаунта
         window.deleteAccount = function() {
             if (!confirm('Вы уверены, что хотите удалить аккаунт? Это действие необратимо.')) {
                 return;
@@ -442,31 +432,29 @@
             window.location.href = '/';
         };
 
-        // Выход
-        window.logout = function() {
-            window.location.href = '/login.html';
-        };
-
         // Навигация
         function navigateTo(section) {
-            if (section === 'balance') {
+            if (section === 'news') {
+                window.location.href = '/news.html';
+            } else if (section === 'balance') {
                 window.location.href = '/balance.html';
             } else if (section === 'wb') {
                 window.location.href = '/dashboard.html';
             } else if (section === 'history') {
                 window.location.href = '/history.html';
-            } else if (section === 'news') {
-                window.location.href = '/news.html';
             } else if (section === 'settings') {
                 window.location.href = '/settings.html';
             }
         }
 
-        // Загружаем при старте
+        // Выход
+        window.logout = function() {
+            window.location.href = '/login.html';
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             loadUserSettings();
             
-            // Добавляем обработчики для пунктов меню
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.addEventListener('click', function(e) {
                     const section = this.dataset.section;

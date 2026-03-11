@@ -45,28 +45,36 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item" data-section="news">
-    <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px;">
-        📰 Новости
-    </a>
-</li>
+                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📰 Новости
+                        </a>
+                    </li>
                     <li class="menu-item" data-section="balance">
-    <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px;">
-        💰 Баланс
-    </a>
-</li>
-                    <li class="menu-item" data-section="wb">📦 Карточки товара</li>
-                    <li class="menu-item" data-section="history">📜 История</li>
+                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            💰 Баланс
+                        </a>
+                    </li>
+                    <li class="menu-item active" data-section="wb">
+                        <a href="/dashboard.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📦 Карточки товара
+                        </a>
+                    </li>
+                    <li class="menu-item" data-section="history">
+                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📜 История
+                        </a>
+                    </li>
                     <li class="menu-item" data-section="settings">
-    <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-        ⚙️ Настройки
-    </a>
-</li>
+                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ⚙️ Настройки
+                        </a>
+                    </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-balance">
                     <span>Баланс: <span id="sidebarBalance">0</span> ₽</span>
-                    <button class="btn btn-small btn-primary" onclick="showPaymentModal()">Пополнить</button>
+                    <button class="btn btn-small btn-primary" onclick="window.location.href='/balance.html'">Пополнить</button>
                 </div>
                 <div class="user-info">
                     <span class="user-email" id="userEmail">Загрузка...</span>
@@ -153,7 +161,7 @@
                             <h3>Текущий баланс</h3>
                             <p class="big-number"><span id="remainingGenerationsDetail">0</span> ₽</p>
                             <p>Потрачено: <span id="usedGenerationsDetail">0</span> ₽</p>
-                            <button class="btn btn-primary" onclick="showPaymentModal()">Пополнить</button>
+                            <button class="btn btn-primary" onclick="window.location.href='/balance.html'">Пополнить</button>
                         </div>
                         <div class="info-card glass card-hover">
                             <h3>Бонусы</h3>
@@ -163,158 +171,85 @@
                     </div>
                 </div>
 
-                <!-- Карточки товара (бывший Wildberries) -->
-<div class="content-section" id="wb-section">
-    <h2>Создание карточек товара</h2>
-    
-    <!-- Блок описания процесса -->
-    <div class="info-block glass" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid var(--accent);">
-        <h3 style="color: var(--accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-            <span>🎯</span> Как это работает
-        </h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                <div style="font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 5px;">100 ₽</div>
-                <div style="color: var(--text-secondary);">Первая генерация</div>
-                <small style="color: var(--text-muted);">1 фото + 3 описания</small>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                <div style="font-size: 24px; font-weight: 700; color: #f5b041; margin-bottom: 5px;">15 ₽</div>
-                <div style="color: var(--text-secondary);">Повторные генерации</div>
-                <small style="color: var(--text-muted);">до 4 раз, новые варианты фото</small>
-            </div>
-            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 5px;">5 фото</div>
-                <div style="color: var(--text-secondary);">Максимум за сессию</div>
-                <small style="color: var(--text-muted);">100 + 15×4 = 160 ₽</small>
-            </div>
-        </div>
-        <p style="margin-top: 15px; color: var(--text-secondary); font-size: 14px;">
-            ✨ После первой генерации вы сможете нажимать "Сделать ещё" и получать новые варианты фото на основе того же товара.
-        </p>
-    </div>
-    
-    <div class="generation-form">
-        <div class="form-group">
-            <label>Название товара</label>
-            <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4" autocomplete="off">
-        </div>
-        <div class="form-row">
-            <div class="form-group half">
-                <label>Бренд</label>
-                <input type="text" id="wbBrand" placeholder="Xiaomi" autocomplete="off">
-            </div>
-            <div class="form-group half">
-                <label>Категория</label>
-                <select id="wbCategory">
-                    <option value="electronics">Электроника</option>
-                    <option value="clothing">Одежда</option>
-                    <option value="home">Товары для дома</option>
-                    <option value="beauty">Красота и здоровье</option>
-                    <option value="food">Продукты</option>
-                </select>
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group half">
-                <label>Цена товара (₽)</label>
-                <input type="number" id="wbPrice" placeholder="1990" min="0" step="1" value="1990" autocomplete="off">
-            </div>
-            <div class="form-group half"></div>
-        </div>
-        <div class="form-group">
-            <label>Ключевые особенности (через запятую)</label>
-            <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы" autocomplete="off">
-        </div>
-        <div class="form-group">
-            <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
-            <div class="file-upload-wrapper">
-                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('wbPhotos').click()">Выбрать файлы</button>
-                <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('wbPhotos', 'wbFileInfo')">
-                <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
-            </div>
-        </div>
-        <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать первое фото (100 ₽)</button>
-    </div>
-</div>
-
-                
+                <!-- Карточки товара -->
+                <div class="content-section" id="wb-section">
+                    <h2>Создание карточек товара</h2>
+                    
+                    <!-- Блок описания процесса -->
+                    <div class="info-block glass" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid var(--accent);">
+                        <h3 style="color: var(--accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+                            <span>🎯</span> Как это работает
+                        </h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
+                                <div style="font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 5px;">100 ₽</div>
+                                <div style="color: var(--text-secondary);">Первая генерация</div>
+                                <small style="color: var(--text-muted);">1 фото</small>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
+                                <div style="font-size: 24px; font-weight: 700; color: #f5b041; margin-bottom: 5px;">15 ₽</div>
+                                <div style="color: var(--text-secondary);">Повторные генерации</div>
+                                <small style="color: var(--text-muted);">до 4 раз, новые варианты</small>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
+                                <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 5px;">5 фото</div>
+                                <div style="color: var(--text-secondary);">Максимум за сессию</div>
+                                <small style="color: var(--text-muted);">100 + 15×4 = 160 ₽</small>
+                            </div>
+                        </div>
+                        <p style="margin-top: 15px; color: var(--text-secondary); font-size: 14px;">
+                            ✨ После первой генерации вы сможете нажимать "Сделать ещё" и получать новые варианты фото на основе того же товара.
+                        </p>
+                    </div>
+                    
+                    <div class="generation-form">
+                        <div class="form-group">
+                            <label>Название товара</label>
+                            <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4" autocomplete="off">
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label>Бренд</label>
+                                <input type="text" id="wbBrand" placeholder="Xiaomi" autocomplete="off">
+                            </div>
+                            <div class="form-group half">
+                                <label>Категория</label>
+                                <select id="wbCategory">
+                                    <option value="electronics">Электроника</option>
+                                    <option value="clothing">Одежда</option>
+                                    <option value="home">Товары для дома</option>
+                                    <option value="beauty">Красота и здоровье</option>
+                                    <option value="food">Продукты</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group half">
+                                <label>Цена товара (₽)</label>
+                                <input type="number" id="wbPrice" placeholder="1990" min="0" step="1" value="1990" autocomplete="off">
+                            </div>
+                            <div class="form-group half"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Ключевые особенности (через запятую)</label>
+                            <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
+                            <div class="file-upload-wrapper">
+                                <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('wbPhotos').click()">Выбрать файлы</button>
+                                <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('wbPhotos', 'wbFileInfo')">
+                                <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать первое фото (100 ₽)</button>
+                    </div>
+                </div>
 
                 <!-- История -->
                 <div class="content-section" id="history-section">
                     <h2>История генераций</h2>
                     <div class="history-list" id="historyListDetail"></div>
-                </div>
-
-                <!-- Настройки -->
-                <div class="content-section" id="settings-section">
-                    <h2>Настройки профиля</h2>
-                    <div class="settings-grid">
-                        <!-- Левая колонка: основная информация -->
-                        <div class="settings-card glass">
-                            <h3>Основная информация</h3>
-                            
-                            <div class="form-group">
-                                <label>Имя пользователя</label>
-                                <div class="settings-row">
-                                    <input type="text" id="displayName" placeholder="Ваше имя" value="">
-                                    <button class="btn btn-small btn-primary" onclick="updateDisplayName()">Сохранить</button>
-                                </div>
-                                <small class="text-muted">Как к вам обращаться</small>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Email</label>
-                                <div class="settings-row">
-                                    <input type="email" id="userEmailSettings" value="" readonly disabled>
-                                    <button class="btn btn-small btn-outline" onclick="changeEmail()">Изменить</button>
-                                </div>
-                                <small class="text-muted">Email привязан к аккаунту, его можно изменить</small>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Номер телефона</label>
-                                <div class="settings-row">
-                                    <input type="tel" id="phoneNumber" placeholder="+7 999 123-45-67" value="">
-                                    <button class="btn btn-small btn-primary" onclick="updatePhoneNumber()">Сохранить</button>
-                                </div>
-                                <small class="text-muted">Для входа и уведомлений</small>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Пароль</label>
-                                <div class="settings-row">
-                                    <input type="password" id="newPassword" placeholder="Новый пароль">
-                                    <button class="btn btn-small btn-primary" onclick="changePassword()">Изменить</button>
-                                </div>
-                                <small class="text-muted">Минимум 6 символов</small>
-                            </div>
-                        </div>
-
-                        <!-- Правая колонка: статистика и безопасность -->
-                        <div class="settings-card glass">
-                            <h3>Статистика аккаунта</h3>
-                            
-                            <div class="stat-item">
-                                <span class="stat-label">Дата регистрации:</span>
-                                <span class="stat-value" id="accountCreated">—</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Всего потрачено:</span>
-                                <span class="stat-value" id="totalGenerations">0 ₽</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Последний вход:</span>
-                                <span class="stat-value" id="lastLogin">—</span>
-                            </div>
-
-                            <div class="danger-zone">
-                                <h4>Зона опасности</h4>
-                                <button class="btn btn-danger" onclick="deleteAccount()">Удалить аккаунт</button>
-                                <p class="text-muted small">Это действие необратимо</p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -325,15 +260,14 @@
                     <h3>Изображения</h3>
                     <div class="image-gallery" id="resultImages"></div>
                 </div>
-                <div class="result-block">
-                    <h3>Описания</h3>
-                    <div class="description-list" id="resultDescriptions"></div>
-                </div>
             </div>
 
-            <!-- История (основная) -->
+            <!-- История (последние 10) -->
             <div class="history-section glass">
-                <h2>История генераций</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>Последние генерации</h2>
+                    <a href="/history.html" class="btn btn-outline btn-small">📜 Вся история</a>
+                </div>
                 <div class="history-list" id="historyList">
                     <p class="text-muted">Загрузка...</p>
                 </div>
@@ -399,7 +333,7 @@
     <!-- Модальное окно загрузки (генерация) -->
     <div id="generationModal" class="modal">
         <div class="modal-content glass loading-content">
-            <h2 class="gradient-text">✨ Генерация карточек ✨</h2>
+            <h2 class="gradient-text">✨ Генерация ✨</h2>
             <div class="loading-animation">
                 <div class="spinner"></div>
                 <div class="progress-bar">
@@ -408,7 +342,6 @@
             </div>
             <p>Подождите, создаём шедевры...</p>
             <p class="timer" id="generationTimer">0 сек.</p>
-            <p class="text-muted">Обычно это занимает 60-70 секунд</p>
         </div>
     </div>
 
