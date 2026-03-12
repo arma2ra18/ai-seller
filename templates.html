@@ -30,223 +30,15 @@
             });
         }
     </script>
-    
-    <style>
-        /* Временные стили для предпросмотра */
-        .preview-card {
-            background: var(--card-cardbg);
-            color: var(--card-text);
-            padding: 0;
-            transition: all 0.3s ease;
-        }
-        
-        .preview-image {
-            width: 100%;
-            height: 200px;
-            background: linear-gradient(135deg, var(--card-primary), var(--card-secondary));
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            color: white;
-        }
-        
-        .preview-content {
-            padding: 25px;
-        }
-        
-        .preview-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: var(--card-primary);
-        }
-        
-        .preview-price {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: var(--card-secondary);
-        }
-        
-        .preview-features {
-            list-style: none;
-            padding: 0;
-        }
-        
-        .preview-features li {
-            margin: 8px 0;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        /* Layout классы */
-        .layout-centered {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        
-        .layout-left {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            text-align: left;
-        }
-        
-        .layout-right {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            text-align: right;
-        }
-        
-        .layout-asymmetric {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        
-        .layout-asymmetric .preview-image {
-            grid-column: 1;
-            height: 100%;
-        }
-        
-        .layout-asymmetric .preview-content {
-            grid-column: 2;
-        }
-        
-        @media (max-width: 768px) {
-            .layout-asymmetric {
-                grid-template-columns: 1fr;
-            }
-            .layout-asymmetric .preview-content {
-                grid-column: 1;
-            }
-        }
-        
-        /* Анимации */
-        @keyframes cardFade {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes cardSlide {
-            from { 
-                opacity: 0;
-                transform: translateX(30px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        @keyframes cardScale {
-            from { 
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to { 
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-        
-        @keyframes cardPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.02); }
-            100% { transform: scale(1); }
-        }
-        
-        @keyframes cardGlitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(2px, -2px); }
-            60% { transform: translate(-2px, -2px); }
-            80% { transform: translate(2px, 2px); }
-            100% { transform: translate(0); }
-        }
-        
-        @keyframes cardRotate {
-            from { 
-                opacity: 0;
-                transform: rotate(-5deg) scale(0.95);
-            }
-            to { 
-                opacity: 1;
-                transform: rotate(0) scale(1);
-            }
-        }
-        
-        .card-animation-fade {
-            animation: cardFade 0.5s ease;
-        }
-        
-        .card-animation-slide {
-            animation: cardSlide 0.5s ease;
-        }
-        
-        .card-animation-scale {
-            animation: cardScale 0.5s ease;
-        }
-        
-        .card-animation-pulse {
-            animation: cardPulse 2s infinite;
-        }
-        
-        .card-animation-glitch {
-            animation: cardGlitch 0.3s infinite;
-        }
-        
-        .card-animation-rotate {
-            animation: cardRotate 0.5s ease;
-        }
-        
-        /* Уведомления */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 16px 24px;
-            background: rgba(28,28,30,0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: 60px;
-            color: white;
-            z-index: 1000;
-            box-shadow: var(--shadow-lg);
-            animation: slideInRight 0.4s ease;
-        }
-        
-        .notification.success {
-            background: rgba(48,209,88,0.95);
-        }
-        
-        .notification.error {
-            background: rgba(255,59,48,0.95);
-        }
-        
-        .notification.info {
-            background: rgba(0,113,227,0.95);
-        }
-        
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-    </style>
 </head>
 <body>
+    <!-- Видеофон -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
 
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
@@ -314,121 +106,120 @@
                 <h1 class="page-title">🎨 Шаблоны карточек</h1>
             </div>
 
-<!-- ===== НОВЫЙ БЛОК FAQ ===== -->
-<div class="faq-section glass" style="margin-bottom: 40px; padding: 30px; border-radius: 32px; background: rgba(28, 28, 30, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05);">
-    <h2 style="font-size: 28px; margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 32px;">❓</span> 
-        <span class="gradient-text">Как пользоваться шаблонами</span>
-    </h2>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-        <!-- Карточка 1 -->
-        <div style="background: rgba(255,255,255,0.03); border-radius: 24px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease;">
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                <span style="font-size: 36px; background: linear-gradient(135deg, #0071e3, #9b5ef0); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 30px;">1️⃣</span>
-                <h3 style="font-size: 20px; color: white;">Выберите стиль</h3>
-            </div>
-            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 15px;">
-                Нажмите на любой шаблон из галереи — <strong>Премиум, Минимализм, Смелый, Техно, Элегантный</strong>. 
-                Карточка предпросмотра сразу изменится.
-            </p>
-            <div style="background: rgba(0,113,227,0.1); border-left: 3px solid var(--accent); padding: 12px; border-radius: 12px;">
-                <span style="color: var(--accent); font-weight: 600;">💡 Совет:</span>
-                <span style="color: var(--text-secondary);"> Пробуйте разные — все настройки редактируются дальше.</span>
-            </div>
-        </div>
+            <!-- ===== БЛОК FAQ ===== -->
+            <div class="faq-section">
+                <h2>
+                    <span>❓</span> 
+                    <span class="gradient-text">Как пользоваться шаблонами</span>
+                </h2>
+                
+                <div class="faq-grid">
+                    <!-- Карточка 1 -->
+                    <div class="faq-card">
+                        <div class="faq-card-header">
+                            <span>1️⃣</span>
+                            <h3>Выберите стиль</h3>
+                        </div>
+                        <p>
+                            Нажмите на любой шаблон из галереи — <strong>Премиум, Минимализм, Смелый, Техно, Элегантный</strong>. 
+                            Карточка предпросмотра сразу изменится.
+                        </p>
+                        <div class="faq-tip">
+                            <span>💡 Совет:</span>
+                            <span> Пробуйте разные — все настройки редактируются дальше.</span>
+                        </div>
+                    </div>
 
-        <!-- Карточка 2 -->
-        <div style="background: rgba(255,255,255,0.03); border-radius: 24px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease;">
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                <span style="font-size: 36px; background: linear-gradient(135deg, #f5b041, #f39c12); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 30px;">2️⃣</span>
-                <h3 style="font-size: 20px; color: white;">Настройте цвета</h3>
-            </div>
-            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 15px;">
-                <strong>6 параметров:</strong> основной (заголовок), вторичный (цена), акцентный (иконки), фон, карточка, текст.
-            </p>
-            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;">
-                <span style="background: #0071e3; width: 30px; height: 30px; border-radius: 8px;"></span>
-                <span style="background: #f5b041; width: 30px; height: 30px; border-radius: 8px;"></span>
-                <span style="background: #9b5ef0; width: 30px; height: 30px; border-radius: 8px;"></span>
-                <span style="background: #1c1c1e; width: 30px; height: 30px; border-radius: 8px;"></span>
-                <span style="background: #ffffff; width: 30px; height: 30px; border-radius: 8px; border: 1px solid #333;"></span>
-            </div>
-            <p style="color: var(--text-muted); font-size: 13px; margin-top: 10px;">
-                ✨ Можно вводить HEX вручную или выбрать из палитры
-            </p>
-        </div>
+                    <!-- Карточка 2 -->
+                    <div class="faq-card">
+                        <div class="faq-card-header">
+                            <span>2️⃣</span>
+                            <h3>Настройте цвета</h3>
+                        </div>
+                        <p>
+                            <strong>6 параметров:</strong> основной (заголовок), вторичный (цена), акцентный (иконки), фон, карточка, текст.
+                        </p>
+                        <div class="faq-color-demo">
+                            <span style="background: #0071e3;"></span>
+                            <span style="background: #f5b041;"></span>
+                            <span style="background: #9b5ef0;"></span>
+                            <span style="background: #1c1c1e;"></span>
+                            <span style="background: #ffffff; border: 1px solid #333;"></span>
+                        </div>
+                        <p style="color: var(--text-muted); font-size: 13px; margin-top: 10px;">
+                            ✨ Можно вводить HEX вручную или выбрать из палитры
+                        </p>
+                    </div>
 
-        <!-- Карточка 3 -->
-        <div style="background: rgba(255,255,255,0.03); border-radius: 24px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease;">
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                <span style="font-size: 36px; background: linear-gradient(135deg, #30d158, #34c759); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 30px;">3️⃣</span>
-                <h3 style="font-size: 20px; color: white;">Выберите шрифты</h3>
-            </div>
-            <p style="color: var(--text-secondary); line-height: 1.6;">
-                <strong>3 отдельных шрифта:</strong> для заголовка, цены и списка особенностей. 
-                Доступно <strong>8+ профессиональных шрифтов</strong> (Inter, Montserrat, Bebas Neue, Playfair Display и др.)
-            </p>
-            <div style="margin-top: 15px; font-size: 14px;">
-                <div style="font-family: 'Bebas Neue'; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 8px; margin-bottom: 5px;">Bebas Neue — ЗАГОЛОВКИ</div>
-                <div style="font-family: 'Montserrat'; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 8px; margin-bottom: 5px;">Montserrat — ЦЕНА</div>
-                <div style="font-family: 'Inter'; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 8px;">Inter — ОСОБЕННОСТИ</div>
-            </div>
-        </div>
+                    <!-- Карточка 3 -->
+                    <div class="faq-card">
+                        <div class="faq-card-header">
+                            <span>3️⃣</span>
+                            <h3>Выберите шрифты</h3>
+                        </div>
+                        <p>
+                            <strong>3 отдельных шрифта:</strong> для заголовка, цены и списка особенностей. 
+                            Доступно <strong>8+ профессиональных шрифтов</strong>.
+                        </p>
+                        <div class="faq-font-demo">
+                            <div style="font-family: 'Bebas Neue';">Bebas Neue — ЗАГОЛОВКИ</div>
+                            <div style="font-family: 'Montserrat';">Montserrat — ЦЕНА</div>
+                            <div style="font-family: 'Inter';">Inter — ОСОБЕННОСТИ</div>
+                        </div>
+                    </div>
 
-        <!-- Карточка 4 -->
-        <div style="background: rgba(255,255,255,0.03); border-radius: 24px; padding: 25px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease;">
-            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                <span style="font-size: 36px; background: linear-gradient(135deg, #64d2ff, #0071e3); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 30px;">4️⃣</span>
-                <h3 style="font-size: 20px; color: white;">Расположение и анимация</h3>
-            </div>
-            <p style="color: var(--text-secondary); line-height: 1.6;">
-                <strong>4 варианта layout:</strong> по центру, слева, справа, асимметричный.<br>
-                <strong>6 анимаций:</strong> затухание, скольжение, масштабирование, пульсация, глитч, вращение.
-            </p>
-            <div style="display: flex; gap: 15px; margin-top: 15px; justify-content: center;">
-                <span style="font-size: 24px;" title="По центру">⬛</span>
-                <span style="font-size: 24px;" title="Слева">⬅️</span>
-                <span style="font-size: 24px;" title="Справа">➡️</span>
-                <span style="font-size: 24px;" title="Асимметричный">🔷</span>
-            </div>
-        </div>
+                    <!-- Карточка 4 -->
+                    <div class="faq-card">
+                        <div class="faq-card-header">
+                            <span>4️⃣</span>
+                            <h3>Расположение и анимация</h3>
+                        </div>
+                        <p>
+                            <strong>4 варианта layout:</strong> по центру, слева, справа, асимметричный.<br>
+                            <strong>6 анимаций:</strong> затухание, скольжение, масштабирование, пульсация, глитч, вращение.
+                        </p>
+                        <div class="faq-layout-icons">
+                            <span title="По центру">⬛</span>
+                            <span title="Слева">⬅️</span>
+                            <span title="Справа">➡️</span>
+                            <span title="Асимметричный">🔷</span>
+                        </div>
+                    </div>
 
-        <!-- Карточка 5 (на всю ширину, если нужно) -->
-        <div style="grid-column: 1 / -1; background: linear-gradient(145deg, rgba(0,113,227,0.15), rgba(155,94,240,0.15)); border-radius: 24px; padding: 30px; border: 1px solid var(--accent);">
-            <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-                <div style="font-size: 48px;">🎯</div>
-                <div style="flex: 1;">
-                    <h3 style="font-size: 22px; color: white; margin-bottom: 10px;">Главное — применить к генерации!</h3>
-                    <p style="color: var(--text-secondary); line-height: 1.6;">
-                        После того как настроили шаблон, нажмите <strong style="color: var(--accent);">"Применить к генерации"</strong> — 
-                        вы попадёте на страницу создания карточки, и все новые фото будут создаваться с вашим дизайном.
-                    </p>
+                    <!-- Карточка 5 (на всю ширину) -->
+                    <div class="faq-cta-card">
+                        <div class="faq-cta-content">
+                            <div>🎯</div>
+                            <div>
+                                <h3>Главное — применить к генерации!</h3>
+                                <p>
+                                    После того как настроили шаблон, нажмите <strong>"Применить к генерации"</strong> — 
+                                    вы попадёте на страницу создания карточки, и все новые фото будут создаваться с вашим дизайном.
+                                </p>
+                            </div>
+                            <div>✨</div>
+                        </div>
+                        <div class="faq-button-demo">
+                            <span>💾 Сохранить шаблон</span>
+                            <span>↩️ Сбросить</span>
+                            <span>✨ Применить к генерации</span>
+                        </div>
+                    </div>
                 </div>
-                <div style="font-size: 48px;">✨</div>
-            </div>
-            <div style="display: flex; gap: 15px; margin-top: 20px; justify-content: center;">
-                <span style="background: rgba(0,113,227,0.2); padding: 8px 20px; border-radius: 40px; color: var(--accent);">💾 Сохранить шаблон</span>
-                <span style="background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 40px; color: var(--text-secondary);">↩️ Сбросить</span>
-                <span style="background: linear-gradient(135deg, #0071e3, #9b5ef0); padding: 8px 30px; border-radius: 40px; color: white; font-weight: 600;">✨ Применить к генерации</span>
-            </div>
-        </div>
-    </div>
 
-    <!-- Дополнительные подсказки -->
-    <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
-        <div style="background: rgba(255,255,255,0.02); padding: 12px 20px; border-radius: 60px; border: 1px dashed rgba(255,255,255,0.1);">
-            <span style="color: var(--accent);">✓</span> Все изменения видны сразу в предпросмотре
-        </div>
-        <div style="background: rgba(255,255,255,0.02); padding: 12px 20px; border-radius: 60px; border: 1px dashed rgba(255,255,255,0.1);">
-            <span style="color: var(--accent);">✓</span> Можно создать свой уникальный стиль
-        </div>
-        <div style="background: rgba(255,255,255,0.02); padding: 12px 20px; border-radius: 60px; border: 1px dashed rgba(255,255,255,0.1);">
-            <span style="color: var(--accent);">✓</span> Шаблон сохраняется в вашем браузере
-        </div>
-    </div>
-</div>
-
+                <!-- Дополнительные подсказки -->
+                <div class="faq-badges">
+                    <div class="faq-badge">
+                        <span>✓</span> Все изменения видны сразу в предпросмотре
+                    </div>
+                    <div class="faq-badge">
+                        <span>✓</span> Можно создать свой уникальный стиль
+                    </div>
+                    <div class="faq-badge">
+                        <span>✓</span> Шаблон сохраняется в вашем браузере
+                    </div>
+                </div>
+            </div>
 
             <div class="templates-container">
                 <!-- Выбор шаблона -->
@@ -494,22 +285,21 @@
                     </div>
                 </div>
 
-<!-- Кнопки действий -->
-<div class="action-buttons">
-    <button class="action-btn primary" onclick="saveTemplate()">
-        💾 Сохранить шаблон
-    </button>
-    <button class="action-btn secondary" onclick="resetTemplate()">
-        ↩️ Сбросить
-    </button>
-    <!-- НОВАЯ КНОПКА -->
-    <button class="action-btn secondary" onclick="resetToClassic()">
-        ⭐ Сбросить к классическому
-    </button>
-    <button class="action-btn secondary" onclick="applyToGenerator()">
-        ✨ Применить к генерации
-    </button>
-</div>
+                <!-- Кнопки действий -->
+                <div class="action-buttons">
+                    <button class="action-btn primary" onclick="saveTemplate()">
+                        💾 Сохранить шаблон
+                    </button>
+                    <button class="action-btn secondary" onclick="resetTemplate()">
+                        ↩️ Сбросить
+                    </button>
+                    <button class="action-btn secondary" onclick="resetToClassic()">
+                        ⭐ Сбросить к классическому
+                    </button>
+                    <button class="action-btn secondary" onclick="applyToGenerator()">
+                        ✨ Применить к генерации
+                    </button>
+                </div>
             </div>
         </main>
     </div>
@@ -734,19 +524,16 @@
         function updatePreview() {
             const card = document.getElementById('previewCard');
             
-            // Убираем старые классы анимации
             card.className = card.className.replace(/card-animation-\S+/g, '').trim();
             
-            // Применяем шаблон
             applyTemplateToElement(card, currentTemplate);
             
-            // Добавляем класс анимации
             card.classList.add(`card-animation-${currentTemplate.animation}`);
         }
 
         // Выбор шаблона
         window.selectTemplate = function(templateId) {
-            currentTemplate = JSON.parse(JSON.stringify(TEMPLATES[templateId])); // Глубокое копирование
+            currentTemplate = JSON.parse(JSON.stringify(TEMPLATES[templateId]));
             renderAll();
             showNotification(`Шаблон "${currentTemplate.name}" выбран`, 'info');
         };
@@ -790,6 +577,36 @@
             updatePreview();
         };
 
+        // Сброс к классическому шаблону
+        window.resetToClassic = function() {
+            const CLASSIC_TEMPLATE = {
+                id: 'classic',
+                name: 'Классический',
+                icon: '⭐',
+                description: 'Стандартный дизайн Prodiger',
+                colors: {
+                    primary: '#0071e3',
+                    secondary: '#f5b041',
+                    accent: '#9b5ef0',
+                    background: '#0a0a0c',
+                    text: '#ffffff',
+                    cardBg: '#1c1c1e'
+                },
+                fonts: {
+                    title: "'Inter', sans-serif",
+                    price: "'Montserrat', sans-serif",
+                    features: "'Roboto', sans-serif"
+                },
+                layout: 'centered',
+                animation: 'fade'
+            };
+            
+            currentTemplate = JSON.parse(JSON.stringify(CLASSIC_TEMPLATE));
+            renderAll();
+            localStorage.setItem('activeTemplate', JSON.stringify(CLASSIC_TEMPLATE));
+            showNotification('⭐ Классический шаблон применён', 'success');
+        };
+
         // Сохранение шаблона
         window.saveTemplate = async function() {
             const success = await saveUserTemplate(currentUser.uid, currentTemplate);
@@ -802,17 +619,12 @@
 
         // Сброс шаблона
         window.resetTemplate = function() {
-            currentTemplate = JSON.parse(JSON.stringify(TEMPLATES.premium));
-            renderAll();
-            showNotification('🔄 Шаблон сброшен до премиум', 'info');
+            resetToClassic();
         };
 
         // Применить к генерации
         window.applyToGenerator = function() {
-            // Сохраняем шаблон
             saveUserTemplate(currentUser.uid, currentTemplate);
-            
-            // Сохраняем активный шаблон для генерации
             localStorage.setItem('activeTemplate', JSON.stringify(currentTemplate));
             
             showNotification('✨ Шаблон применен к генерации! Переходим...', 'success');
@@ -861,44 +673,6 @@
                 });
             });
         });
-
-// Сброс к классическому шаблону (как было до шаблонов)
-window.resetToClassic = function() {
-    // Классический шаблон
-    const CLASSIC_TEMPLATE = {
-        id: 'classic',
-        name: 'Классический',
-        icon: '⭐',
-        description: 'Стандартный дизайн Prodiger',
-        colors: {
-            primary: '#0071e3',
-            secondary: '#f5b041',
-            accent: '#9b5ef0',
-            background: '#0a0a0c',
-            text: '#ffffff',
-            cardBg: '#1c1c1e'
-        },
-        fonts: {
-            title: "'Inter', sans-serif",
-            price: "'Montserrat', sans-serif",
-            features: "'Roboto', sans-serif"
-        },
-        layout: 'centered',
-        animation: 'fade'
-    };
-    
-    // Применяем классический шаблон
-    currentTemplate = JSON.parse(JSON.stringify(CLASSIC_TEMPLATE));
-    
-    // Обновляем весь интерфейс
-    renderAll();
-    
-    // Сохраняем в localStorage как активный
-    localStorage.setItem('activeTemplate', JSON.stringify(CLASSIC_TEMPLATE));
-    
-    // Показываем уведомление
-    showNotification('⭐ Классический шаблон применён', 'success');
-};
     </script>
 </body>
 </html>

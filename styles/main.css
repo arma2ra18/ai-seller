@@ -50,3 +50,6 @@
 
 /* История описаний */
 @import url('27-description-history.css');
+
+/* Страница шаблонов (дополнительные стили) */
+@import url('28-templates-page.css');
