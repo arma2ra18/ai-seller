@@ -1,31 +1,16 @@
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
-import admin from 'firebase-admin';
+import { createClient } from '@supabase/supabase-js';
 
-// Firebase Admin SDK (инициализация такая же, как в generate-card.js)
-if (!admin.apps.length) {
-  try {
-    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountEnv) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
-    }
-    const serviceAccount = JSON.parse(serviceAccountEnv);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    });
-    console.log('Firebase Admin initialized successfully');
-  } catch (error) {
-    console.error('Firebase Admin initialization error:', error);
-    throw new Error(`Firebase init failed: ${error.message}`);
-  }
-}
-const bucket = admin.storage().bucket();
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
+);
 
 export const config = {
     api: {
         bodyParser: false,
-        maxDuration: 60, // Увеличиваем время для генерации видео
+        maxDuration: 60,
     },
 };
 
@@ -37,7 +22,6 @@ async function generateAnimation(imageBase64, prompt) {
         throw new Error('WAVESPEED_API_KEY not set');
     }
 
-    // Используем Google Veo 2 (лучший для товарной анимации) [citation:7]
     const response = await fetch('https://api.wavespeed.ai/v1/generate', {
         method: 'POST',
         headers: {
@@ -46,11 +30,11 @@ async function generateAnimation(imageBase64, prompt) {
         },
         body: JSON.stringify({
             model: 'google-veo-2-image-to-video',
-            image: imageBase64, // base64 изображения
+            image: imageBase64,
             prompt: prompt,
-            duration: 5, // 5 секунд
-            resolution: '720p', // HD качество
-            aspect_ratio: '1:1', // Квадрат для карточек
+            duration: 5,
+            resolution: '720p',
+            aspect_ratio: '1:1',
         }),
     });
 
@@ -60,7 +44,7 @@ async function generateAnimation(imageBase64, prompt) {
     }
 
     const result = await response.json();
-    return result.video_url; // URL сгенерированного видео
+    return result.video_url;
 }
 
 export default async function handler(req, res) {
@@ -79,10 +63,31 @@ export default async function handler(req, res) {
         const brand = fields.brand?.[0] || '';
         const price = fields.price?.[0] || '1990';
         const userFeatures = (fields.features?.[0] || '').split(',').map(f => f.trim()).filter(Boolean);
-        const animationType = fields.animationType?.[0] || 'cinematic'; // тип анимации
+        const animationType = fields.animationType?.[0] || 'cinematic';
+        const userId = fields.userId?.[0];
+
+        if (!userId) {
+            return res.status(401).json({ error: 'User not authenticated' });
+        }
 
         if (!productName) {
             return res.status(400).json({ error: 'Product name is required' });
+        }
+
+        // Проверяем баланс пользователя
+        const { data: user, error: userError } = await supabase
+            .from('users')
+            .select('balance, used_spent')
+            .eq('id', userId)
+            .single();
+
+        if (userError || !user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const cost = 50; // Стоимость анимации
+        if (user.balance < cost) {
+            return res.status(400).json({ error: 'Insufficient balance' });
         }
 
         // Получаем загруженное фото
@@ -92,13 +97,12 @@ export default async function handler(req, res) {
             const imageBuffer = fs.readFileSync(photoFile.filepath);
             imageBase64 = imageBuffer.toString('base64');
             
-            // Удаляем временный файл
             fs.unlinkSync(photoFile.filepath);
         } else {
             return res.status(400).json({ error: 'No photo uploaded' });
         }
 
-        // Промпт для анимации (адаптированный из нашего ультра-промпта)
+        // Промпт для анимации
         const prompt = `Create a 5-second cinematic product animation for Wildberries. 
 The product is "${productName}" by brand ${brand}. Price: ${price} ₽. Features: ${userFeatures.join(', ')}.
 
@@ -118,19 +122,56 @@ Animation type: ${animationType === 'cinematic' ? 'cinematic with smooth motion'
         // Генерируем анимацию
         const videoUrl = await generateAnimation(imageBase64, prompt);
         
-        // Загружаем видео в Firebase Storage для постоянного хранения
-        const videoFileName = `animation_${Date.now()}.mp4`;
+        // Скачиваем видео
         const videoResponse = await fetch(videoUrl);
         const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
         
-        const file = bucket.file(`animations/${videoFileName}`);
-        await file.save(videoBuffer, {
-            metadata: { contentType: 'video/mp4' },
-            public: true,
-        });
+        // Загружаем в Supabase Storage
+        const videoFileName = `animation_${Date.now()}.mp4`;
+        const { error: uploadError } = await supabase
+            .storage
+            .from('animations')
+            .upload(videoFileName, videoBuffer, {
+                contentType: 'video/mp4',
+                cacheControl: '3600'
+            });
+
+        if (uploadError) {
+            throw new Error(`Storage upload failed: ${uploadError.message}`);
+        }
+
+        // Получаем публичный URL
+        const { data: urlData } = supabase
+            .storage
+            .from('animations')
+            .getPublicUrl(videoFileName);
         
-        const publicVideoUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-        
+        const publicVideoUrl = urlData.publicUrl;
+
+        // Сохраняем в историю
+        await supabase
+            .from('generation_sessions')
+            .insert({
+                user_id: userId,
+                product_name: productName,
+                brand: brand,
+                price: parseInt(price),
+                features: userFeatures,
+                attempts: 1,
+                total_spent: cost,
+                images: [publicVideoUrl],
+                created_at: new Date().toISOString()
+            });
+
+        // Списываем деньги
+        await supabase
+            .from('users')
+            .update({ 
+                balance: user.balance - cost,
+                used_spent: (user.used_spent || 0) + cost
+            })
+            .eq('id', userId);
+
         console.log('✅ Animation generated and uploaded');
 
         res.status(200).json({ 
