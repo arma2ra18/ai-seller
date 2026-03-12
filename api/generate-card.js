@@ -1,28 +1,13 @@
-import { IncomingForm } from 'formidable';
-import fs from 'fs';
-import { GoogleGenAI } from '@google/genai';
-import admin from 'firebase-admin';
-import sharp from 'sharp';
+// Удаляем firebase-admin
+// import admin from 'firebase-admin';
 
-// Инициализация Firebase Admin SDK (только один раз)
-if (!admin.apps.length) {
-  try {
-    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountEnv) {
-      throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
-    }
-    const serviceAccount = JSON.parse(serviceAccountEnv);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-    });
-    console.log('Firebase Admin initialized successfully');
-  } catch (error) {
-    console.error('Firebase Admin initialization error:', error);
-    throw new Error(`Firebase init failed: ${error.message}`);
-  }
-}
-const bucket = admin.storage().bucket();
+// Добавляем supabase
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY // Это секретный ключ, не anon!
+)
 
 export const config = {
     api: {

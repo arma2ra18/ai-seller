@@ -1,151 +1,80 @@
-import { auth, db } from './firebase.js';
-import {
-    doc, getDoc, collection, addDoc, query, orderBy,
-    getDocs, updateDoc, increment, limit, setDoc, deleteDoc,
-    where, Timestamp
-} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-import { 
-    onAuthStateChanged, 
-    signOut,
-    updateProfile, 
-    updateEmail, 
-    updatePassword, 
-    deleteUser,
-    reauthenticateWithCredential,
-    EmailAuthProvider
-} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-import { TEMPLATES, applyTemplateToResults } from './templates.js';
+import { supabase } from './supabase.js'
 
-let currentUser = null;
-let userData = null;
-
-// Переменные для модального окна загрузки
-let generationInterval;
-let generationStartTime;
-
-// Переменные для пополнения (в рублях)
-let selectedRubles = 0;
-
-// Текущая сессия генерации (группа карточек)
-let currentGenerationSession = {
-    sessionId: null,           // ID сессии в Firestore
-    productName: null,
-    brand: null,
-    category: null,
-    price: null,
-    features: [],
-    originalImageId: null,
-    attemptsMade: 0,
-    maxAttempts: 5,
-    generatedImages: [],       // Массив URL всех фото в этой сессии
-    imageIds: []               // Массив ID изображений в Storage
-};
-
-// Активный шаблон
-let activeTemplate = null;
-
-// Для страницы истории (все сессии)
-let allSessions = [];
-let currentHistoryPage = 1;
-const HISTORY_PER_PAGE = 10;
+let currentUser = null
+let userData = null
 
 // Следим за состоянием авторизации
-onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-        window.location.href = '/login.html';
-        return;
+supabase.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_OUT' || !session) {
+        window.location.href = '/login.html'
+        return
     }
-    currentUser = user;
-    await loadUserData();
-    loadActiveTemplate();
     
-    // Получаем текущий путь страницы
-    const path = window.location.pathname;
-    console.log('Текущая страница:', path);
+    currentUser = session.user
+    await loadUserData()
+    loadActiveTemplate()
     
-    // Загружаем историю только если это не страница новостей
+    // Загружаем данные в зависимости от страницы
+    const path = window.location.pathname
+    console.log('Текущая страница:', path)
+    
     if (!path.includes('news.html')) {
         if (path.includes('history.html')) {
-            console.log('Загружаем всю историю...');
-            await loadAllHistory();
-        } else {
-            console.log('Загружаем последние 10 записей...');
-            await loadRecentHistory();
+            await loadAllHistory()
+        } else if (!path.includes('news.html')) {
+            await loadRecentHistory()
         }
-    } else {
-        console.log('Страница новостей, историю не загружаем');
     }
-});
+})
 
-// Загрузка активного шаблона
-function loadActiveTemplate() {
+// Загрузка данных пользователя из Supabase
+async function loadUserData(forceRefresh = false) {
+    if (!currentUser) return
+    
     try {
-        const saved = localStorage.getItem('activeTemplate');
-        const savedForUser = localStorage.getItem(`template_${currentUser?.uid}`);
-        
-        if (saved) {
-            activeTemplate = JSON.parse(saved);
-        } else if (savedForUser) {
-            activeTemplate = JSON.parse(savedForUser);
-        } else {
-            activeTemplate = TEMPLATES.premium;
-        }
-        
-        console.log('🎨 Активный шаблон загружен:', activeTemplate.name);
-    } catch (error) {
-        console.error('Ошибка загрузки шаблона:', error);
-    }
-}
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single()
 
-// Загрузка данных пользователя из Firestore
-async function loadUserData() {
-    if (!currentUser) return;
-    try {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-            userData = userDoc.data();
-            updateUI();
-            updateStats();
-        } else {
-            await setDoc(doc(db, 'users', currentUser.uid), {
-                email: currentUser.email || '',
-                displayName: currentUser.displayName || '',
-                phoneNumber: currentUser.phoneNumber || '',
-                balance: 500,
-                usedSpent: 0,
-                createdAt: new Date().toISOString()
-            });
-            await loadUserData();
-        }
+        if (error) throw error
+        
+        userData = user
+        updateUI()
+        updateStats()
     } catch (error) {
-        console.error('Ошибка загрузки пользователя:', error);
-        showNotification('Ошибка загрузки данных', 'error');
+        console.error('Ошибка загрузки пользователя:', error)
+        showNotification('Ошибка загрузки данных', 'error')
     }
 }
 
 // Обновление интерфейса
 function updateUI() {
-    if (!userData) return;
+    if (!userData) return
     
-    const currentBalance = userData.balance || 0;
+    const currentBalance = userData.balance || 0
 
     const balanceSelectors = [
         '#remainingGenerations',
         '#remainingGenerationsDetail',
         '#sidebarBalance'
-    ];
+    ]
     
     balanceSelectors.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => {
-            if (el) el.textContent = currentBalance;
-        });
-    });
+            if (el) el.textContent = currentBalance
+        })
+    })
 
-    const userEmailEl = document.getElementById('userEmail');
+    const userEmailEl = document.getElementById('userEmail')
     if (userEmailEl) {
-        userEmailEl.textContent = currentUser.email || currentUser.phoneNumber || 'Пользователь';
+        userEmailEl.textContent = userData.email || 'Пользователь'
     }
 }
+
+// Остальной код dashboard.js (генерация, история, лайтбокс) можно оставить без изменений,
+// но нужно заменить все getDoc, getDocs, addDoc на запросы к supabase.
 
 // Обновление плиток статистики
 function updateStats() {
