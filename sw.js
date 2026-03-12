@@ -63,6 +63,7 @@ self.addEventListener('install', event => {
         console.log('Кэширование ресурсов');
         return cache.addAll(urlsToCache).catch(error => {
           console.error('Ошибка кэширования ресурсов:', error);
+          // Продолжаем, даже если некоторые ресурсы не закешировались
         });
       })
   );
@@ -97,31 +98,23 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Для POST запросов - только сеть, без кэширования
+  // ⚡ ВАЖНО: НЕ перехватываем POST-запросы вообще
+  // (генерация карточек, логин, запросы к Firestore)
   if (event.request.method === 'POST') {
-    event.respondWith(fetch(event.request).catch(error => {
-      console.error('Ошибка POST запроса:', error);
-      return new Response('Ошибка сети', { status: 503 });
-    }));
-    return;
+    return; // Просто пропускаем, Service Worker не вмешивается
   }
   
-  // Для API запросов - Network First (ИСПРАВЛЕНО)
+  // Для API GET-запросов - Network First
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Кэшируем только успешные GET запросы
-          // ВАЖНО: проверяем, что response можно клонировать
-          if (event.request.method === 'GET' && response.ok) {
-            // Клонируем ответ ДО того, как он будет использован
+          // Кэшируем только успешные GET-запросы
+          if (response.ok) {
             const responseToCache = response.clone();
-            
             caches.open(API_CACHE_NAME)
               .then(cache => {
-                cache.put(event.request, responseToCache).catch(err => {
-                  // Тихая ошибка - не критично
-                });
+                cache.put(event.request, responseToCache).catch(() => {});
               })
               .catch(() => {});
           }
@@ -147,7 +140,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         if (cachedResponse) {
-          // Обновляем кэш в фоне (НЕ блокируем ответ)
+          // Обновляем кэш в фоне (не блокируем ответ)
           fetch(event.request)
             .then(response => {
               if (response.ok) {
@@ -199,7 +192,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Для всего остального - Network First
+  // Для всего остального (например, запросы к Firebase) - Network First
   event.respondWith(
     fetch(event.request)
       .then(response => {
