@@ -1,5 +1,4 @@
-import { auth } from './firebase.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { supabase } from './supabase.js';
 
 // Функция для обновления кнопок в зависимости от статуса авторизации
 function updateAuthButtons(user) {
@@ -34,9 +33,9 @@ function updateAuthButtons(user) {
     }
 }
 
-// Следим за состоянием авторизации
-onAuthStateChanged(auth, (user) => {
-    updateAuthButtons(user);
+// Следим за состоянием авторизации через Supabase
+supabase.auth.onAuthStateChange((event, session) => {
+    updateAuthButtons(session?.user || null);
 });
 
 // Плавный скролл к якорям
