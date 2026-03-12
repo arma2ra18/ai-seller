@@ -26,156 +26,15 @@
             });
         }
     </script>
-    
-    <style>
-        .settings-container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        
-        .settings-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-top: 20px;
-        }
-        
-        .settings-card {
-            background: rgba(28, 28, 30, 0.7);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 24px;
-            padding: 30px;
-            transition: var(--transition);
-            animation: fadeInUp 0.5s ease;
-        }
-        
-        .settings-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 113, 227, 0.2);
-        }
-        
-        .settings-card h3 {
-            margin-bottom: 25px;
-            font-size: 22px;
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .settings-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .settings-row input {
-            flex: 1;
-            padding: 12px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            color: white;
-            transition: var(--transition);
-        }
-        
-        .settings-row input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
-            transform: scale(1.02);
-            outline: none;
-        }
-        
-        .settings-row input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: var(--transition);
-        }
-        
-        .stat-item:hover {
-            background: rgba(255,255,255,0.02);
-            transform: translateX(5px);
-        }
-        
-        .stat-label {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        
-        .stat-value {
-            font-weight: 600;
-            color: var(--accent);
-            background: rgba(0,113,227,0.1);
-            padding: 4px 12px;
-            border-radius: 40px;
-        }
-        
-        .danger-zone {
-            margin-top: 30px;
-            padding: 20px;
-            background: rgba(255,59,48,0.05);
-            border: 1px solid rgba(255,59,48,0.2);
-            border-radius: 16px;
-            transition: var(--transition);
-        }
-        
-        .danger-zone:hover {
-            background: rgba(255,59,48,0.08);
-        }
-        
-        .danger-zone h4 {
-            color: var(--error);
-            margin-bottom: 15px;
-        }
-        
-        .btn-danger {
-            background: linear-gradient(135deg, var(--error), #ff1f1f);
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        
-        .btn-danger:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(255,59,48,0.5);
-        }
-        
-        .success-message {
-            background: rgba(48, 209, 88, 0.1);
-            border: 1px solid rgba(48, 209, 88, 0.3);
-            color: var(--success);
-            padding: 12px;
-            border-radius: 12px;
-            margin-top: 15px;
-            text-align: center;
-            display: none;
-        }
-        
-        .success-message.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @media (max-width: 768px) {
-            .settings-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
 <body>
+    <!-- Видеофон -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
 
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
@@ -197,7 +56,7 @@
                 <div class="sidebar-logo-text gradient-logo">Prodiger</div>
             </div>
             <nav class="sidebar-nav">
-           <ul>
+                <ul>
                     <li class="menu-item" data-section="news">
                         <a href="/news.html">📰 Новости</a>
                     </li>
@@ -379,37 +238,30 @@
         // Загрузка данных пользователя с кэшированием
         async function loadUserData(forceRefresh = false) {
             try {
-                // Функция для получения данных из Firebase
                 const fetchUserData = async () => {
                     const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                     return userDoc.exists() ? userDoc.data() : null;
                 };
                 
-                // Получаем данные с кэшированием
                 const userData = await cacheUserData(currentUser.uid, fetchUserData, forceRefresh);
                 
                 if (userData) {
-                    // Заполняем поля формы
                     document.getElementById('displayName').value = userData.displayName || '';
                     document.getElementById('userEmailSettings').value = userData.email || currentUser.email || '';
                     document.getElementById('phoneNumber').value = userData.phoneNumber || '';
                     
-                    // Баланс в сайдбаре
                     const balance = parseInt(userData.balance) || 0;
                     document.getElementById('sidebarBalance').textContent = balance;
                     document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
                     
-                    // Дата регистрации
                     if (userData.createdAt) {
                         const date = new Date(userData.createdAt);
                         document.getElementById('accountCreated').textContent = date.toLocaleDateString('ru-RU');
                     }
                     
-                    // Всего потрачено
                     const spent = parseInt(userData.usedSpent) || 0;
                     document.getElementById('totalSpent').textContent = spent.toLocaleString() + ' ₽';
                     
-                    // Количество генераций
                     let totalGenerations = 0;
                     try {
                         const sessionsSnapshot = await getDocs(collection(db, 'users', currentUser.uid, 'generationSessions'));
@@ -421,17 +273,12 @@
                     }
                     document.getElementById('totalGenerations').textContent = totalGenerations;
                     
-                    // Последний вход
                     if (currentUser.metadata?.lastSignInTime) {
                         const lastLogin = new Date(currentUser.metadata.lastSignInTime);
                         document.getElementById('lastLogin').textContent = lastLogin.toLocaleString('ru-RU');
                     }
                     
-                    console.log('✅ Настройки загружены:', {
-                        balance: balance,
-                        spent: spent,
-                        generations: totalGenerations
-                    });
+                    console.log('✅ Настройки загружены');
                 }
             } catch (error) {
                 console.error('❌ Ошибка загрузки данных:', error);
@@ -439,12 +286,10 @@
             }
         }
 
-        // Функция для принудительного обновления
         window.refreshSettings = function() {
             loadUserData(true);
         };
 
-        // Показать уведомление
         function showSettingsMessage(text, isSuccess = true) {
             const msgEl = document.getElementById('settingsSuccessMessage');
             msgEl.textContent = text;
@@ -461,7 +306,6 @@
             setTimeout(() => msgEl.classList.remove('show'), 3000);
         }
 
-        // Обновление имени
         window.updateDisplayName = async function() {
             const newName = document.getElementById('displayName').value.trim();
             if (!newName) {
@@ -475,9 +319,7 @@
                     displayName: newName
                 });
                 
-                // Очищаем кэш после обновления
                 clearCache('userData', currentUser.uid);
-                
                 showSettingsMessage('Имя обновлено!');
             } catch (error) {
                 console.error('Ошибка обновления имени:', error);
@@ -485,7 +327,6 @@
             }
         };
 
-        // Смена email
         window.changeEmail = function() {
             document.getElementById('emailModal').classList.add('show');
         };
@@ -513,9 +354,7 @@
                     email: newEmail
                 });
                 
-                // Очищаем кэш после обновления
                 clearCache('userData', currentUser.uid);
-                
                 showSettingsMessage('Email успешно изменён!');
                 closeEmailModal();
                 document.getElementById('userEmailSettings').value = newEmail;
@@ -526,7 +365,6 @@
             }
         };
 
-        // Обновление телефона
         window.updatePhoneNumber = async function() {
             const newPhone = document.getElementById('phoneNumber').value.trim();
             if (!newPhone) {
@@ -539,9 +377,7 @@
                     phoneNumber: newPhone
                 });
                 
-                // Очищаем кэш после обновления
                 clearCache('userData', currentUser.uid);
-                
                 showSettingsMessage('Номер телефона обновлён!');
             } catch (error) {
                 console.error('Ошибка обновления телефона:', error);
@@ -549,7 +385,6 @@
             }
         };
 
-        // Смена пароля
         window.changePassword = async function() {
             const newPassword = document.getElementById('newPassword').value;
             
@@ -577,7 +412,6 @@
             }
         };
 
-        // Удаление аккаунта
         window.deleteAccount = async function() {
             if (!confirm('Вы уверены, что хотите удалить аккаунт? Это действие необратимо.')) {
                 return;
@@ -594,13 +428,13 @@
             }
         };
 
-        // Навигация
         window.navigateTo = function(section) {
             const paths = {
                 'news': '/news.html',
                 'balance': '/balance.html',
                 'generate': '/generate.html',
                 'description': '/description.html',
+                'templates': '/templates.html',
                 'description-history': '/description-history.html',
                 'history': '/history.html',
                 'settings': '/settings.html'
@@ -610,7 +444,6 @@
             }
         };
 
-        // Выход
         window.logout = async function() {
             await auth.signOut();
             window.location.href = '/login.html';

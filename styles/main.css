@@ -53,3 +53,6 @@
 
 /* Страница шаблонов (дополнительные стили) */
 @import url('28-templates-page.css');
+
+/* Настройки профиля */
+@import url('29-settings.css');
