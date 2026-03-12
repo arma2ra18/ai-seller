@@ -44,3 +44,6 @@
 
 /* Баланс */
 @import url('25-balance.css');
+
+/* Генерация описаний */
+@import url('26-description.css');
