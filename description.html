@@ -5,434 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Генерация описаний — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
-    <style>
-        .description-container {
-            max-width: 1000px;
-            margin: 0 auto;
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
+            });
         }
-        
-        /* Информационный баннер */
-        .beta-banner {
-            background: linear-gradient(135deg, rgba(0,113,227,0.2), rgba(155,94,240,0.2));
-            border: 1px solid var(--accent);
-            border-radius: 60px;
-            padding: 20px 30px;
-            margin-bottom: 30px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            animation: fadeInUp 0.6s ease;
-        }
-        
-        .beta-badge {
-            background: var(--accent-gold);
-            color: #000;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-weight: 700;
-            font-size: 14px;
-        }
-        
-        .beta-text {
-            color: var(--text-secondary);
-            font-size: 16px;
-        }
-        
-        .beta-text strong {
-            color: white;
-        }
-        
-        /* Основная сетка */
-        .description-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-        
-        /* Левая колонка - форма */
-        .form-card {
-            background: rgba(28, 28, 30, 0.7);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 32px;
-            padding: 30px;
-            animation: fadeInUp 0.7s ease;
-        }
-        
-        .form-card h2 {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        
-        .form-card .subtitle {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-        
-        .feature-highlight {
-            background: rgba(0,113,227,0.1);
-            border-left: 4px solid var(--accent);
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 30px;
-        }
-        
-        .feature-highlight p {
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-        
-        .feature-highlight strong {
-            color: var(--accent);
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-        
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 16px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            color: white;
-            font-size: 16px;
-            transition: var(--transition);
-        }
-        
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
-        }
-        
-        .form-group textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-        
-        .char-counter {
-            text-align: right;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 5px;
-        }
-        
-        /* Улучшенный дизайн для ссылок конкурентов */
-        .competitor-links {
-            background: linear-gradient(145deg, rgba(30, 30, 35, 0.8), rgba(25, 25, 30, 0.9));
-            border-radius: 24px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid rgba(255,255,255,0.03);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .competitor-links h4 {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: var(--accent);
-            font-size: 18px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .competitor-links h4::before {
-            content: '🔗';
-            font-size: 20px;
-        }
-
-        .competitor-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .competitor-input {
-            position: relative;
-            transition: var(--transition);
-        }
-
-        .competitor-input:hover {
-            transform: translateX(5px);
-        }
-
-        .competitor-input .input-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 24px;
-            height: 24px;
-            background: rgba(0,113,227,0.1);
-            border: 1px solid rgba(0,113,227,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent);
-            font-size: 12px;
-            font-weight: 600;
-            transition: var(--transition);
-        }
-
-        .competitor-input:hover .input-icon {
-            background: var(--accent);
-            color: white;
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .competitor-input input {
-            width: 100%;
-            padding: 16px 16px 16px 50px;
-            background: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 16px;
-            color: white;
-            font-size: 14px;
-            transition: var(--transition);
-        }
-
-        .competitor-input input:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(0,113,227,0.2);
-            background: rgba(0,113,227,0.05);
-        }
-
-        .competitor-input input::placeholder {
-            color: rgba(255,255,255,0.2);
-            font-style: italic;
-        }
-
-        .competitor-note {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 15px;
-            background: rgba(0,113,227,0.05);
-            border-radius: 16px;
-            margin-top: 15px;
-            border: 1px dashed rgba(0,113,227,0.3);
-        }
-
-        .competitor-note .badge {
-            background: var(--accent);
-            color: white;
-            padding: 6px 16px;
-            border-radius: 40px;
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(0,113,227,0.3);
-        }
-
-        .competitor-note span:last-child {
-            color: var(--text-secondary);
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        /* Адаптивность */
-        @media (max-width: 768px) {
-            .competitor-links {
-                padding: 20px;
-            }
-            
-            .competitor-note {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
-        
-        .keywords-tip {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 8px;
-            color: var(--text-muted);
-            font-size: 13px;
-        }
-        
-        .btn-large {
-            padding: 18px;
-            font-size: 18px;
-            width: 100%;
-            margin-top: 20px;
-        }
-        
-        /* Правая колонка - результат */
-        .result-card {
-            background: rgba(28, 28, 30, 0.7);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 32px;
-            padding: 30px;
-            animation: fadeInUp 0.8s ease;
-            position: sticky;
-            top: 100px;
-        }
-        
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .result-header h3 {
-            font-size: 20px;
-        }
-        
-        .result-content {
-            background: rgba(0,0,0,0.2);
-            border-radius: 20px;
-            padding: 25px;
-            min-height: 400px;
-            white-space: pre-wrap;
-            line-height: 1.7;
-            color: var(--text-secondary);
-            font-size: 15px;
-            overflow-y: auto;
-            max-height: 600px;
-        }
-        
-        .result-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 400px;
-            color: var(--text-muted);
-            text-align: center;
-        }
-        
-        .result-placeholder .icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            opacity: 0.3;
-        }
-        
-        .result-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        .result-actions button {
-            flex: 1;
-        }
-        
-        .platform-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .platform-btn {
-            flex: 1;
-            padding: 12px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 40px;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: var(--transition);
-            text-align: center;
-        }
-        
-        .platform-btn:hover {
-            background: rgba(0,113,227,0.1);
-            border-color: var(--accent);
-        }
-        
-        .platform-btn.active {
-            background: var(--accent);
-            border-color: var(--accent);
-            color: white;
-        }
-        
-        @media (max-width: 768px) {
-            .description-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .beta-banner {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .result-card {
-                position: static;
-            }
-        }
-
-        /* Стили для уведомлений */
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 16px 24px;
-            background: rgba(28, 28, 30, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 60px;
-            color: white;
-            font-size: 14px;
-            font-weight: 500;
-            z-index: 9999;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .notification.success {
-            background: rgba(48, 209, 88, 0.95);
-            border-color: rgba(48, 209, 88, 0.3);
-        }
-
-        .notification.error {
-            background: rgba(255, 59, 48, 0.95);
-            border-color: rgba(255, 59, 48, 0.3);
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        @keyframes fadeOut {
-            to {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-        }
-    </style>
+    </script>
 </head>
 <body>
+    <!-- Видеофон -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
 
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
@@ -454,7 +56,7 @@
                 <div class="sidebar-logo-text gradient-logo">Prodiger</div>
             </div>
             <nav class="sidebar-nav">
-            <ul>
+                <ul>
                     <li class="menu-item" data-section="news">
                         <a href="/news.html">📰 Новости</a>
                     </li>
@@ -532,7 +134,7 @@
                             <div class="char-counter"><span id="charCount">0</span>/150 символов</div>
                         </div>
                         
-                        <!-- Ссылки на конкурентов (УЛУЧШЕННЫЙ ДИЗАЙН) -->
+                        <!-- Ссылки на конкурентов -->
                         <div class="competitor-links">
                             <h4>Анализ конкурентов</h4>
                             
@@ -624,7 +226,6 @@
 
         // ========== УВЕДОМЛЕНИЯ ==========
         function showNotification(message, type = 'info') {
-            // Удаляем предыдущее уведомление, если есть
             const existing = document.querySelector('.notification');
             if (existing) existing.remove();
             
@@ -633,7 +234,6 @@
             notification.textContent = message;
             document.body.appendChild(notification);
             
-            // Автоматически скрываем через 3 секунды
             setTimeout(() => {
                 notification.remove();
             }, 3000);
@@ -711,7 +311,7 @@
             progress.style.width = percent + '%';
         }
 
-        // Генерация описания (обновленная функция с уведомлениями)
+        // Генерация описания
         window.generateDescription = async function() {
             const productName = document.getElementById('productName').value.trim();
             
@@ -720,7 +320,6 @@
                 return;
             }
 
-            // Проверка баланса (50 ₽)
             const balance = parseInt(userData.balance) || 0;
             if (balance < 50) {
                 showNotification('❌ Недостаточно средств. Требуется 50 ₽', 'error');
@@ -734,7 +333,6 @@
             showGenerationModal();
 
             try {
-                // Собираем данные
                 const competitors = [
                     document.getElementById('competitor1').value.trim(),
                     document.getElementById('competitor2').value.trim(),
@@ -744,7 +342,6 @@
                 const keywords = document.getElementById('keywords').value.trim()
                     .split(',').map(k => k.trim()).filter(k => k);
 
-                // Отправляем запрос к API
                 const response = await fetch('/api/generate-description', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -763,9 +360,7 @@
                 const result = await response.json();
                 currentDescription = result.description;
 
-                // ========== СОХРАНЕНИЕ В FIREBASE ==========
                 try {
-                    // Сохраняем в коллекцию descriptions
                     await addDoc(collection(db, 'users', currentUser.uid, 'descriptions'), {
                         productName: productName,
                         platform: selectedPlatform,
@@ -781,24 +376,20 @@
                     showNotification('⚠️ Описание создано, но не сохранено в историю', 'warning');
                 }
 
-                // ========== СПИСЫВАЕМ ДЕНЬГИ ==========
                 await updateDoc(doc(db, 'users', currentUser.uid), {
                     balance: increment(-50),
                     usedSpent: increment(50)
                 });
 
-                // Обновляем баланс на странице
                 const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (updatedDoc.exists()) {
                     userData = updatedDoc.data();
                     document.getElementById('sidebarBalance').textContent = userData.balance || 0;
                 }
 
-                // Отображаем результат
                 const resultDiv = document.getElementById('resultContent');
                 resultDiv.innerHTML = `<div style="white-space: pre-wrap;">${currentDescription}</div>`;
 
-                // Активируем кнопки
                 document.getElementById('copyBtn').disabled = false;
                 document.getElementById('saveBtn').disabled = false;
 
@@ -842,6 +433,7 @@
                 'balance': '/balance.html',
                 'generate': '/generate.html',
                 'description': '/description.html',
+                'templates': '/templates.html',
                 'description-history': '/description-history.html',
                 'history': '/history.html',
                 'settings': '/settings.html'
