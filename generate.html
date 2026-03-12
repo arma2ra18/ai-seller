@@ -436,47 +436,51 @@
                             <input type="text" id="wbBrand" placeholder="Xiaomi" autocomplete="off">
                         </div>
                         <div class="form-group half">
-                            <!-- НОВЫЙ СТИЛИЗОВАННЫЙ СЕЛЕКТ КАТЕГОРИИ -->
-                            <div class="category-label">
-                                <i>📋</i> Категория товара
-                            </div>
-                            <div class="category-select-wrapper">
-                                <select id="wbCategory" class="category-select">
-                                    <optgroup label="🔥 Популярные категории">
-                                        <option value="electronics" selected>📱 Электроника и аксессуары</option>
-                                        <option value="clothing">👕 Одежда и обувь</option>
-                                        <option value="home">🏠 Товары для дома и интерьера</option>
-                                        <option value="beauty">💄 Красота и здоровье</option>
-                                        <option value="children">🧸 Детские товары и игрушки</option>
-                                        <option value="sports">⚽ Спорт и активный отдых</option>
-                                        <option value="auto">🚗 Автотовары и аксессуары</option>
-                                        <option value="food">🍎 Продукты питания</option>
-                                    </optgroup>
-                                    <optgroup label="📦 Все категории Wildberries">
-                                        <option value="electronics">📱 Электроника и аксессуары</option>
-                                        <option value="clothing">👕 Одежда, обувь, аксессуары</option>
-                                        <option value="home">🏠 Товары для дома, интерьер, мебель</option>
-                                        <option value="beauty">💄 Косметика, парфюмерия, уход</option>
-                                        <option value="children">🧸 Детские товары, игрушки, коляски</option>
-                                        <option value="sports">⚽ Спорт, фитнес, активный отдых</option>
-                                        <option value="auto">🚗 Автотовары, запчасти, аксессуары</option>
-                                        <option value="food">🍎 Продукты, снеки, напитки</option>
-                                        <option value="animals">🐶 Товары для животных</option>
-                                        <option value="books">📚 Книги, фильмы, музыка</option>
-                                        <option value="hobby">🎨 Творчество, рукоделие, хобби</option>
-                                        <option value="repair">🔨 Стройка, ремонт, инструменты</option>
-                                        <option value="garden">🌱 Дача, сад, огород</option>
-                                        <option value="jewelry">💍 Ювелирные украшения</option>
-                                        <option value="furniture">🪑 Мебель</option>
-                                        <option value="kitchen">🍳 Посуда, кухонные принадлежности</option>
-                                        <option value="textile">🛏️ Текстиль, постельное бельё</option>
-                                        <option value="bags">👜 Сумки, рюкзаки, чемоданы</option>
-                                        <option value="watches">⌚ Часы и аксессуары</option>
-                                        <option value="adults">🔞 18+ товары</option>
-                                    </optgroup>
-                                </select>
-                            </div>
-                        </div>
+                           <!-- Категория с опцией "Не выбрано" -->
+<div class="form-group half">
+    <div class="category-label">
+        <i>📋</i> Категория товара
+    </div>
+    <div class="category-select-wrapper">
+        <select id="wbCategory" class="category-select">
+            <option value="" selected disabled hidden>── Выберите категорию ──</option>
+            <option value="">⭐ Категория не выбрано (универсальный промпт)</option>
+            <optgroup label="🔥 Популярные категории">
+                <option value="electronics">📱 Электроника и аксессуары</option>
+                <option value="clothing">👕 Одежда и обувь</option>
+                <option value="home">🏠 Товары для дома и интерьера</option>
+                <option value="beauty">💄 Красота и здоровье</option>
+                <option value="jewelry">💍 Ювелирные украшения</option>
+                <option value="children">🧸 Детские товары и игрушки</option>
+                <option value="sports">⚽ Спорт и активный отдых</option>
+                <option value="auto">🚗 Автотовары и аксессуары</option>
+                <option value="food">🍎 Продукты питания</option>
+            </optgroup>
+            <optgroup label="📦 Все категории Wildberries">
+                <option value="electronics">📱 Электроника и аксессуары</option>
+                <option value="clothing">👕 Одежда, обувь, аксессуары</option>
+                <option value="home">🏠 Товары для дома, интерьер, мебель</option>
+                <option value="beauty">💄 Косметика, парфюмерия, уход</option>
+                <option value="jewelry">💍 Ювелирные украшения и бижутерия</option>
+                <option value="children">🧸 Детские товары, игрушки, коляски</option>
+                <option value="sports">⚽ Спорт, фитнес, активный отдых</option>
+                <option value="auto">🚗 Автотовары, запчасти, аксессуары</option>
+                <option value="food">🍎 Продукты, снеки, напитки</option>
+                <option value="animals">🐶 Товары для животных</option>
+                <option value="books">📚 Книги, фильмы, музыка</option>
+                <option value="hobby">🎨 Творчество, рукоделие, хобби</option>
+                <option value="repair">🔨 Стройка, ремонт, инструменты</option>
+                <option value="garden">🌱 Дача, сад, огород</option>
+                <option value="furniture">🪑 Мебель</option>
+                <option value="kitchen">🍳 Посуда, кухонные принадлежности</option>
+                <option value="textile">🛏️ Текстиль, постельное бельё</option>
+                <option value="bags">👜 Сумки, рюкзаки, чемоданы</option>
+                <option value="watches">⌚ Часы и аксессуары</option>
+                <option value="adults">🔞 18+ товары</option>
+            </optgroup>
+        </select>
+    </div>
+</div>
                     </div>
                     <div class="form-row">
                         <div class="form-group half">
