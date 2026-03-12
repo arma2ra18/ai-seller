@@ -477,10 +477,17 @@ function getAutoPrompt(productName, brand, price, userFeatures, attempt) {
 
 /**
  * УНИВЕРСАЛЬНАЯ ФУНКЦИЯ: выбирает промпт по категории
+ * Если категория не выбрана (пустая строка) - используем базовый промпт
  */
 function buildPromptByCategory(category, productName, brand, price, userFeatures, attempt) {
+    
+    // ✅ Если категория не выбрана - используем БАЗОВЫЙ ПРОМПТ (как было изначально)
+    if (!category || category === '') {
+        return getBasePrompt(productName, brand, price, userFeatures, attempt);
+    }
+    
+    // Иначе выбираем по категории
     switch(category) {
-        case 'jewelry':
         case 'jewelry':
             return getJewelryPrompt(productName, brand, price, userFeatures, attempt);
         case 'electronics':
@@ -501,6 +508,7 @@ function buildPromptByCategory(category, productName, brand, price, userFeatures
         case 'auto':
             return getAutoPrompt(productName, brand, price, userFeatures, attempt);
         default:
+            // Для неизвестных категорий тоже используем базовый
             return getBasePrompt(productName, brand, price, userFeatures, attempt);
     }
 }
