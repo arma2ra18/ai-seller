@@ -5,106 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Новости — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
-    <style>
-        .news-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin-top: 30px;
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
+            });
         }
-        
-        .news-card {
-            background: rgba(28, 28, 30, 0.7);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 24px;
-            padding: 30px;
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            animation: fadeInUp 0.5s ease;
-        }
-        
-        .news-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 113, 227, 0.2);
-            border-color: var(--accent);
-        }
-        
-        .news-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--accent-gradient);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .news-card:hover::before {
-            opacity: 1;
-        }
-        
-        .news-date {
-            display: inline-block;
-            background: rgba(0, 113, 227, 0.1);
-            color: var(--accent);
-            padding: 6px 12px;
-            border-radius: 40px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-        
-        .news-title {
-            font-size: 24px;
-            margin-bottom: 15px;
-            color: white;
-        }
-        
-        .news-content {
-            color: var(--text-secondary);
-            line-height: 1.7;
-            margin-bottom: 20px;
-        }
-        
-        .news-tag {
-            display: inline-block;
-            background: rgba(255,255,255,0.05);
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-right: 8px;
-        }
-        
-        .news-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: var(--accent-gold);
-            color: #000;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .pinned-news {
-            border: 2px solid var(--accent);
-            box-shadow: 0 0 30px rgba(0, 113, 227, 0.3);
-        }
-        
-        @media (max-width: 768px) {
-            .news-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    </script>
 </head>
 <body>
+    <!-- Видеофон -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
 
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
@@ -262,16 +192,18 @@
 
         // Навигация
         function navigateTo(section) {
-            if (section === 'news') {
-                window.location.href = '/news.html';
-            } else if (section === 'balance') {
-                window.location.href = '/balance.html';
-            } else if (section === 'wb') {
-                window.location.href = '/dashboard.html';
-            } else if (section === 'history') {
-                window.location.href = '/history.html';
-            } else if (section === 'settings') {
-                window.location.href = '/settings.html';
+            const paths = {
+                'news': '/news.html',
+                'balance': '/balance.html',
+                'generate': '/generate.html',
+                'description': '/description.html',
+                'templates': '/templates.html',
+                'description-history': '/description-history.html',
+                'history': '/history.html',
+                'settings': '/settings.html'
+            };
+            if (paths[section]) {
+                window.location.href = paths[section];
             }
         }
 
