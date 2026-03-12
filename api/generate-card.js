@@ -2,6 +2,7 @@ import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import admin from 'firebase-admin';
+import sharp from 'sharp';
 
 // Инициализация Firebase Admin SDK (только один раз)
 if (!admin.apps.length) {
@@ -53,7 +54,7 @@ async function generateGeminiImage(prompt, referenceImage) {
             contents: contents,
             config: {
                 responseModalities: ['Image'],
-                aspectRatio: '1:1',
+                aspectRatio: '3:4', // Меняем на 3:4 для 900x1200
             }
         });
 
@@ -70,24 +71,69 @@ async function generateGeminiImage(prompt, referenceImage) {
 }
 
 /**
- * Загружает изображение в Firebase Storage и возвращает публичный URL.
+ * Пост-обработка изображения: ресайз до 900x1200 и сжатие
  */
-async function uploadToStorage(base64Data, fileName) {
+async function processImage(base64Data) {
     const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
         throw new Error('Invalid base64 data');
     }
+    
     const mimeType = matches[1];
     const base64 = matches[2];
     const buffer = Buffer.from(base64, 'base64');
+    
+    // Ресайз до 900x1200 с сохранением пропорций
+    const processedBuffer = await sharp(buffer)
+        .resize(900, 1200, {
+            fit: 'cover',      // Обрезаем, если пропорции не совпадают
+            position: 'center' // Центрируем товар
+        })
+        .jpeg({ 
+            quality: 85,       // Качество 85% (выше 65%)
+            mozjpeg: true      // Лучшее сжатие
+        })
+        .toBuffer();
+    
+    // Проверяем размер файла (не больше 10 МБ)
+    const fileSizeMB = processedBuffer.length / (1024 * 1024);
+    if (fileSizeMB > 10) {
+        console.warn(`Размер файла ${fileSizeMB.toFixed(2)} МБ > 10 МБ, сжимаем сильнее`);
+        const smallerBuffer = await sharp(processedBuffer)
+            .jpeg({ quality: 70, mozjpeg: true })
+            .toBuffer();
+        return {
+            buffer: smallerBuffer,
+            mimeType: 'image/jpeg',
+            size: smallerBuffer.length
+        };
+    }
+    
+    return {
+        buffer: processedBuffer,
+        mimeType: 'image/jpeg',
+        size: processedBuffer.length
+    };
+}
 
+/**
+ * Загружает изображение в Firebase Storage и возвращает публичный URL.
+ */
+async function uploadToStorage(buffer, fileName, mimeType) {
     const file = bucket.file(`generated/${fileName}`);
     await file.save(buffer, {
-        metadata: { contentType: mimeType },
+        metadata: { 
+            contentType: mimeType,
+            metadata: {
+                width: '900',
+                height: '1200',
+                generated: 'true'
+            }
+        },
         public: true,
     });
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-    console.log(`Uploaded to Storage: ${publicUrl}`);
+    console.log(`Uploaded to Storage: ${publicUrl} (${buffer.length} bytes)`);
     return publicUrl;
 }
 
@@ -237,12 +283,15 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: 'Failed to generate image: ' + err.message });
         }
 
-        // Загружаем в Storage
-        const fileName = `card_${Date.now()}_${attempt}.jpg`;
-        const publicUrl = await uploadToStorage(imageDataUrl, fileName);
+        // ✅ ПОСТ-ОБРАБОТКА: ресайз до 900x1200 и сжатие
+        const processed = await processImage(imageDataUrl);
         
-        // Генерируем описания (можно варьировать в зависимости от попытки)
-        const descriptions = []; // Больше не генерируем описания
+        // Загружаем в Storage (передаём обработанный buffer)
+        const fileName = `card_${Date.now()}_${attempt}.jpg`;
+        const publicUrl = await uploadToStorage(processed.buffer, fileName, processed.mimeType);
+        
+        // Генерируем описания (больше не генерируем)
+        const descriptions = [];
 
         // Удаляем временные файлы
         if (files.photos) {
@@ -254,12 +303,14 @@ export default async function handler(req, res) {
             });
         }
 
-        console.log('✅ Успешно сгенерировано изображение');
+        console.log('✅ Успешно сгенерировано изображение 900x1200');
         res.status(200).json({ 
             images: [publicUrl], 
             descriptions,
             originalImageId: savedOriginalId,
-            attempt: attempt
+            attempt: attempt,
+            dimensions: '900x1200',
+            size: processed.size
         });
     } catch (error) {
         console.error('❌ Ошибка в handler:', error);
