@@ -1,14 +1,28 @@
 import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
-import { createClient } from '@supabase/supabase-js';
+import admin from 'firebase-admin';
 import sharp from 'sharp';
 
-// Инициализация Supabase клиента
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY // Секретный ключ (service_role)
-);
+// Инициализация Firebase Admin SDK (только один раз)
+if (!admin.apps.length) {
+  try {
+    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountEnv) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set');
+    }
+    const serviceAccount = JSON.parse(serviceAccountEnv);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    });
+    console.log('Firebase Admin initialized successfully');
+  } catch (error) {
+    console.error('Firebase Admin initialization error:', error);
+    throw new Error(`Firebase init failed: ${error.message}`);
+  }
+}
+const bucket = admin.storage().bucket();
 
 export const config = {
     api: {
@@ -114,32 +128,23 @@ async function processImage(base64Data) {
 }
 
 /**
- * Загружает изображение в Supabase Storage и возвращает публичный URL.
+ * Загружает изображение в Firebase Storage и возвращает публичный URL.
  */
 async function uploadToStorage(buffer, fileName, mimeType) {
-    // Загружаем файл в Supabase Storage (bucket 'generated')
-    const { data, error } = await supabase
-        .storage
-        .from('generated')
-        .upload(fileName, buffer, {
+    const file = bucket.file(`generated/${fileName}`);
+    await file.save(buffer, {
+        metadata: { 
             contentType: mimeType,
-            cacheControl: '3600',
-            upsert: false
-        });
-
-    if (error) {
-        console.error('❌ Ошибка загрузки в Supabase Storage:', error);
-        throw new Error(`Storage upload failed: ${error.message}`);
-    }
-
-    // Получаем публичный URL
-    const { data: urlData } = supabase
-        .storage
-        .from('generated')
-        .getPublicUrl(fileName);
-
-    const publicUrl = urlData.publicUrl;
-    console.log(`✅ Uploaded to Supabase Storage: ${publicUrl} (${buffer.length} bytes)`);
+            metadata: {
+                width: '900',
+                height: '1200',
+                generated: 'true'
+            }
+        },
+        public: true,
+    });
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
+    console.log(`Uploaded to Storage: ${publicUrl} (${buffer.length} bytes)`);
     return publicUrl;
 }
 
@@ -186,17 +191,9 @@ export default async function handler(req, res) {
         } else if (originalImageId) {
             // Загружаем оригинал из Storage для повторных генераций
             try {
-                // Скачиваем файл из Supabase Storage
-                const { data, error } = await supabase
-                    .storage
-                    .from('originals')
-                    .download(originalImageId);
-
-                if (error) throw error;
-                
-                // Конвертируем Blob в Buffer
-                const arrayBuffer = await data.arrayBuffer();
-                referenceBuffer = Buffer.from(arrayBuffer);
+                const file = bucket.file(`originals/${originalImageId}`);
+                const [fileBuffer] = await file.download();
+                referenceBuffer = fileBuffer;
                 console.log(`Loaded original image from Storage: ${originalImageId}`);
             } catch (err) {
                 console.error('Failed to load original image from Storage:', err);
@@ -213,23 +210,13 @@ export default async function handler(req, res) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             if (photoArray.length) {
                 const originalFileName = `original_${Date.now()}_${photoArray[0].originalFilename}`;
-                
-                // Загружаем в Supabase Storage (bucket 'originals')
-                const { error: uploadError } = await supabase
-                    .storage
-                    .from('originals')
-                    .upload(originalFileName, referenceBuffer, {
-                        contentType: photoArray[0].mimetype,
-                        cacheControl: '3600',
-                        upsert: false
-                    });
-
-                if (uploadError) {
-                    console.error('❌ Ошибка сохранения оригинала:', uploadError);
-                } else {
-                    savedOriginalId = originalFileName;
-                    console.log(`Saved original image as: ${originalFileName}`);
-                }
+                const file = bucket.file(`originals/${originalFileName}`);
+                await file.save(referenceBuffer, { 
+                    metadata: { contentType: photoArray[0].mimetype }, 
+                    public: false 
+                });
+                savedOriginalId = originalFileName;
+                console.log(`Saved original image as: ${originalFileName}`);
             }
         }
 

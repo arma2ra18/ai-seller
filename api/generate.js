@@ -1,32 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-);
-
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
     try {
-        const { category, productName, features, audience, keywords, userId } = req.body;
+        const { category, productName, features, audience, keywords } = req.body;
 
-        // Проверяем пользователя (опционально)
-        if (userId) {
-            const { data: user } = await supabase
-                .from('users')
-                .select('balance')
-                .eq('id', userId)
-                .single();
-                
-            if (!user) {
-                console.log('User not found, but continuing');
-            }
-        }
+        // Здесь будет интеграция с GigaChat
+        // Пока возвращаем тестовые данные
         
-        // Возвращаем тестовые данные
         const result = {
             names: [
                 `${productName} — лучший выбор в ${category}`,

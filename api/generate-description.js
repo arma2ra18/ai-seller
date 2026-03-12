@@ -1,10 +1,4 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_KEY
-);
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
@@ -12,35 +6,16 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { productName, platform, competitors = [], keywords = [], model = 'flash', userId } = req.body;
+        const { productName, platform, competitors = [], keywords = [], model = 'flash' } = req.body;
 
         if (!productName) {
             return res.status(400).json({ error: 'Product name is required' });
-        }
-
-        if (!userId) {
-            return res.status(401).json({ error: 'User not authenticated' });
         }
 
         const apiKey = process.env.GOOGLE_API_KEY;
         if (!apiKey) {
             console.error('GOOGLE_API_KEY not set');
             return res.status(500).json({ error: 'Google API key not configured' });
-        }
-
-        // Проверяем баланс пользователя
-        const { data: user, error: userError } = await supabase
-            .from('users')
-            .select('balance, used_spent')
-            .eq('id', userId)
-            .single();
-
-        if (userError || !user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        if (user.balance < 50) {
-            return res.status(400).json({ error: 'Insufficient balance. Required: 50 ₽' });
         }
 
         // Определяем требования к описанию в зависимости от платформы
@@ -109,9 +84,9 @@ export default async function handler(req, res) {
         
         // Карта правильных названий моделей
         const modelMap = {
-            'flash': 'gemini-2.5-flash',
-            'flash-lite': 'gemini-2.5-flash-lite',
-            'pro': 'gemini-2.5-pro'
+            'flash': 'gemini-2.5-flash',           // Быстрая модель [citation:2][citation:9]
+            'flash-lite': 'gemini-2.5-flash-lite',   // Самая быстрая и экономичная [citation:2]
+            'pro': 'gemini-2.5-pro'                  // Самая мощная для сложных задач [citation:2][citation:8]
         };
         
         const selectedModel = modelMap[model] || modelMap.flash;
@@ -122,8 +97,8 @@ export default async function handler(req, res) {
         const geminiModel = genAI.getGenerativeModel({ 
             model: selectedModel,
             generationConfig: {
-                temperature: 0.9,
-                maxOutputTokens: 8192,
+                temperature: 0.9,        // Чуть выше для креативности
+                maxOutputTokens: 8192,    // Максимально длинный ответ
                 topP: 0.95,
                 topK: 40
             }
@@ -137,6 +112,7 @@ export default async function handler(req, res) {
         if (!description || description.length < 1000) {
             console.log('Description too short, regenerating with higher temperature...');
             
+            // Пробуем ещё раз с более высокой температурой
             const retryModel = genAI.getGenerativeModel({ 
                 model: selectedModel,
                 generationConfig: {
@@ -152,51 +128,43 @@ export default async function handler(req, res) {
             description = retryResponse.text();
         }
 
-        // Сохраняем описание в БД
-        const { data: savedDesc, error: insertError } = await supabase
-            .from('descriptions')
-            .insert({
-                user_id: userId,
-                product_name: productName,
-                platform: platform,
-                description: description,
-                keywords: keywords,
-                cost: 50,
-                created_at: new Date().toISOString()
-            })
-            .select()
-            .single();
-
-        if (insertError) {
-            console.error('❌ Error saving description:', insertError);
-            // Не возвращаем ошибку, просто логируем
-        }
-
-        // Списываем деньги
-        await supabase
-            .from('users')
-            .update({ 
-                balance: user.balance - 50,
-                used_spent: (user.used_spent || 0) + 50
-            })
-            .eq('id', userId);
-
         console.log(`✅ Description generated, length: ${description.length} chars`);
 
         res.status(200).json({ 
             description,
             platform,
             model: selectedModel,
-            length: description.length,
-            saved: !insertError
+            length: description.length
         });
 
     } catch (error) {
         console.error('❌ Fatal error:', error);
         
+        // Возвращаем информативную ошибку
         res.status(500).json({ 
             error: 'Ошибка генерации описания',
-            details: error.message
+            details: error.message,
+            fallback: generateFallbackDescription(req.body.productName, req.body.platform, req.body.keywords)
         });
     }
+}
+
+// Запасная функция с демо-данными (только если совсем всё сломалось)
+function generateFallbackDescription(productName, platform, keywords) {
+    const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
+    
+    return `✨ **${productName}** — премиальное качество для ${platformName}!
+
+📋 **ПОДРОБНЫЕ ХАРАКТЕРИСТИКИ:**
+• Модель: ${productName}
+• Бренд: ${productName.split(' ')[0] || 'Premium'}
+• Страна производства: Китай
+• Гарантия: 12 месяцев
+
+📦 **КОМПЛЕКТАЦИЯ:**
+- Товар в фирменной упаковке
+- Документация
+- Гарантийный талон
+
+❗️ **ВНИМАНИЕ:** Это демо-режим. Полноценное описание не сгенерировалось. Пожалуйста, попробуйте ещё раз или обратитесь в поддержку.`;
 }

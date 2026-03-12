@@ -51,12 +51,16 @@ const urlsToCache = [
   '/styles/21-utilities.css',
   '/styles/22-legacy.css',
   '/styles/23-templates.css',
-  '/js/supabase.js',          // Вместо firebase.js
+  '/js/firebase.js',
   '/js/auth.js',
   '/js/dashboard.js',
   '/js/main.js',
   '/js/cache.js',
   '/js/templates.js',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
+  'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap'
 ];
 

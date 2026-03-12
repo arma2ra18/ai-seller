@@ -1,4 +1,17 @@
-import { supabase } from './supabase.js';
+import { auth, db } from './firebase.js';
+import { 
+    signOut,
+    GoogleAuthProvider,
+    signInWithPopup,
+    RecaptchaVerifier,
+    signInWithPhoneNumber,
+    updateProfile
+} from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+
+// Переменные для хранения confirmationResult и режима (login/register)
+let confirmationResult = null;
+let currentMode = null;
 
 // Переключение вкладок
 window.showTab = function(tab) {
@@ -15,123 +28,142 @@ window.showTab = function(tab) {
     document.getElementById('authMessage').textContent = '';
 };
 
-// ========== ВХОД ПО EMAIL ==========
-window.handleEmailLogin = async function() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    const messageEl = document.getElementById('authMessage');
+// ========== ОТПРАВКА КОДА (для входа или регистрации) ==========
+window.sendPhoneCode = async function(mode) {
+    const phone = mode === 'login' 
+        ? document.getElementById('loginPhone').value.trim()
+        : document.getElementById('registerPhone').value.trim();
     
-    if (!email || !password) {
-        messageEl.textContent = '❌ Введите email и пароль';
+    const messageEl = document.getElementById('authMessage');
+
+    if (!phone) {
+        messageEl.textContent = '❌ Введите номер телефона';
         messageEl.className = 'auth-message error';
         return;
     }
 
     try {
-        messageEl.textContent = '⏳ Вход...';
-        messageEl.className = 'auth-message info';
-        
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: email,
-            password: password
+        // Удаляем старый recaptchaVerifier, если есть
+        if (window.recaptchaVerifier) {
+            window.recaptchaVerifier.clear();
+            window.recaptchaVerifier = null;
+        }
+
+        // Создаём новый recaptchaVerifier
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': () => {
+                console.log('reCAPTCHA verified');
+            }
         });
 
-        if (error) throw error;
-
-        messageEl.textContent = '✅ Успешно! Перенаправляем...';
-        messageEl.className = 'auth-message success';
+        const appVerifier = window.recaptchaVerifier;
+        confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
         
-        setTimeout(() => window.location.href = '/news.html', 1500);
+        currentMode = mode;
+        
+        const codeModal = document.getElementById('codeModal');
+        if (codeModal) codeModal.classList.add('show');
+        
+        messageEl.textContent = '✅ Код отправлен! Проверьте SMS';
+        messageEl.className = 'auth-message success';
     } catch (error) {
-        console.error('Login error:', error);
-        let errorMessage = 'Ошибка входа';
-        if (error.message.includes('Invalid login credentials')) {
-            errorMessage = 'Неверный email или пароль';
-        } else {
-            errorMessage = error.message;
-        }
-        messageEl.textContent = '❌ ' + errorMessage;
+        console.error('Phone auth error:', error);
+        messageEl.textContent = '❌ Ошибка: ' + error.message;
         messageEl.className = 'auth-message error';
     }
 };
 
-// ========== РЕГИСТРАЦИЯ ПО EMAIL ==========
-window.handleEmailRegister = async function() {
-    const email = document.getElementById('registerEmail').value.trim();
-    const password = document.getElementById('registerPassword').value;
+// ========== ПОДТВЕРЖДЕНИЕ КОДА ==========
+window.verifyPhoneCode = async function() {
+    const code = document.getElementById('verificationCode').value.trim();
     const messageEl = document.getElementById('authMessage');
     
-    if (!email || !password) {
-        messageEl.textContent = '❌ Введите email и пароль';
-        messageEl.className = 'auth-message error';
+    if (!code) {
+        alert('Введите код подтверждения');
         return;
     }
-
-    if (password.length < 6) {
-        messageEl.textContent = '❌ Пароль должен быть не менее 6 символов';
-        messageEl.className = 'auth-message error';
-        return;
-    }
-
+    
     try {
-        messageEl.textContent = '⏳ Регистрация...';
-        messageEl.className = 'auth-message info';
+        console.log('Verifying code:', code);
+        const result = await confirmationResult.confirm(code);
+        const user = result.user;
+        console.log('User authenticated:', user.uid);
         
-        // Регистрируем пользователя в Supabase Auth
-        const { data, error } = await supabase.auth.signUp({
-            email: email,
-            password: password
-        });
-
-        if (error) throw error;
-
-        // Если пользователь создан, добавляем запись в таблицу users с балансом 500
-        if (data.user) {
-            const { error: insertError } = await supabase
-                .from('users')
-                .insert({
-                    id: data.user.id,
-                    email: email,
-                    balance: 500,
-                    used_spent: 0,
-                    created_at: new Date().toISOString()
-                });
-
-            if (insertError) {
-                console.error('Error inserting user:', insertError);
-                // Даже если ошибка вставки, пользователь уже создан в Auth
+        // Всегда создаём/обновляем запись в Firestore
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+        
+        if (!userDoc.exists()) {
+            console.log('Creating new user in Firestore');
+            await setDoc(userRef, {
+                phoneNumber: user.phoneNumber,
+                email: user.email || '',
+                displayName: user.displayName || '',
+                plan: 'start',
+                balance: 500,
+                usedSpent: 0,
+                createdAt: new Date().toISOString()
+            });
+        } else {
+            console.log('User already exists in Firestore');
+            // Если нужно, можно обновить номер телефона
+            if (user.phoneNumber && userDoc.data().phoneNumber !== user.phoneNumber) {
+                await setDoc(userRef, { phoneNumber: user.phoneNumber }, { merge: true });
             }
         }
-
-        messageEl.textContent = '✅ Регистрация успешна! Перенаправляем...';
-        messageEl.className = 'auth-message success';
         
-        setTimeout(() => window.location.href = '/news.html', 1500);
+        messageEl.textContent = '✅ Успешно! Перенаправляем...';
+        messageEl.className = 'auth-message success';
+        closeCodeModal();
+        
+        // Небольшая задержка перед редиректом
+        setTimeout(() => {
+            window.location.href = '/news.html';  // Изменено с dashboard.html на news.html
+        }, 1500);
     } catch (error) {
-        console.error('Register error:', error);
-        messageEl.textContent = '❌ ' + error.message;
+        console.error('Verification error:', error);
+        
+        // Детальный разбор ошибки
+        if (error.code === 'auth/invalid-verification-code') {
+            messageEl.textContent = '❌ Неверный код. Попробуйте ещё раз.';
+        } else if (error.code === 'auth/code-expired') {
+            messageEl.textContent = '❌ Код истёк. Запросите новый.';
+        } else {
+            messageEl.textContent = '❌ Ошибка: ' + error.message;
+        }
         messageEl.className = 'auth-message error';
     }
 };
 
 // ========== ВХОД ЧЕРЕЗ GOOGLE ==========
 window.handleGoogleLogin = async function() {
+    const provider = new GoogleAuthProvider();
     const messageEl = document.getElementById('authMessage');
     
     try {
         messageEl.textContent = '⏳ Вход через Google...';
         messageEl.className = 'auth-message info';
         
-        const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: window.location.origin + '/news.html'
-            }
-        });
-
-        if (error) throw error;
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
         
-        // Редирект произойдёт автоматически
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (!userDoc.exists()) {
+            await setDoc(doc(db, 'users', user.uid), {
+                email: user.email,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                plan: 'start',
+                balance: 500,
+                usedSpent: 0,
+                createdAt: new Date().toISOString()
+            });
+        }
+        
+        messageEl.textContent = '✅ Вход выполнен! Перенаправляем...';
+        messageEl.className = 'auth-message success';
+        setTimeout(() => window.location.href = '/news.html', 1500);  // Изменено с dashboard.html на news.html
     } catch (error) {
         console.error('Google sign-in error:', error);
         messageEl.textContent = '❌ Ошибка входа через Google: ' + error.message;
@@ -139,64 +171,35 @@ window.handleGoogleLogin = async function() {
     }
 };
 
-// ========== ВЫХОД ==========
-window.logout = async function() {
-    await supabase.auth.signOut();
-    window.location.href = '/login.html';
-};
-
-// ========== ОТПРАВКА КОДА (пока отключено - требует Twilio) ==========
-window.sendPhoneCode = function(mode) {
-    const messageEl = document.getElementById('authMessage');
-    messageEl.textContent = '❌ Вход по телефону временно недоступен. Используйте email.';
-    messageEl.className = 'auth-message error';
-};
-
-// ========== ПОДТВЕРЖДЕНИЕ КОДА (заглушка) ==========
-window.verifyPhoneCode = function() {
-    const messageEl = document.getElementById('authMessage');
-    messageEl.textContent = '❌ Вход по телефону временно недоступен.';
-    messageEl.className = 'auth-message error';
-};
-
-// ========== ПОВТОРНАЯ ОТПРАВКА КОДА (заглушка) ==========
-window.resendPhoneCode = function() {
-    const messageEl = document.getElementById('authMessage');
-    messageEl.textContent = '❌ Функция недоступна.';
-    messageEl.className = 'auth-message error';
-};
-
-// ========== ЗАКРЫТИЕ МОДАЛЬНОГО ОКНА ==========
+// ========== УПРАВЛЕНИЕ МОДАЛЬНЫМИ ОКНАМИ ==========
 window.closeCodeModal = function() {
     const modal = document.getElementById('codeModal');
     if (modal) modal.classList.remove('show');
 };
 
-// ========== СЛЕДИМ ЗА СОСТОЯНИЕМ АВТОРИЗАЦИИ ==========
-supabase.auth.onAuthStateChange((event, session) => {
-    console.log('Auth event:', event, session?.user?.email);
-    
-    if (event === 'SIGNED_IN' && session?.user) {
-        // Проверяем, есть ли пользователь в таблице users
-        (async () => {
-            const { data: user, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-            
-            if (error || !user) {
-                // Если нет - создаём
-                await supabase
-                    .from('users')
-                    .insert({
-                        id: session.user.id,
-                        email: session.user.email,
-                        balance: 500,
-                        used_spent: 0,
-                        created_at: new Date().toISOString()
-                    });
-            }
-        })();
+window.resendPhoneCode = async function() {
+    if (!confirmationResult) {
+        alert('Сначала запросите код');
+        return;
     }
-});
+    try {
+        // Повторно отправляем код
+        await confirmationResult.confirm('');
+        alert('Код отправлен повторно');
+    } catch (error) {
+        console.error('Resend error:', error);
+        alert('Ошибка при повторной отправке');
+    }
+};
+
+// ========== ВЫХОД ==========
+window.logout = async function() {
+    await signOut(auth);
+    window.location.href = '/login.html';
+};
+
+// Закрытие модального окна по клику вне его
+window.onclick = function(event) {
+    const codeModal = document.getElementById('codeModal');
+    if (event.target === codeModal) closeCodeModal();
+};
