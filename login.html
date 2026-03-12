@@ -5,10 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
+            });
+        }
+    </script>
 </head>
 <body>
+    <!-- Видеофон -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
+
     <div class="auth-container">
-        <div class="auth-card">
+        <div class="auth-card glass">
             <div class="auth-logo">Prodiger</div>
             <h2>Вход в личный кабинет</h2>
             
@@ -18,76 +47,238 @@
             </div>
 
             <!-- Вкладка входа -->
-<div id="login-tab" class="auth-form active">
-    <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="example@mail.ru">
-    </div>
-    <div class="form-group">
-        <label>Пароль</label>
-        <input type="password" id="loginPassword" placeholder="••••••••">
-    </div>
-    
-    <button class="btn btn-primary btn-block" onclick="handleEmailLogin()">Войти</button>
-    
-    <div class="auth-divider">
-        <span>или</span>
-    </div>
-    
-    <div class="social-buttons">
-        <button class="btn btn-google btn-block" onclick="handleGoogleLogin()">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="social-icon">
-            Войти через Google
-        </button>
-    </div>
-</div>
-
-<!-- Вкладка регистрации -->
-<div id="register-tab" class="auth-form">
-    <div class="form-group">
-        <label>Email</label>
-        <input type="email" id="registerEmail" placeholder="example@mail.ru">
-    </div>
-    <div class="form-group">
-        <label>Пароль</label>
-        <input type="password" id="registerPassword" placeholder="минимум 6 символов">
-    </div>
-    
-    <button class="btn btn-primary btn-block" onclick="handleEmailRegister()">Зарегистрироваться</button>
-    
-    <div class="auth-divider">
-        <span>или</span>
-    </div>
-    
-    <div class="social-buttons">
-        <button class="btn btn-google btn-block" onclick="handleGoogleLogin()">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="social-icon">
-            Google
-        </button>
-    </div>
-    
-    <p style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
-        После регистрации вы получите 500 рублей на счет
-    </p>
-</div>
-
-    <!-- Модальное окно для ввода кода из SMS -->
-    <div id="codeModal" class="modal">
-        <div class="modal-content glass">
-            <button class="modal-close" onclick="closeCodeModal()">&times;</button>
-            <h2>Подтверждение</h2>
-            <p>Мы отправили код на ваш номер телефона</p>
-            
-            <div class="form-group">
-                <label>Код подтверждения</label>
-                <input type="text" id="verificationCode" placeholder="123456">
+            <div id="login-tab" class="auth-form active">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="loginEmail" placeholder="example@mail.ru" autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+                </div>
+                
+                <button class="btn btn-primary btn-block" onclick="handleEmailLogin()">Войти</button>
+                
+                <div class="auth-divider">
+                    <span>или</span>
+                </div>
+                
+                <div class="social-buttons">
+                    <button class="btn btn-google btn-block" onclick="handleGoogleLogin()">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="social-icon">
+                        Войти через Google
+                    </button>
+                </div>
+                
+                <div class="forgot-password">
+                    <a href="#" onclick="alert('Для восстановления пароля обратитесь в поддержку: support@prodiger.ru')">Забыли пароль?</a>
+                </div>
             </div>
-            
-            <button class="btn btn-primary btn-block" onclick="verifyPhoneCode()">Подтвердить</button>
-            <button class="btn btn-link" onclick="resendPhoneCode()">Отправить код повторно</button>
+
+            <!-- Вкладка регистрации -->
+            <div id="register-tab" class="auth-form">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="registerEmail" placeholder="example@mail.ru" autocomplete="email">
+                </div>
+                
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="registerPassword" placeholder="минимум 6 символов" autocomplete="new-password">
+                </div>
+                
+                <div class="form-group">
+                    <label>Подтверждение пароля</label>
+                    <input type="password" id="registerPasswordConfirm" placeholder="повторите пароль" autocomplete="new-password">
+                </div>
+                
+                <button class="btn btn-primary btn-block" onclick="handleEmailRegister()">Зарегистрироваться</button>
+                
+                <div class="auth-divider">
+                    <span>или</span>
+                </div>
+                
+                <div class="social-buttons">
+                    <button class="btn btn-google btn-block" onclick="handleGoogleLogin()">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="social-icon">
+                        Google
+                    </button>
+                </div>
+                
+                <p style="text-align: center; margin-top: 20px; color: var(--text-secondary);">
+                    После регистрации вы получите 500 рублей на счет
+                </p>
+            </div>
+
+            <div id="authMessage" class="auth-message"></div>
         </div>
     </div>
 
-    <script type="module" src="js/auth.js"></script>
+    <script type="module">
+        import { supabase } from './js/supabase.js';
+
+        // Переключение вкладок
+        window.showTab = function(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            
+            if (tab === 'login') {
+                document.querySelector('[onclick="showTab(\'login\')"]').classList.add('active');
+                document.getElementById('login-tab').classList.add('active');
+            } else {
+                document.querySelector('[onclick="showTab(\'register\')"]').classList.add('active');
+                document.getElementById('register-tab').classList.add('active');
+            }
+            document.getElementById('authMessage').textContent = '';
+            document.getElementById('authMessage').className = 'auth-message';
+        };
+
+        // Показать сообщение
+        function showMessage(text, type = 'info') {
+            const messageEl = document.getElementById('authMessage');
+            messageEl.textContent = text;
+            messageEl.className = `auth-message ${type}`;
+        }
+
+        // ========== ВХОД ПО EMAIL ==========
+        window.handleEmailLogin = async function() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!email || !password) {
+                showMessage('❌ Введите email и пароль', 'error');
+                return;
+            }
+
+            try {
+                showMessage('⏳ Вход...', 'info');
+                
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                showMessage('✅ Успешно! Перенаправляем...', 'success');
+                
+                setTimeout(() => window.location.href = '/news.html', 1500);
+            } catch (error) {
+                console.error('Login error:', error);
+                let errorMessage = 'Ошибка входа';
+                if (error.message.includes('Invalid login credentials')) {
+                    errorMessage = 'Неверный email или пароль';
+                } else {
+                    errorMessage = error.message;
+                }
+                showMessage('❌ ' + errorMessage, 'error');
+            }
+        };
+
+        // ========== РЕГИСТРАЦИЯ ПО EMAIL ==========
+        window.handleEmailRegister = async function() {
+            const email = document.getElementById('registerEmail').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerPasswordConfirm').value;
+            
+            if (!email || !password || !confirmPassword) {
+                showMessage('❌ Заполните все поля', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('❌ Пароль должен быть не менее 6 символов', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showMessage('❌ Пароли не совпадают', 'error');
+                return;
+            }
+
+            try {
+                showMessage('⏳ Регистрация...', 'info');
+                
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
+
+                if (error) throw error;
+
+                // Если пользователь создан, добавляем запись в таблицу users с балансом 500
+                if (data.user) {
+                    const { error: insertError } = await supabase
+                        .from('users')
+                        .insert({
+                            id: data.user.id,
+                            email: email,
+                            balance: 500,
+                            used_spent: 0,
+                            created_at: new Date().toISOString()
+                        });
+
+                    if (insertError) {
+                        console.error('Error inserting user:', insertError);
+                        // Не прерываем регистрацию, если не удалось создать запись
+                    }
+                }
+
+                showMessage('✅ Регистрация успешна! Перенаправляем...', 'success');
+                
+                setTimeout(() => window.location.href = '/news.html', 1500);
+            } catch (error) {
+                console.error('Register error:', error);
+                showMessage('❌ ' + error.message, 'error');
+            }
+        };
+
+        // ========== ВХОД ЧЕРЕЗ GOOGLE ==========
+        window.handleGoogleLogin = async function() {
+            try {
+                showMessage('⏳ Вход через Google...', 'info');
+                
+                const { data, error } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + '/news.html'
+                    }
+                });
+
+                if (error) throw error;
+                
+                // Редирект произойдёт автоматически
+            } catch (error) {
+                console.error('Google sign-in error:', error);
+                showMessage('❌ Ошибка входа через Google: ' + error.message, 'error');
+            }
+        };
+
+        // ========== ПРОВЕРКА, ЕСЛИ УЖЕ ВОШЛИ ==========
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                window.location.href = '/news.html';
+            }
+        });
+
+        // ========== ЗАГЛУШКИ ДЛЯ ТЕЛЕФОНА ==========
+        window.sendPhoneCode = function() {
+            showMessage('❌ Вход по телефону временно недоступен. Используйте email.', 'error');
+        };
+        
+        window.verifyPhoneCode = function() {
+            showMessage('❌ Вход по телефону временно недоступен.', 'error');
+        };
+        
+        window.resendPhoneCode = function() {
+            showMessage('❌ Функция недоступна.', 'error');
+        };
+        
+        window.closeCodeModal = function() {
+            const modal = document.getElementById('codeModal');
+            if (modal) modal.classList.remove('show');
+        };
+    </script>
 </body>
 </html>
