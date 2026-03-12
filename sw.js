@@ -1,5 +1,6 @@
 const CACHE_NAME = 'prodiger-v1';
 const API_CACHE_NAME = 'prodiger-api-v1';
+
 self.addEventListener('fetch', event => {
   // Логируем все запросы, которые обрабатывает SW
   console.log('SW перехватил:', event.request.method, event.request.url);

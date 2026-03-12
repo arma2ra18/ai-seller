@@ -378,18 +378,22 @@
                     </div>
                 </div>
 
-                <!-- Кнопки действий -->
-                <div class="action-buttons">
-                    <button class="action-btn primary" onclick="saveTemplate()">
-                        💾 Сохранить шаблон
-                    </button>
-                    <button class="action-btn secondary" onclick="resetTemplate()">
-                        ↩️ Сбросить
-                    </button>
-                    <button class="action-btn secondary" onclick="applyToGenerator()">
-                        ✨ Применить к генерации
-                    </button>
-                </div>
+<!-- Кнопки действий -->
+<div class="action-buttons">
+    <button class="action-btn primary" onclick="saveTemplate()">
+        💾 Сохранить шаблон
+    </button>
+    <button class="action-btn secondary" onclick="resetTemplate()">
+        ↩️ Сбросить
+    </button>
+    <!-- НОВАЯ КНОПКА -->
+    <button class="action-btn secondary" onclick="resetToClassic()">
+        ⭐ Сбросить к классическому
+    </button>
+    <button class="action-btn secondary" onclick="applyToGenerator()">
+        ✨ Применить к генерации
+    </button>
+</div>
             </div>
         </main>
     </div>
@@ -742,5 +746,42 @@
             });
         });
     </script>
+// Сброс к классическому шаблону (как было до шаблонов)
+window.resetToClassic = function() {
+    // Классический шаблон
+    const CLASSIC_TEMPLATE = {
+        id: 'classic',
+        name: 'Классический',
+        icon: '⭐',
+        description: 'Стандартный дизайн Prodiger',
+        colors: {
+            primary: '#0071e3',
+            secondary: '#f5b041',
+            accent: '#9b5ef0',
+            background: '#0a0a0c',
+            text: '#ffffff',
+            cardBg: '#1c1c1e'
+        },
+        fonts: {
+            title: "'Inter', sans-serif",
+            price: "'Montserrat', sans-serif",
+            features: "'Roboto', sans-serif"
+        },
+        layout: 'centered',
+        animation: 'fade'
+    };
+    
+    // Применяем классический шаблон
+    currentTemplate = JSON.parse(JSON.stringify(CLASSIC_TEMPLATE));
+    
+    // Обновляем весь интерфейс
+    renderAll();
+    
+    // Сохраняем в localStorage как активный
+    localStorage.setItem('activeTemplate', JSON.stringify(CLASSIC_TEMPLATE));
+    
+    // Показываем уведомление
+    showNotification('⭐ Классический шаблон применён', 'success');
+};
 </body>
 </html>
