@@ -206,9 +206,117 @@
             color: var(--text-secondary);
             font-size: 14px;
         }
+        
+        /* ===== НОВЫЕ СТИЛИ ДЛЯ СЕЛЕКТА КАТЕГОРИИ ===== */
+        .category-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .category-select {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(20, 20, 30, 0.8);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 60px;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .category-select:hover {
+            border-color: rgba(0, 113, 227, 0.5);
+            background: rgba(30, 30, 40, 0.9);
+            transform: translateY(-2px);
+        }
+        
+        .category-select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.2), 0 8px 25px rgba(0, 113, 227, 0.3);
+            background: rgba(25, 25, 35, 0.95);
+        }
+        
+        .category-select option {
+            background: #1a1a25;
+            color: white;
+            padding: 15px;
+            font-size: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .category-select optgroup {
+            background: #0f0f15;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            padding: 10px 0;
+        }
+        
+        /* Стрелка для селекта */
+        .category-select-wrapper::after {
+            content: "▼";
+            font-size: 14px;
+            color: var(--accent);
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+            transition: transform 0.3s ease;
+            opacity: 0.8;
+        }
+        
+        .category-select-wrapper:hover::after {
+            transform: translateY(-50%) rotate(180deg);
+            color: white;
+        }
+        
+        /* Метка для категории */
+        .category-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        .category-label i {
+            color: var(--accent);
+            font-style: normal;
+            font-size: 18px;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .category-select {
+                padding: 14px 18px;
+                font-size: 15px;
+            }
+            
+            .category-select-wrapper::after {
+                right: 15px;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Видеофон -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
 
     <div class="floating-elements">
         <div class="floating-icon" style="top: 10%; left: 5%;">📊</div>
@@ -328,14 +436,46 @@
                             <input type="text" id="wbBrand" placeholder="Xiaomi" autocomplete="off">
                         </div>
                         <div class="form-group half">
-                            <label>Категория</label>
-                            <select id="wbCategory">
-                                <option value="electronics">Электроника</option>
-                                <option value="clothing">Одежда</option>
-                                <option value="home">Товары для дома</option>
-                                <option value="beauty">Красота и здоровье</option>
-                                <option value="food">Продукты</option>
-                            </select>
+                            <!-- НОВЫЙ СТИЛИЗОВАННЫЙ СЕЛЕКТ КАТЕГОРИИ -->
+                            <div class="category-label">
+                                <i>📋</i> Категория товара
+                            </div>
+                            <div class="category-select-wrapper">
+                                <select id="wbCategory" class="category-select">
+                                    <optgroup label="🔥 Популярные категории">
+                                        <option value="electronics" selected>📱 Электроника и аксессуары</option>
+                                        <option value="clothing">👕 Одежда и обувь</option>
+                                        <option value="home">🏠 Товары для дома и интерьера</option>
+                                        <option value="beauty">💄 Красота и здоровье</option>
+                                        <option value="children">🧸 Детские товары и игрушки</option>
+                                        <option value="sports">⚽ Спорт и активный отдых</option>
+                                        <option value="auto">🚗 Автотовары и аксессуары</option>
+                                        <option value="food">🍎 Продукты питания</option>
+                                    </optgroup>
+                                    <optgroup label="📦 Все категории Wildberries">
+                                        <option value="electronics">📱 Электроника и аксессуары</option>
+                                        <option value="clothing">👕 Одежда, обувь, аксессуары</option>
+                                        <option value="home">🏠 Товары для дома, интерьер, мебель</option>
+                                        <option value="beauty">💄 Косметика, парфюмерия, уход</option>
+                                        <option value="children">🧸 Детские товары, игрушки, коляски</option>
+                                        <option value="sports">⚽ Спорт, фитнес, активный отдых</option>
+                                        <option value="auto">🚗 Автотовары, запчасти, аксессуары</option>
+                                        <option value="food">🍎 Продукты, снеки, напитки</option>
+                                        <option value="animals">🐶 Товары для животных</option>
+                                        <option value="books">📚 Книги, фильмы, музыка</option>
+                                        <option value="hobby">🎨 Творчество, рукоделие, хобби</option>
+                                        <option value="repair">🔨 Стройка, ремонт, инструменты</option>
+                                        <option value="garden">🌱 Дача, сад, огород</option>
+                                        <option value="jewelry">💍 Ювелирные украшения</option>
+                                        <option value="furniture">🪑 Мебель</option>
+                                        <option value="kitchen">🍳 Посуда, кухонные принадлежности</option>
+                                        <option value="textile">🛏️ Текстиль, постельное бельё</option>
+                                        <option value="bags">👜 Сумки, рюкзаки, чемоданы</option>
+                                        <option value="watches">⌚ Часы и аксессуары</option>
+                                        <option value="adults">🔞 18+ товары</option>
+                                    </optgroup>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="form-row">
@@ -445,7 +585,7 @@
 
         // Текущая сессия генерации (группа карточек)
         let currentGenerationSession = {
-            sessionId: null,           // ID сессии в Firestore
+            sessionId: null,
             productName: null,
             brand: null,
             category: null,
@@ -454,7 +594,31 @@
             originalImageId: null,
             attemptsMade: 0,
             maxAttempts: 5,
-            generatedImages: []        // Массив URL всех фото в этой сессии
+            generatedImages: []
+        };
+
+        // Объект с эмодзи для каждой категории
+        const categoryEmoji = {
+            'electronics': '📱',
+            'clothing': '👕',
+            'home': '🏠',
+            'beauty': '💄',
+            'children': '🧸',
+            'sports': '⚽',
+            'auto': '🚗',
+            'food': '🍎',
+            'animals': '🐶',
+            'books': '📚',
+            'hobby': '🎨',
+            'repair': '🔨',
+            'garden': '🌱',
+            'jewelry': '💍',
+            'furniture': '🪑',
+            'kitchen': '🍳',
+            'textile': '🛏️',
+            'bags': '👜',
+            'watches': '⌚',
+            'adults': '🔞'
         };
 
         // Проверка авторизации
@@ -736,7 +900,6 @@
 
                 // Сохраняем в Firestore (сессии)
                 if (attempt === 0) {
-                    // Первая генерация - создаем новую сессию
                     const sessionData = {
                         type: 'product-session',
                         productName: currentGenerationSession.productName || document.getElementById('wbProductName').value.trim(),
@@ -762,7 +925,6 @@
                     currentGenerationSession.features = features;
                 } 
                 else if (currentGenerationSession.sessionId) {
-                    // Повторная генерация - обновляем сессию
                     const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
                     await updateDoc(sessionRef, {
                         attempts: newAttemptCount,
@@ -832,7 +994,7 @@
             }
         }
 
-        // Отображение результатов (ВСЕ ФОТО РЯДОМ)
+        // Отображение результатов
         function displayCardResults(result) {
             const container = document.getElementById('cardResults');
             if (!container) return;
@@ -846,10 +1008,8 @@
                 container.appendChild(gallery);
             }
 
-            // Если пришли новые фото - добавляем их в конец
             if (result.images && result.images.length) {
                 result.images.forEach(url => {
-                    // Проверяем, нет ли уже такого фото
                     const existing = Array.from(gallery.children).some(img => img.src === url);
                     if (!existing) {
                         const img = document.createElement('img');
@@ -861,7 +1021,6 @@
                     }
                 });
                 
-                // Применяем шаблон
                 if (activeTemplate) {
                     setTimeout(() => {
                         applyTemplateToResults(activeTemplate);
@@ -869,7 +1028,6 @@
                 }
             }
             
-            // Плавный скролл к результатам
             setTimeout(() => {
                 container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 200);
