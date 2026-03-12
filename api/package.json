@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "replicate": "^1.0.0",
-    "axios": "^1.6.0"
+    "@google/genai": "^1.44.0",
+    "firebase-admin": "^13.7.0",
+    "formidable": "^3.5.4",
+    "sharp": "^0.33.5"
   }
 }

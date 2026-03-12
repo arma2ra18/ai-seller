@@ -2,8 +2,9 @@ import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import { GoogleGenAI } from '@google/genai';
 import admin from 'firebase-admin';
+import sharp from 'sharp'; // Добавляем для обработки изображений
 
-// Инициализация Firebase Admin SDK (только один раз)
+// Инициализация Firebase Admin SDK
 if (!admin.apps.length) {
   try {
     const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -33,7 +34,7 @@ export const config = {
 const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
 /**
- * Генерация одного изображения через Gemini (рабочая версия)
+ * Генерация изображения через Gemini с нужным разрешением
  */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
@@ -53,7 +54,7 @@ async function generateGeminiImage(prompt, referenceImage) {
             contents: contents,
             config: {
                 responseModalities: ['Image'],
-                aspectRatio: '1:1',
+                aspectRatio: '3:4', // Важно! 900x1200 = 3:4
             }
         });
 
@@ -70,25 +71,119 @@ async function generateGeminiImage(prompt, referenceImage) {
 }
 
 /**
- * Загружает изображение в Firebase Storage и возвращает публичный URL.
+ * Пост-обработка изображения: ресайз до 900x1200 и сжатие
  */
-async function uploadToStorage(base64Data, fileName) {
+async function processImage(base64Data) {
     const matches = base64Data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
     if (!matches || matches.length !== 3) {
         throw new Error('Invalid base64 data');
     }
+    
     const mimeType = matches[1];
     const base64 = matches[2];
     const buffer = Buffer.from(base64, 'base64');
+    
+    // Ресайз до 900x1200 с сохранением пропорций (crop если нужно)
+    const processedBuffer = await sharp(buffer)
+        .resize(900, 1200, {
+            fit: 'cover',      // Обрезаем, если пропорции не совпадают
+            position: 'center' // Центрируем товар
+        })
+        .jpeg({ 
+            quality: 85,       // Качество 85% (выше 65%)
+            mozjpeg: true      // Лучшее сжатие
+        })
+        .toBuffer();
+    
+    // Проверяем размер файла (не больше 10 МБ)
+    const fileSizeMB = processedBuffer.length / (1024 * 1024);
+    if (fileSizeMB > 10) {
+        console.warn(`Размер файла ${fileSizeMB.toFixed(2)} МБ > 10 МБ, сжимаем сильнее`);
+        // Если больше 10 МБ, сжимаем до 70% качества
+        const smallerBuffer = await sharp(processedBuffer)
+            .jpeg({ quality: 70, mozjpeg: true })
+            .toBuffer();
+        return {
+            buffer: smallerBuffer,
+            mimeType: 'image/jpeg',
+            size: smallerBuffer.length
+        };
+    }
+    
+    return {
+        buffer: processedBuffer,
+        mimeType: 'image/jpeg', // Всегда JPEG на выходе
+        size: processedBuffer.length
+    };
+}
 
+/**
+ * Загружает изображение в Firebase Storage
+ */
+async function uploadToStorage(buffer, fileName, mimeType) {
     const file = bucket.file(`generated/${fileName}`);
     await file.save(buffer, {
-        metadata: { contentType: mimeType },
+        metadata: { 
+            contentType: mimeType,
+            metadata: {
+                width: '900',
+                height: '1200',
+                generated: 'true'
+            }
+        },
         public: true,
     });
     const publicUrl = `https://storage.googleapis.com/${bucket.name}/${file.name}`;
-    console.log(`Uploaded to Storage: ${publicUrl}`);
+    console.log(`Uploaded to Storage: ${publicUrl} (${buffer.length} bytes)`);
     return publicUrl;
+}
+
+// УЛЬТРА-ПРОМПТ с запретами Wildberries
+function buildPrompt(productName, brand, price, userFeatures, attempt) {
+    const forbiddenPhrases = [
+        'Не используй фразы: "хит", "лучший из всех", "лидер продаж", "топ"',
+        'Не добавляй цены, QR-коды, скидки, контакты',
+        'Не используй призывы к действию (позвони, сравни, купи)',
+        'Не указывай количество проданных товаров',
+        'Не добавляй вознаграждение за отзыв'
+    ].join('. ');
+    
+    return `Ты — ведущий дизайнер инфографики для Wildberries. Твоя задача создать фото-карточку товара, которая привлечет максимум внимания и увеличит продажи.
+
+**Товар:** "${productName}"
+**Бренд:** ${brand}
+**Цена:** ${price} ₽
+**Ключевые особенности от пользователя:** ${userFeatures.join(', ')}
+
+### **Правила создания шедевра:**
+
+1. **Используй свои знания.** На основе названия "${productName}", найди в своей базе данных реальные характеристики, технические детали и преимущества этого товара. Добавь их на карточку в виде иконок или коротких надписей.
+
+2. **Цветовая стратегия (выбери подходящую):**
+   * Если товар премиальный или технологичный, используй глубокий, насыщенный фон (тёмно-синий, чёрный, изумрудный). Товар должен светиться на нём.
+   * Если товар для дома, уюта или еда, используй тёплые, "вкусные" тона (бежевый, терракотовый, мягкий зелёный).
+   * Если товар для молодёжи или спорта, добавь яркие, контрастные цвета.
+
+3. **3D и объём:** Добавь мягкие, но заметные 3D-эффекты. Товар должен выглядеть объёмно. Тени реалистичные.
+
+4. **Типографика (разные шрифты):**
+   * **Название товара:** Крупный, жирный, современный шрифт.
+   * **Цена:** Самый яркий элемент. Сделай её "золотой", неоновой или обведи контуром. Добавь эффект лёгкого свечения.
+   * **Характеристики:** Чистый, хорошо читаемый шрифт. Сгруппируй в аккуратные блоки.
+
+5. **Композиция (как у лучших селлеров):**
+   * Размести товар в центре. Вокруг него, словно на прилавке магазина, разложи информацию.
+   * **Вверху:** Название и главный слоган.
+   * **По бокам:** Ключевые фишки в виде иконок с подписями.
+   * **Внизу:** Цена и стилизованная кнопка призыва к покупке.
+   * Используй выноски и указатели, чтобы связать текст с деталями товара.
+
+6. **ВАЖНО — ЗАПРЕЩЕНО (правила Wildberries):**
+   ${forbiddenPhrases}
+
+7. **Размер и пропорции:** Создавай карточку в пропорциях 3:4 (вертикальную), чтобы после обрезки получилось 900x1200 пикселей.
+
+Создай фото-карточку, от которой невозможно оторвать взгляд, строго соблюдая правила Wildberries.`;
 }
 
 export default async function handler(req, res) {
@@ -116,17 +211,6 @@ export default async function handler(req, res) {
         const platform = fields.platform?.[0] || 'wb';
         const attempt = parseInt(fields.attempt?.[0]) || 0;
         const originalImageId = fields.originalImageId?.[0] || null;
-        
-        // Получаем шаблон, если он передан
-        let template = null;
-        if (fields.template?.[0]) {
-            try {
-                template = JSON.parse(fields.template[0]);
-                console.log('🎨 Получен шаблон:', template.name);
-            } catch (e) {
-                console.error('Ошибка парсинга шаблона:', e);
-            }
-        }
 
         if (!productName) {
             return res.status(400).json({ error: 'Product name is required' });
@@ -141,9 +225,6 @@ export default async function handler(req, res) {
             if (photoArray.length) {
                 referenceBuffer = fs.readFileSync(photoArray[0].filepath);
                 console.log(`Loaded reference image: ${photoArray[0].originalFilename}`);
-                
-                // Удаляем временный файл после чтения
-                fs.unlinkSync(photoArray[0].filepath);
             }
         } else if (originalImageId) {
             // Загружаем оригинал из Storage для повторных генераций
@@ -177,85 +258,42 @@ export default async function handler(req, res) {
             }
         }
 
-        // Базовый промпт
-        const basePrompt = `Ты — ведущий дизайнер инфографики для Wildberries. Твоя задача создать фото-карточку товара, которая привлечет максимум внимания и увеличит продажи.
-
-**Товар:** "${productName}"
-**Бренд:** ${brand}
-**Цена:** ${price} ₽
-**Ключевые особенности от пользователя:** ${userFeatures.join(', ')}
-
-### **Правила создания шедевра:**
-
-1.  **Используй свои знания.** На основе названия "${productName}", найди в своей базе данных реальные характеристики, технические детали и преимущества этого товара. Добавь их на карточку в виде иконок или коротких надписей. Обязательно используй эту информацию.
-
-2.  **Цветовая стратегия (выбери подходящую):**
-    *   Если товар премиальный или технологичный, используй глубокий, насыщенный фон (тёмно-синий, чёрный, изумрудный). Товар должен светиться на нём.
-    *   Если товар для дома, уюта или еда, используй тёплые, "вкусные" тона (бежевый, терракотовый, мягкий зелёный).
-    *   Если товар для молодёжи или спорта, добавь яркие, контрастные цвета.
-
-3.  **3D и объём:** Добавь мягкие, но заметные 3D-эффекты. Товар должен выглядеть объёмно. Тени должны быть реалистичными.
-
-4.  **Типографика (разные шрифты):**
-    *   **Название товара:** Крупный, жирный, современный шрифт (например, Bebas Neue, Oswald).
-    *   **Цена:** Самый яркий элемент. Сделай её "золотой", неоновой или обведи контуром. Добавь эффект лёгкого свечения.
-    *   **Характеристики:** Используй чистый, хорошо читаемый шрифт (например, Roboto, Open Sans). Сгруппируй их в аккуратные блоки.
-
-5.  **Композиция (как у лучших селлеров):**
-    *   Размести товар в центре. Вокруг него, словно на прилавке магазина, разложи информацию.
-    *   **Вверху:** Название и главный слоган (например, "Лидер продаж 2026").
-    *   **По бокам:** Ключевые фишки в виде иконок с подписями (шумоподавление 🎧, влагозащита 💧, 30ч работы 🔋).
-    *   **Внизу:** Цена и кнопка призыва к покупке (стилизованно).
-    *   Используй выноски и указатели, чтобы связать текст с деталями товара.
-
-6.  **Запрещено:** Белый фон, скучный минимализм, мелкий нечитаемый текст, пустота. Карточка должна быть насыщенной, но гармоничной.
-
-Создай фото-карточку, от которой невозможно оторвать взгляд.`;
-
-        // Добавляем информацию о шаблоне, если он есть
-        let templatePrompt = '';
-        if (template) {
-            templatePrompt = `
-
-### **Дополнительные требования к дизайну (строго соблюдай):**
-- Основной цвет (для заголовков): ${template.colors.primary}
-- Вторичный цвет (для цены): ${template.colors.secondary}
-- Акцентный цвет (для иконок и галочек): ${template.colors.accent}
-- Цвет фона: ${template.colors.background}
-- Цвет карточки: ${template.colors.cardBg || template.colors.background}
-- Стиль шаблона: ${template.name}
-- Расположение текста: ${template.layout === 'centered' ? 'по центру' : 
-                         template.layout === 'left' ? 'слева' : 
-                         template.layout === 'right' ? 'справа' : 'асимметричное'}
-- Шрифт заголовка: ${template.fonts.title}
-- Шрифт цены: ${template.fonts.price}
-- Шрифт особенностей: ${template.fonts.features}
-
-Используй эти цвета и шрифты в карточке. Основной цвет применяй для заголовка, вторичный для цены, акцентный для иконок и галочек.`;
-        }
-
-        const variation = ` (Попытка ${attempt + 1}. Вариант ${attempt + 1} из 5: используй другое расположение текста, цветовую гамму или композицию, но сохрани все ключевые элементы товара)`;
-        const finalPrompt = basePrompt + templatePrompt + variation;
+        // Строим промпт с учётом правил Wildberries
+        const finalPrompt = buildPrompt(productName, brand, price, userFeatures, attempt);
 
         let imageDataUrl;
         try {
             console.log(`Generating image (attempt ${attempt + 1})...`);
             imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer);
         } catch (err) {
-            console.error(`❌ Ошибка при генерации изображения (attempt ${attempt + 1}):`, err);
+            console.error(`❌ Ошибка при генерации изображения:`, err);
             return res.status(500).json({ error: 'Failed to generate image: ' + err.message });
         }
 
+        // Пост-обработка: ресайз до 900x1200 и сжатие
+        const processed = await processImage(imageDataUrl);
+        
         // Загружаем в Storage
         const fileName = `card_${Date.now()}_${attempt}.jpg`;
-        const publicUrl = await uploadToStorage(imageDataUrl, fileName);
+        const publicUrl = await uploadToStorage(processed.buffer, fileName, processed.mimeType);
+        
+        // Удаляем временные файлы
+        if (files.photos) {
+            const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
+            photoArray.forEach(file => {
+                if (file.filepath && fs.existsSync(file.filepath)) {
+                    fs.unlinkSync(file.filepath);
+                }
+            });
+        }
 
-        console.log('✅ Успешно сгенерировано изображение');
+        console.log('✅ Успешно сгенерировано изображение 900x1200');
         res.status(200).json({ 
             images: [publicUrl], 
             originalImageId: savedOriginalId,
             attempt: attempt,
-            template: template ? template.name : null
+            dimensions: '900x1200',
+            size: processed.size
         });
     } catch (error) {
         console.error('❌ Ошибка в handler:', error);
