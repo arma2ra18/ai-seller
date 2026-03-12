@@ -6,33 +6,8 @@
     <title>Генерация карточек — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
     
-    <!-- Подключаем шрифты для шаблонов -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
-    
     <!-- Jivo Chat Widget -->
     <script src="//code.jivo.ru/widget/dxg5looTDX" async></script>
-    
-    <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#0071e3">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Prodiger">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
-                }).catch(function(err) {
-                    console.log('Ошибка регистрации ServiceWorker:', err);
-                });
-            });
-        }
-    </script>
 </head>
 <body>
     <!-- Видеофон -->
@@ -70,28 +45,39 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item" data-section="news">
-                        <a href="/news.html">📰 Новости</a>
+                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📰 Новости
+                        </a>
                     </li>
                     <li class="menu-item" data-section="balance">
-                        <a href="/balance.html">💰 Баланс</a>
+                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            💰 Баланс
+                        </a>
                     </li>
                     <li class="menu-item active" data-section="generate">
-                        <a href="/generate.html">✨ Генерация фото</a>
+                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ✨ Генерация
+                        </a>
                     </li>
-                    <li class="menu-item" data-section="description">
-                        <a href="/description.html">📝 Описание товара</a>
+ <li class="menu-item" data-section="description">
+                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📝 Описание товара
+                        </a>
                     </li>
-                    <li class="menu-item" data-section="templates">
-                        <a href="/templates.html">🎨 Шаблоны</a>
-                    </li>
-                    <li class="menu-item" data-section="description-history">
-                        <a href="/description-history.html">📚 История описаний</a>
+<li class="menu-item" data-section="description-history">
+                        <a href="/description-history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📚 История описаний
+                        </a>
                     </li>
                     <li class="menu-item" data-section="history">
-                        <a href="/history.html">📜 История фото</a>
+                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            📜 История фото
+                        </a>
                     </li>
                     <li class="menu-item" data-section="settings">
-                        <a href="/settings.html">⚙️ Настройки</a>
+                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
+                            ⚙️ Настройки
+                        </a>
                     </li>
                 </ul>
             </nav>
@@ -115,118 +101,67 @@
                 <p>Загрузите фото и получите готовые изображения с инфографикой</p>
             </div>
 
-            <!-- Индикатор активного шаблона -->
-            <div id="templateIndicator" class="template-indicator" style="display: none;">
-                <span id="templateIndicatorText"></span>
-                <a href="/templates.html">Изменить →</a>
-            </div>
-
-            <!-- Блок описания процесса -->
-            <div class="info-block glass">
-                <h3>
+            <!-- Блок описания процесса (как в dashboard) -->
+            <div class="info-block glass" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid var(--accent);">
+                <h3 style="color: var(--accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
                     <span>🎯</span> Как это работает
                 </h3>
-                <div class="stats-mini">
-                    <div class="stat-mini-item">
-                        <div class="stat-mini-value accent">100 ₽</div>
-                        <div class="stat-mini-label">Первая генерация</div>
-                        <div class="stat-mini-desc">1 фото</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
+                        <div style="font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 5px;">100 ₽</div>
+                        <div style="color: var(--text-secondary);">Первая генерация</div>
+                        <small style="color: var(--text-muted);">1 фото</small>
                     </div>
-                    <div class="stat-mini-item">
-                        <div class="stat-mini-value gold">15 ₽</div>
-                        <div class="stat-mini-label">Повторные генерации</div>
-                        <div class="stat-mini-desc">до 4 раз, новые варианты</div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
+                        <div style="font-size: 24px; font-weight: 700; color: #f5b041; margin-bottom: 5px;">15 ₽</div>
+                        <div style="color: var(--text-secondary);">Повторные генерации</div>
+                        <small style="color: var(--text-muted);">до 4 раз, новые варианты</small>
                     </div>
-                    <div class="stat-mini-item">
-                        <div class="stat-mini-value success">5 фото</div>
-                        <div class="stat-mini-label">Максимум за сессию</div>
-                        <div class="stat-mini-desc">100 + 15×4 = 160 ₽</div>
+                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
+                        <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 5px;">5 фото</div>
+                        <div style="color: var(--text-secondary);">Максимум за сессию</div>
+                        <small style="color: var(--text-muted);">100 + 15×4 = 160 ₽</small>
                     </div>
                 </div>
-                <p class="info-note">
+                <p style="margin-top: 15px; color: var(--text-secondary); font-size: 14px;">
                     ✨ После первой генерации вы сможете нажимать "Сделать ещё" и получать новые варианты фото на основе того же товара.
                 </p>
             </div>
 
-            <!-- Форма генерации -->
+            <!-- Форма генерации (скопирована из dashboard) -->
             <div class="content-area glass">
                 <div class="generation-form">
-                    <!-- Название товара -->
                     <div class="form-group">
                         <label>Название товара</label>
                         <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4" autocomplete="off">
                     </div>
-                    
-                    <!-- Ряд: Бренд + Категория -->
                     <div class="form-row">
                         <div class="form-group half">
                             <label>Бренд</label>
                             <input type="text" id="wbBrand" placeholder="Xiaomi" autocomplete="off">
                         </div>
                         <div class="form-group half">
-                            <div class="category-label">
-                                <i>📋</i> Категория товара
-                            </div>
-                            <div class="category-select-wrapper">
-                                <select id="wbCategory" class="category-select">
-                                    <option value="" selected disabled hidden>── Выберите категорию ──</option>
-                                    <option value="">⭐ Категория не выбрано (универсальный промпт)</option>
-                                    <optgroup label="🔥 Популярные категории">
-                                        <option value="electronics">📱 Электроника и аксессуары</option>
-                                        <option value="clothing">👕 Одежда и обувь</option>
-                                        <option value="home">🏠 Товары для дома и интерьера</option>
-                                        <option value="beauty">💄 Красота и здоровье</option>
-                                        <option value="jewelry">💍 Ювелирные украшения</option>
-                                        <option value="children">🧸 Детские товары и игрушки</option>
-                                        <option value="sports">⚽ Спорт и активный отдых</option>
-                                        <option value="auto">🚗 Автотовары и аксессуары</option>
-                                        <option value="food">🍎 Продукты питания</option>
-                                    </optgroup>
-                                    <optgroup label="📦 Все категории Wildberries">
-                                        <option value="electronics">📱 Электроника и аксессуары</option>
-                                        <option value="clothing">👕 Одежда, обувь, аксессуары</option>
-                                        <option value="home">🏠 Товары для дома, интерьер, мебель</option>
-                                        <option value="beauty">💄 Косметика, парфюмерия, уход</option>
-                                        <option value="jewelry">💍 Ювелирные украшения и бижутерия</option>
-                                        <option value="children">🧸 Детские товары, игрушки, коляски</option>
-                                        <option value="sports">⚽ Спорт, фитнес, активный отдых</option>
-                                        <option value="auto">🚗 Автотовары, запчасти, аксессуары</option>
-                                        <option value="food">🍎 Продукты, снеки, напитки</option>
-                                        <option value="animals">🐶 Товары для животных</option>
-                                        <option value="books">📚 Книги, фильмы, музыка</option>
-                                        <option value="hobby">🎨 Творчество, рукоделие, хобби</option>
-                                        <option value="repair">🔨 Стройка, ремонт, инструменты</option>
-                                        <option value="garden">🌱 Дача, сад, огород</option>
-                                        <option value="furniture">🪑 Мебель</option>
-                                        <option value="kitchen">🍳 Посуда, кухонные принадлежности</option>
-                                        <option value="textile">🛏️ Текстиль, постельное бельё</option>
-                                        <option value="bags">👜 Сумки, рюкзаки, чемоданы</option>
-                                        <option value="watches">⌚ Часы и аксессуары</option>
-                                        <option value="adults">🔞 18+ товары</option>
-                                    </optgroup>
-                                </select>
-                            </div>
+                            <label>Категория</label>
+                            <select id="wbCategory">
+                                <option value="electronics">Электроника</option>
+                                <option value="clothing">Одежда</option>
+                                <option value="home">Товары для дома</option>
+                                <option value="beauty">Красота и здоровье</option>
+                                <option value="food">Продукты</option>
+                            </select>
                         </div>
                     </div>
-                    
-                    <!-- Ряд: Цена + пустой блок (для сохранения сетки) -->
                     <div class="form-row">
                         <div class="form-group half">
                             <label>Цена товара (₽)</label>
                             <input type="number" id="wbPrice" placeholder="1990" min="0" step="1" value="1990" autocomplete="off">
                         </div>
-                        <div class="form-group half">
-                            <!-- Пусто - для сохранения двухколоночной сетки -->
-                        </div>
+                        <div class="form-group half"></div>
                     </div>
-                    
-                    <!-- Ключевые особенности -->
                     <div class="form-group">
                         <label>Ключевые особенности (через запятую)</label>
                         <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы" autocomplete="off">
                     </div>
-                    
-                    <!-- Загрузка фото -->
                     <div class="form-group">
                         <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
                         <div class="file-upload-wrapper">
@@ -235,14 +170,12 @@
                             <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
                         </div>
                     </div>
-                    
-                    <!-- Кнопка -->
                     <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать первое фото (100 ₽)</button>
                 </div>
             </div>
 
             <!-- Результаты генерации -->
-            <div id="cardResults" class="results-section glass" style="display: none;">
+            <div id="cardResults" class="results-section glass" style="display: none; margin-top: 30px;">
                 <h2>Результаты генерации</h2>
                 <div class="result-block">
                     <h3>Изображения</h3>
@@ -305,545 +238,24 @@
         <img class="lightbox-content" id="lightbox-img" alt="">
     </div>
 
-    <script type="module">
-        import { auth, db } from './js/firebase.js';
-        import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-        import { 
-            doc, getDoc, collection, addDoc, query, orderBy, 
-            getDocs, updateDoc, increment, limit, deleteDoc, setDoc 
-        } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { TEMPLATES, applyTemplateToResults } from './js/templates.js';
-        import { cacheBalance, clearCache } from './js/cache.js';
-
-        let currentUser = null;
-        let userData = null;
-        let activeTemplate = null;
-        
-        // Переменные для модального окна загрузки
-        let generationInterval;
-        let generationStartTime;
-
-        // Текущая сессия генерации (группа карточек)
-        let currentGenerationSession = {
-            sessionId: null,
-            productName: null,
-            brand: null,
-            category: null,
-            price: null,
-            features: [],
-            originalImageId: null,
-            attemptsMade: 0,
-            maxAttempts: 5,
-            generatedImages: []
-        };
-
-        // Объект с эмодзи для каждой категории
-        const categoryEmoji = {
-            'electronics': '📱',
-            'clothing': '👕',
-            'home': '🏠',
-            'beauty': '💄',
-            'children': '🧸',
-            'sports': '⚽',
-            'auto': '🚗',
-            'food': '🍎',
-            'animals': '🐶',
-            'books': '📚',
-            'hobby': '🎨',
-            'repair': '🔨',
-            'garden': '🌱',
-            'jewelry': '💍',
-            'furniture': '🪑',
-            'kitchen': '🍳',
-            'textile': '🛏️',
-            'bags': '👜',
-            'watches': '⌚',
-            'adults': '🔞'
-        };
-
-        // Проверка авторизации
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = '/login.html';
-                return;
-            }
-            currentUser = user;
-            
-            try {
-                await loadUserData();
-                loadActiveTemplate();
-            } catch (error) {
-                console.error('Ошибка при загрузке, повтор через 1с:', error);
-                setTimeout(async () => {
-                    await loadUserData();
-                    loadActiveTemplate();
-                }, 1000);
-            }
-        });
-
-        // Загрузка данных пользователя с кэшированием
-        async function loadUserData(forceRefresh = false) {
-            try {
-                const fetchUserData = async () => {
-                    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                    return userDoc.exists() ? userDoc.data() : null;
-                };
-                
-                userData = await cacheBalance(currentUser.uid, fetchUserData, forceRefresh);
-                
-                if (userData) {
-                    const balance = parseInt(userData.balance) || 0;
-                    document.getElementById('sidebarBalance').textContent = balance;
-                    document.getElementById('userEmail').textContent = userData.email || currentUser.email || 'Пользователь';
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки данных:', error);
-                showNotification('❌ Ошибка загрузки данных', 'error');
-            }
-        }
-
-        // Загрузка активного шаблона
-        function loadActiveTemplate() {
-            try {
-                const saved = localStorage.getItem('activeTemplate');
-                const savedForUser = localStorage.getItem(`template_${currentUser?.uid}`);
-                
-                if (saved) {
-                    activeTemplate = JSON.parse(saved);
-                } else if (savedForUser) {
-                    activeTemplate = JSON.parse(savedForUser);
-                } else {
-                    activeTemplate = TEMPLATES.premium;
-                }
-                
-                const indicator = document.getElementById('templateIndicator');
-                const indicatorText = document.getElementById('templateIndicatorText');
-                
-                if (activeTemplate) {
-                    indicator.style.display = 'flex';
-                    indicatorText.innerHTML = `🎨 Активный шаблон: <strong>${activeTemplate.name}</strong>`;
-                }
-                
-                console.log('🎨 Активный шаблон загружен:', activeTemplate.name);
-            } catch (error) {
-                console.error('Ошибка загрузки шаблона:', error);
-            }
-        }
-
-        // Функция для обновления информации о файлах
-        window.updateFileInfo = function(inputId, infoId) {
-            const input = document.getElementById(inputId);
-            const info = document.getElementById(infoId);
-            if (!input || !info) return;
-            if (input.files.length === 0) {
-                info.textContent = input.multiple ? 'Файлы не выбраны' : 'Файл не выбран';
-            } else {
-                const names = Array.from(input.files).map(f => f.name).join(', ');
-                info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
-            }
-        };
-
-        // Сброс сессии для новой карточки
-        function resetGenerationSession() {
-            currentGenerationSession = {
-                sessionId: null,
-                productName: null,
-                brand: null,
-                category: null,
-                price: null,
-                features: [],
-                originalImageId: null,
-                attemptsMade: 0,
-                maxAttempts: 5,
-                generatedImages: []
+    <script type="module" src="js/dashboard.js"></script>
+    <script>
+        // Функции для навигации
+        function navigateTo(section) {
+            const paths = {
+                'news': '/news.html',
+                'balance': '/balance.html',
+                'generate': '/generate.html',
+                'history': '/history.html',
+                'settings': '/settings.html'
             };
-        }
-
-        // Показать модальное окно
-        function showGenerationModal() {
-            const modal = document.getElementById('generationModal');
-            modal.classList.add('show');
-            document.getElementById('generationProgress').style.width = '0%';
-            document.getElementById('generationTimer').textContent = '0 сек.';
-            generationStartTime = Date.now();
-            if (generationInterval) clearInterval(generationInterval);
-            generationInterval = setInterval(updateGenerationTimer, 1000);
-        }
-
-        function hideGenerationModal() {
-            document.getElementById('generationModal').classList.remove('show');
-            if (generationInterval) {
-                clearInterval(generationInterval);
-                generationInterval = null;
+            if (paths[section]) {
+                window.location.href = paths[section];
             }
         }
 
-        function updateGenerationTimer() {
-            const elapsed = Math.floor((Date.now() - generationStartTime) / 1000);
-            document.getElementById('generationTimer').textContent = `${elapsed} сек.`;
-            const progress = document.getElementById('generationProgress');
-            const percent = Math.min(100, (elapsed / 70) * 100);
-            progress.style.width = percent + '%';
-        }
-
-        // Уведомления
-        function showNotification(message, type = 'info') {
-            const existing = document.querySelector('.notification');
-            if (existing) existing.remove();
-            
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-
-        // Генерация карточки
-        window.generateWBCard = async function() {
-            if (!currentUser || !userData) return;
-
-            const fileInput = document.getElementById('wbPhotos');
-            if (!fileInput) {
-                showNotification('Ошибка: элемент загрузки не найден.', 'error');
-                return;
-            }
-            
-            const productName = document.getElementById('wbProductName')?.value.trim();
-            const brand = document.getElementById('wbBrand')?.value.trim();
-            const category = document.getElementById('wbCategory')?.value;
-            const price = document.getElementById('wbPrice')?.value.trim() || '1990';
-            const featuresInput = document.getElementById('wbFeatures')?.value;
-            const features = featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : [];
-            const files = fileInput.files;
-            
-            if (!productName) {
-                showNotification('Введите название товара', 'error');
-                return;
-            }
-            if (files.length === 0) {
-                showNotification('Выберите хотя бы одно фото', 'error');
-                return;
-            }
-
-            if (featuresInput && featuresInput.includes('@')) {
-                document.getElementById('wbFeatures').value = '';
-                showNotification('Пожалуйста, введите характеристики товара, а не email', 'warning');
-                return;
-            }
-
-            const currentBalance = userData.balance || 0;
-            if (currentBalance < 100) {
-                showNotification('Недостаточно средств. Требуется 100 ₽', 'error');
-                return;
-            }
-
-            resetGenerationSession();
-            currentGenerationSession.productName = productName;
-            currentGenerationSession.brand = brand;
-            currentGenerationSession.category = category;
-            currentGenerationSession.price = price;
-            currentGenerationSession.features = features;
-
-            await performGeneration(files, 0);
-        };
-
-        // Повторная генерация
-        window.regeneratePhoto = async function() {
-            if (!currentUser || !userData) return;
-            if (!currentGenerationSession.originalImageId) {
-                showNotification('Ошибка: нет исходного изображения для повторной генерации', 'error');
-                return;
-            }
-
-            const nextAttempt = currentGenerationSession.attemptsMade;
-            if (nextAttempt >= currentGenerationSession.maxAttempts) {
-                showNotification('Достигнут лимит повторных генераций (максимум 5 фото)', 'warning');
-                return;
-            }
-
-            const cost = 15;
-            const currentBalance = userData.balance || 0;
-            if (currentBalance < cost) {
-                showNotification(`Недостаточно средств. Требуется ${cost} ₽`, 'error');
-                return;
-            }
-
-            await performGeneration(null, nextAttempt);
-        };
-
-        // Общая функция генерации
-        async function performGeneration(files, attempt) {
-            const cost = attempt === 0 ? 100 : 15;
-            const btn = document.getElementById('generateWBBtn');
-
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<span class="loading"></span> Генерация...';
-            }
-
-            showGenerationModal();
-
-            try {
-                const formData = new FormData();
-                if (files) {
-                    for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
-                }
-                formData.append('productName', currentGenerationSession.productName || document.getElementById('wbProductName').value.trim());
-                formData.append('brand', currentGenerationSession.brand || document.getElementById('wbBrand').value.trim());
-                formData.append('category', currentGenerationSession.category || document.getElementById('wbCategory').value);
-                formData.append('price', currentGenerationSession.price || document.getElementById('wbPrice').value.trim() || '1990');
-                
-                const featuresInput = document.getElementById('wbFeatures')?.value;
-                const features = currentGenerationSession.features.length > 0 
-                    ? currentGenerationSession.features 
-                    : (featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : []);
-                
-                formData.append('features', features.join(','));
-                formData.append('platform', 'wb');
-                formData.append('attempt', attempt);
-                
-                if (currentGenerationSession.originalImageId) {
-                    formData.append('originalImageId', currentGenerationSession.originalImageId);
-                }
-                
-                // Добавляем шаблон
-                if (activeTemplate) {
-                    formData.append('template', JSON.stringify(activeTemplate));
-                    console.log('🎨 Отправляем шаблон:', activeTemplate.name);
-                }
-
-                const response = await fetch('/api/generate-card', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText);
-                }
-                
-                const result = await response.json();
-
-                if (result.originalImageId) {
-                    currentGenerationSession.originalImageId = result.originalImageId;
-                }
-
-                if (result.images && result.images.length) {
-                    currentGenerationSession.generatedImages.push(result.images[0]);
-                }
-                
-                const newAttemptCount = attempt + 1;
-                currentGenerationSession.attemptsMade = newAttemptCount;
-
-                // Сохраняем в Firestore (сессии)
-                if (attempt === 0) {
-                    const sessionData = {
-                        type: 'product-session',
-                        productName: currentGenerationSession.productName || document.getElementById('wbProductName').value.trim(),
-                        brand: currentGenerationSession.brand || document.getElementById('wbBrand').value.trim(),
-                        category: currentGenerationSession.category || document.getElementById('wbCategory').value,
-                        price: currentGenerationSession.price || document.getElementById('wbPrice').value.trim() || '1990',
-                        features: features,
-                        attempts: 1,
-                        totalSpent: cost,
-                        images: [result.images[0]],
-                        imageIds: [`generated/${result.images[0].split('/').pop()}`],
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        template: activeTemplate?.name
-                    };
-                    
-                    const sessionRef = await addDoc(collection(db, 'users', currentUser.uid, 'generationSessions'), sessionData);
-                    currentGenerationSession.sessionId = sessionRef.id;
-                    currentGenerationSession.productName = sessionData.productName;
-                    currentGenerationSession.brand = sessionData.brand;
-                    currentGenerationSession.category = sessionData.category;
-                    currentGenerationSession.price = sessionData.price;
-                    currentGenerationSession.features = features;
-                } 
-                else if (currentGenerationSession.sessionId) {
-                    const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
-                    await updateDoc(sessionRef, {
-                        attempts: newAttemptCount,
-                        totalSpent: increment(cost),
-                        images: currentGenerationSession.generatedImages,
-                        updatedAt: new Date().toISOString()
-                    });
-                }
-
-                // Списываем деньги
-                await updateDoc(doc(db, 'users', currentUser.uid), { 
-                    balance: increment(-cost),
-                    usedSpent: increment(cost)
-                });
-
-                // Обновляем баланс
-                const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                if (updatedDoc.exists()) {
-                    userData = updatedDoc.data();
-                    document.getElementById('sidebarBalance').textContent = userData.balance || 0;
-                }
-                
-                displayCardResults(result);
-                
-                const message = attempt === 0 
-                    ? '✅ Первое фото готово! Можете сгенерировать ещё за 15 ₽' 
-                    : `✅ Фото №${attempt + 1} готово! Списано ${cost} ₽`;
-                showNotification(message, 'success');
-
-            } catch (error) {
-                console.error('❌ Ошибка генерации:', error);
-                
-                let errorMessage = 'Неизвестная ошибка';
-                try {
-                    if (error.message) {
-                        const parsed = JSON.parse(error.message);
-                        errorMessage = parsed.error || parsed.message || error.message;
-                    } else {
-                        errorMessage = error.message || 'Ошибка соединения';
-                    }
-                } catch {
-                    errorMessage = error.message || 'Ошибка соединения';
-                }
-                
-                if (errorMessage.includes('API key')) {
-                    showNotification('❌ Ошибка API ключа', 'error');
-                } else if (errorMessage.includes('model')) {
-                    showNotification('❌ Ошибка модели Gemini', 'error');
-                } else if (errorMessage.includes('balance')) {
-                    showNotification('❌ Недостаточно средств', 'error');
-                } else if (errorMessage.includes('500')) {
-                    showNotification('❌ Ошибка сервера. Попробуйте позже.', 'error');
-                } else if (errorMessage.includes('Failed to fetch')) {
-                    showNotification('❌ Ошибка соединения. Проверьте интернет.', 'error');
-                } else {
-                    showNotification('❌ ' + errorMessage.substring(0, 100), 'error');
-                }
-            } finally {
-                hideGenerationModal();
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = attempt === 0 
-                        ? '✨ Создать первое фото (100 ₽)' 
-                        : '🔄 Сделать ещё (15 ₽)';
-                }
-                updateRegenerationUI();
-            }
-        }
-
-        // Отображение результатов
-        function displayCardResults(result) {
-            const container = document.getElementById('cardResults');
-            if (!container) return;
-            container.style.display = 'block';
-
-            let gallery = document.getElementById('resultImages');
-            if (!gallery) {
-                gallery = document.createElement('div');
-                gallery.id = 'resultImages';
-                gallery.className = 'image-gallery';
-                container.appendChild(gallery);
-            }
-
-            if (result.images && result.images.length) {
-                result.images.forEach(url => {
-                    const existing = Array.from(gallery.children).some(img => img.src === url);
-                    if (!existing) {
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.alt = `Фото товара ${gallery.children.length + 1}`;
-                        img.onclick = () => openLightbox(url);
-                        img.loading = 'lazy';
-                        gallery.appendChild(img);
-                    }
-                });
-                
-                if (activeTemplate) {
-                    setTimeout(() => {
-                        applyTemplateToResults(activeTemplate);
-                    }, 100);
-                }
-            }
-            
-            setTimeout(() => {
-                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            }, 200);
-        }
-
-        // Обновление UI повторных генераций
-function updateRegenerationUI() {
-    const container = document.getElementById('cardResults');
-    if (!container) return;
-
-    let infoBlock = document.getElementById('regenerationInfo');
-    if (!infoBlock) {
-        infoBlock = document.createElement('div');
-        infoBlock.id = 'regenerationInfo';
-        infoBlock.className = 'regeneration-info';
-        container.insertBefore(infoBlock, container.firstChild);
-    }
-
-    const remaining = currentGenerationSession.maxAttempts - currentGenerationSession.attemptsMade;
-    const nextCost = 15;
-
-    infoBlock.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 20px;">📸</span>
-                <div>
-                    <strong style="font-size: 18px;">${currentGenerationSession.productName}</strong>
-                    <span style="color: var(--text-secondary); margin-left: 10px;">
-                        ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
-                    </span>
-                </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 20px;">
-                <span style="color: #f5b041; font-weight: 600;">
-                    Следующая: ${nextCost} ₽
-                </span>
-                <span style="color: var(--text-secondary);">
-                    осталось ${remaining}
-                </span>
-            </div>
-        </div>
-    `;
-
-    let regenBtn = document.getElementById('regenerateBtn');
-    if (!regenBtn) {
-        regenBtn = document.createElement('button');
-        regenBtn.id = 'regenerateBtn';
-        regenBtn.onclick = window.regeneratePhoto;
-        container.appendChild(regenBtn);
-    }
-
-    // ✅ ИСПРАВЛЕНО: показываем кнопку только если остались попытки
-    if (remaining > 0) {
-        regenBtn.style.display = 'inline-block';
-        regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
-        regenBtn.disabled = false;
-    } else {
-        regenBtn.style.display = 'none';
-    }
-}
-
-        // Лайтбокс
-        window.openLightbox = function(url) {
-            const lightbox = document.getElementById('lightbox');
-            const lightboxImg = document.getElementById('lightbox-img');
-            if (!lightbox || !lightboxImg) return;
-            lightboxImg.src = url;
-            lightbox.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        };
-
-        window.closeLightbox = function() {
-            const lightbox = document.getElementById('lightbox');
-            if (!lightbox) return;
-            lightbox.classList.remove('show');
-            document.body.style.overflow = '';
+        window.logout = function() {
+            window.location.href = '/login.html';
         };
 
         // Функции для модального окна пополнения
@@ -871,30 +283,37 @@ function updateRegenerationUI() {
             closeModal();
         };
 
-        // Навигация
-        window.navigateTo = function(section) {
-            const paths = {
-                'news': '/news.html',
-                'balance': '/balance.html',
-                'generate': '/generate.html',
-                'description': '/description.html',
-                'templates': '/templates.html',
-                'description-history': '/description-history.html',
-                'history': '/history.html',
-                'settings': '/settings.html'
-            };
-            if (paths[section]) {
-                window.location.href = paths[section];
+        // Функции для генерации (будут использоваться из dashboard.js)
+        window.updateFileInfo = function(inputId, infoId) {
+            const input = document.getElementById(inputId);
+            const info = document.getElementById(infoId);
+            if (input.files.length === 0) {
+                info.textContent = 'Файлы не выбраны';
+            } else {
+                const names = Array.from(input.files).map(f => f.name).join(', ');
+                info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
             }
         };
 
-        window.logout = async function() {
-            await auth.signOut();
-            window.location.href = '/login.html';
+        window.closeLightbox = function() {
+            document.getElementById('lightbox').classList.remove('show');
+            document.body.style.overflow = '';
         };
 
-        // Обработчики меню
+        // Загрузка данных пользователя
+        async function loadUserData() {
+            try {
+                // Здесь будет загрузка из Firebase
+                document.getElementById('sidebarBalance').textContent = '1250';
+                document.getElementById('userEmail').textContent = 'user@example.com';
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            loadUserData();
+            
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.addEventListener('click', function(e) {
                     const section = this.dataset.section;
