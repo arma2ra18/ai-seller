@@ -1,6 +1,17 @@
 const CACHE_NAME = 'prodiger-v1';
 const API_CACHE_NAME = 'prodiger-api-v1';
-
+self.addEventListener('fetch', event => {
+  // Логируем все запросы, которые обрабатывает SW
+  console.log('SW перехватил:', event.request.method, event.request.url);
+  
+  // Добавляем глобальный try-catch
+  try {
+    // Весь ваш существующий код обработки fetch
+    // ... (весь код из предыдущего ответа)
+  } catch (e) {
+    console.error('SW ОШИБКА:', e, 'URL:', event.request.url);
+  }
+});
 // Ресурсы для кэширования при установке
 const urlsToCache = [
   '/',
