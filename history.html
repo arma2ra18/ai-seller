@@ -30,6 +30,13 @@
     </script>
 </head>
 <body>
+    <!-- Видеофон -->
+    <div class="video-background" style="opacity: 0.2;">
+        <video autoplay muted loop playsinline>
+            <source src="https://cdn.pixabay.com/vimeo/877732388/abstract-174514.mp4?width=1280&hash=9a1a1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f1f" type="video/mp4">
+        </video>
+        <div class="overlay"></div>
+    </div>
 
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
@@ -51,7 +58,7 @@
                 <div class="sidebar-logo-text gradient-logo">Prodiger</div>
             </div>
             <nav class="sidebar-nav">
-                  <ul>
+                <ul>
                     <li class="menu-item" data-section="news">
                         <a href="/news.html">📰 Новости</a>
                     </li>
@@ -135,8 +142,8 @@
 
             <!-- Список сессий -->
             <div id="sessionsList" class="sessions-list">
-                <div class="loading-spinner" style="text-align: center; padding: 60px;">
-                    <div class="spinner" style="width: 50px; height: 50px; border: 3px solid rgba(0,113,227,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
                     <p style="color: var(--text-secondary);">Загрузка истории...</p>
                 </div>
             </div>
@@ -204,7 +211,6 @@
             isLoading = true;
 
             try {
-                // Функция для загрузки из Firebase
                 const fetchSessions = async () => {
                     const sessionsRef = collection(db, 'users', currentUser.uid, 'generationSessions');
                     let q;
@@ -230,7 +236,6 @@
                     }));
                 };
                 
-                // Получаем данные с кэшированием (только для первой страницы)
                 let newSessions;
                 if (isFirstLoad) {
                     newSessions = await cacheSessions(
@@ -244,15 +249,11 @@
                         allSessions = newSessions;
                     }
                 } else {
-                    // Для следующих страниц не кэшируем
                     newSessions = await fetchSessions();
                     allSessions = [...allSessions, ...newSessions];
                 }
 
-                // Обновляем статистику
                 updateStats();
-                
-                // Применяем сортировку
                 applySort();
 
             } catch (error) {
@@ -590,8 +591,9 @@
                 'balance': '/balance.html',
                 'generate': '/generate.html',
                 'description': '/description.html',
-                'history': '/history.html',
+                'templates': '/templates.html',
                 'description-history': '/description-history.html',
+                'history': '/history.html',
                 'settings': '/settings.html'
             };
             if (paths[section]) {
@@ -615,7 +617,6 @@
         });
 
         document.getElementById('sortSelect').addEventListener('change', applySort);
-
 
         // Обработчики меню
         document.addEventListener('DOMContentLoaded', function() {
