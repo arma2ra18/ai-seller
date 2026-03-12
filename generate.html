@@ -774,59 +774,60 @@
         }
 
         // Обновление UI повторных генераций
-        function updateRegenerationUI() {
-            const container = document.getElementById('cardResults');
-            if (!container) return;
+function updateRegenerationUI() {
+    const container = document.getElementById('cardResults');
+    if (!container) return;
 
-            let infoBlock = document.getElementById('regenerationInfo');
-            if (!infoBlock) {
-                infoBlock = document.createElement('div');
-                infoBlock.id = 'regenerationInfo';
-                infoBlock.className = 'regeneration-info';
-                container.insertBefore(infoBlock, container.firstChild);
-            }
+    let infoBlock = document.getElementById('regenerationInfo');
+    if (!infoBlock) {
+        infoBlock = document.createElement('div');
+        infoBlock.id = 'regenerationInfo';
+        infoBlock.className = 'regeneration-info';
+        container.insertBefore(infoBlock, container.firstChild);
+    }
 
-            const remaining = currentGenerationSession.maxAttempts - currentGenerationSession.attemptsMade;
-            const nextCost = 15;
+    const remaining = currentGenerationSession.maxAttempts - currentGenerationSession.attemptsMade;
+    const nextCost = 15;
 
-            infoBlock.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 20px;">📸</span>
-                        <div>
-                            <strong style="font-size: 18px;">${currentGenerationSession.productName}</strong>
-                            <span style="color: var(--text-secondary); margin-left: 10px;">
-                                ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
-                            </span>
-                        </div>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        <span style="color: #f5b041; font-weight: 600;">
-                            Следующая: ${nextCost} ₽
-                        </span>
-                        <span style="color: var(--text-secondary);">
-                            осталось ${remaining}
-                        </span>
-                    </div>
+    infoBlock.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 20px;">📸</span>
+                <div>
+                    <strong style="font-size: 18px;">${currentGenerationSession.productName}</strong>
+                    <span style="color: var(--text-secondary); margin-left: 10px;">
+                        ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
+                    </span>
                 </div>
-            `;
+            </div>
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <span style="color: #f5b041; font-weight: 600;">
+                    Следующая: ${nextCost} ₽
+                </span>
+                <span style="color: var(--text-secondary);">
+                    осталось ${remaining}
+                </span>
+            </div>
+        </div>
+    `;
 
-            let regenBtn = document.getElementById('regenerateBtn');
-            if (!regenBtn) {
-                regenBtn = document.createElement('button');
-                regenBtn.id = 'regenerateBtn';
-                regenBtn.onclick = window.regeneratePhoto;
-                container.appendChild(regenBtn);
-            }
+    let regenBtn = document.getElementById('regenerateBtn');
+    if (!regenBtn) {
+        regenBtn = document.createElement('button');
+        regenBtn.id = 'regenerateBtn';
+        regenBtn.onclick = window.regeneratePhoto;
+        container.appendChild(regenBtn);
+    }
 
-            if (remaining > 0 && currentGenerationSession.attemptsMade > 0) {
-                regenBtn.style.display = 'inline-block';
-                regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
-                regenBtn.disabled = false;
-            } else {
-                regenBtn.style.display = 'none';
-            }
-        }
+    // ✅ ИСПРАВЛЕНО: показываем кнопку только если остались попытки
+    if (remaining > 0) {
+        regenBtn.style.display = 'inline-block';
+        regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
+        regenBtn.disabled = false;
+    } else {
+        regenBtn.style.display = 'none';
+    }
+}
 
         // Лайтбокс
         window.openLightbox = function(url) {
