@@ -47,3 +47,6 @@
 
 /* Генерация описаний */
 @import url('26-description.css');
+
+/* История описаний */
+@import url('27-description-history.css');
