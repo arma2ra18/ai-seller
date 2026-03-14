@@ -324,196 +324,58 @@ window.generateOzonCard = async function() {
     await generateCard('ozon');
 };
 
-// ----- Общая функция генерации (ИСПРАВЛЕННАЯ) -----
-async function performGeneration(files, attempt, platform, btnId) {
-    const cost = attempt === 0 ? 100 : 15;
-    const btn = document.getElementById(btnId);
+// ----- Общая функция генерации -----
+async function generateCard(platform) {
+    if (!currentUser || !userData) return;
 
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="loading"></span> Генерация...';
+    const inputId = platform === 'wb' ? 'wbPhotos' : 'ozonPhotos';
+    const nameId = platform === 'wb' ? 'wbProductName' : 'ozonProductName';
+    const brandId = platform === 'wb' ? 'wbBrand' : 'ozonBrand';
+    const categoryId = platform === 'wb' ? 'wbCategory' : 'ozonCategory';
+    const priceId = platform === 'wb' ? 'wbPrice' : 'ozonPrice';
+    const featuresId = platform === 'wb' ? 'wbFeatures' : 'ozonFeatures';
+    const btnId = platform === 'wb' ? 'generateWBBtn' : 'generateOzonBtn';
+
+    const fileInput = document.getElementById(inputId);
+    
+    const productName = document.getElementById(nameId)?.value.trim();
+    const brand = document.getElementById(brandId)?.value.trim();
+    const category = document.getElementById(categoryId)?.value;
+    const price = document.getElementById(priceId)?.value.trim() || '1990';
+    const featuresInput = document.getElementById(featuresId)?.value;
+    const features = featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : [];
+    
+    // Проверяем только название товара
+    if (!productName) {
+        showNotification('Введите название товара', 'error');
+        return;
     }
 
-    showGenerationModal();
-
-    try {
-        const formData = new FormData();
-        
-        // Для повторной генерации (attempt > 0) - файлы не нужны, используем originalImageId
-        if (attempt === 0 && files && files.length > 0) {
-            // Первая генерация с фото
-            for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
-            console.log(`📸 Первая генерация с ${files.length} фото`);
-        } else if (attempt === 0) {
-            // Первая генерация без фото
-            console.log('📝 Первая генерация без фото (по описанию)');
-            // Не добавляем фото, API сам поймет
-        } else {
-            // Повторная генерация - фото не нужно, используем originalImageId
-            console.log('🔄 Повторная генерация, используем оригинал:', currentGenerationSession.originalImageId);
-            // Не добавляем фото, только originalImageId
-        }
-        
-        formData.append('productName', currentGenerationSession.productName);
-        formData.append('brand', currentGenerationSession.brand || '');
-        formData.append('category', currentGenerationSession.category || '');
-        formData.append('price', currentGenerationSession.price || '1990');
-        formData.append('features', currentGenerationSession.features.join(','));
-        formData.append('platform', platform);
-        formData.append('attempt', attempt);
-        
-        // ВАЖНО: всегда передаем originalImageId, если он есть
-        if (currentGenerationSession.originalImageId) {
-            formData.append('originalImageId', currentGenerationSession.originalImageId);
-            console.log('🆔 Передаем originalImageId:', currentGenerationSession.originalImageId);
-        } else {
-            console.log('⚠️ originalImageId отсутствует в currentGenerationSession');
-        }
-
-        const response = await fetch('/api/generate-card', {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText);
-        }
-        
-        const result = await response.json();
-        console.log('✅ Ответ от API:', result);
-
-        // Сохраняем originalImageId если пришел (для первой генерации без фото это важно!)
-        if (result.originalImageId) {
-            currentGenerationSession.originalImageId = result.originalImageId;
-            console.log('💾 Сохранен originalImageId в currentGenerationSession:', result.originalImageId);
-        } else {
-            console.log('⚠️ API не вернул originalImageId');
-        }
-
-        if (result.images && result.images.length) {
-            currentGenerationSession.generatedImages.push(result.images[0]);
-            currentGenerationSession.imageIds.push(`generated/${result.images[0].split('/').pop()}`);
-        }
-        
-        const newAttemptCount = attempt + 1;
-        currentGenerationSession.attemptsMade = newAttemptCount;
-
-        // Сохраняем в Firestore
-        if (currentGenerationSession.sessionId) {
-            // Обновляем существующую сессию
-            const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
-            const updateData = {
-                attempts: newAttemptCount,
-                totalSpent: increment(cost),
-                images: currentGenerationSession.generatedImages,
-                imageIds: currentGenerationSession.imageIds,
-                updatedAt: new Date().toISOString()
-            };
-            
-            // Добавляем originalImageId только если он есть
-            if (currentGenerationSession.originalImageId) {
-                updateData.originalImageId = currentGenerationSession.originalImageId;
-            }
-            
-            await updateDoc(sessionRef, updateData);
-            console.log('✅ Сессия обновлена:', currentGenerationSession.sessionId, 'с originalImageId:', currentGenerationSession.originalImageId);
-        } else {
-            // Создаём новую сессию
-            const sessionData = {
-                type: 'product-session',
-                productName: currentGenerationSession.productName,
-                brand: currentGenerationSession.brand,
-                category: currentGenerationSession.category,
-                price: currentGenerationSession.price,
-                features: currentGenerationSession.features,
-                platform: platform,
-                attempts: 1,
-                totalSpent: cost,
-                images: [result.images[0]],
-                imageIds: [`generated/${result.images[0].split('/').pop()}`],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            };
-            
-            // Добавляем originalImageId только если он есть
-            if (currentGenerationSession.originalImageId) {
-                sessionData.originalImageId = currentGenerationSession.originalImageId;
-                console.log('💾 Сохраняем originalImageId в новую сессию:', currentGenerationSession.originalImageId);
-            }
-            
-            const sessionRef = await addDoc(collection(db, 'users', currentUser.uid, 'generationSessions'), sessionData);
-            currentGenerationSession.sessionId = sessionRef.id;
-            console.log('✅ Новая сессия создана:', sessionRef.id);
-        }
-
-        // Списываем средства
-        await updateDoc(doc(db, 'users', currentUser.uid), { 
-            balance: increment(-cost),
-            usedSpent: increment(cost)
-        });
-
-        const updatedDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (updatedDoc.exists()) {
-            userData = updatedDoc.data();
-        }
-        updateUI();
-        
-        // Обновляем историю
-        const path = window.location.pathname;
-        if (path.includes('history.html')) {
-            await loadAllHistory();
-        } else if (!path.includes('news.html')) {
-            await loadRecentHistory();
-        }
-        
-        displayCardResults(result, attempt, platform);
-        
-        const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
-        const message = attempt === 0 
-            ? `✅ Первое фото для ${platformName} готово! Можете сгенерировать ещё за 15 ₽` 
-            : `✅ Фото №${attempt + 1} для ${platformName} готово! Списано ${cost} ₽`;
-        showNotification(message, 'success');
-
-    } catch (error) {
-        console.error('❌ Ошибка генерации:', error);
-        
-        let errorMessage = 'Неизвестная ошибка';
-        try {
-            if (error.message) {
-                const parsed = JSON.parse(error.message);
-                errorMessage = parsed.error || parsed.message || error.message;
-            } else {
-                errorMessage = error.message || 'Ошибка соединения';
-            }
-        } catch {
-            errorMessage = error.message || 'Ошибка соединения';
-        }
-        
-        if (errorMessage.includes('API key')) {
-            showNotification('❌ Ошибка API ключа', 'error');
-        } else if (errorMessage.includes('model')) {
-            showNotification('❌ Ошибка модели Gemini', 'error');
-        } else if (errorMessage.includes('balance')) {
-            showNotification('❌ Недостаточно средств', 'error');
-        } else if (errorMessage.includes('500')) {
-            showNotification('❌ Ошибка сервера. Попробуйте позже.', 'error');
-        } else if (errorMessage.includes('Failed to fetch')) {
-            showNotification('❌ Ошибка соединения. Проверьте интернет.', 'error');
-        } else {
-            showNotification('❌ ' + errorMessage.substring(0, 100), 'error');
-        }
-    } finally {
-        hideGenerationModal();
-        if (btn) {
-            btn.disabled = false;
-            const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
-            btn.innerHTML = attempt === 0 
-                ? `✨ Создать первое фото для ${platformName} (100 ₽)` 
-                : '🔄 Сделать ещё (15 ₽)';
-        }
-        updateRegenerationUI();
+    // Проверяем баланс
+    const currentBalance = userData.balance || 0;
+    if (currentBalance < 100) {
+        showNotification('Недостаточно средств. Требуется 100 ₽', 'error');
+        return;
     }
+
+    // Фото не обязательно! Просто передаем что есть (или пустой массив)
+    let files = [];
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        files = fileInput.files;
+        console.log(`📸 Загружено ${files.length} фото`);
+    } else {
+        console.log('📝 Фото не загружено, будет генерация по описанию');
+    }
+
+    resetGenerationSession(platform);
+    currentGenerationSession.productName = productName;
+    currentGenerationSession.brand = brand;
+    currentGenerationSession.category = category;
+    currentGenerationSession.price = price;
+    currentGenerationSession.features = features;
+    currentGenerationSession.platform = platform;
+
+    await performGeneration(files, 0, platform, btnId);
 }
 
 // ----- Повторная генерация -----
@@ -561,7 +423,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// ----- Общая функция генерации (ИСПРАВЛЕННАЯ) -----
+// ----- ОСНОВНАЯ ФУНКЦИЯ ГЕНЕРАЦИИ (ЕДИНСТВЕННАЯ) -----
 async function performGeneration(files, attempt, platform, btnId) {
     const cost = attempt === 0 ? 100 : 15;
     const btn = document.getElementById(btnId);
@@ -616,6 +478,7 @@ async function performGeneration(files, attempt, platform, btnId) {
         }
         
         const result = await response.json();
+        console.log('✅ Ответ от API:', result);
 
         // Сохраняем originalImageId если пришел (для первой генерации без фото это важно!)
         if (result.originalImageId) {
@@ -1099,7 +962,7 @@ window.viewHistorySession = async function(sessionId) {
                 price: session.price,
                 features: session.features || [],
                 platform: session.platform || 'wb',
-                originalImageId: session.originalImageId || null, // Загружаем сохраненный ID
+                originalImageId: session.originalImageId || null,
                 attemptsMade: session.attempts,
                 maxAttempts: 5,
                 generatedImages: session.images || []
