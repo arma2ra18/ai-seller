@@ -350,18 +350,20 @@
                         <small style="color: var(--text-muted); display: block; margin-top: 5px;">Через запятую, например: шумоподавление, влагозащита, 30ч</small>
                     </div>
 
-                    <!-- Загрузка фото -->
-                    <div class="form-group">
-                        <label>Фото товара <span style="color: #8b5cf6;">*</span></label>
-                        <div class="file-upload-wrapper">
-                            <button type="button" class="file-upload-button" onclick="document.getElementById('wbPhotos').click()">
-                                Выбрать файлы
-                            </button>
-                            <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('wbPhotos', 'wbFileInfo')">
-                            <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
-                        </div>
-                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">Поддерживаются JPG, PNG. До 3 файлов, до 5 МБ каждый.</small>
-                    </div>
+                 <!-- Загрузка фото (необязательно) -->
+<div class="form-group">
+    <label>Фото товара <span style="color: var(--text-secondary);">(необязательно)</span></label>
+    <div class="file-upload-wrapper">
+        <button type="button" class="file-upload-button" onclick="document.getElementById('wbPhotos').click()">
+            Выбрать файлы
+        </button>
+        <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('wbPhotos', 'wbFileInfo')">
+        <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
+    </div>
+    <small style="color: var(--text-muted); display: block; margin-top: 5px;">
+        Если не загрузить фото, ИИ создаст изображение товара по описанию
+    </small>
+</div>
 
                     <!-- Кнопка генерации -->
                     <button class="btn-generate" id="generateWBBtn" onclick="generateWBCard()">
