@@ -8,33 +8,32 @@
     <link rel="stylesheet" href="styles/main.css">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
-<!-- PWA Meta Tags -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#0071e3">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Prodiger">
-<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-<link rel="mask-icon" href="/icons/icon-192x192.png" color="#0071e3">
-
-<!-- Service Worker Registration -->
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
-            }).catch(function(err) {
-                console.log('Ошибка регистрации ServiceWorker:', err);
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="mask-icon" href="/icons/icon-192x192.png" color="#0071e3">
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker успешно зарегистрирован:', registration.scope);
+                }).catch(function(err) {
+                    console.log('Ошибка регистрации ServiceWorker:', err);
+                });
             });
-        });
-    }
-</script>
-
+        }
+    </script>
+    
     <!-- Jivo Chat Widget -->
     <script src="//code.jivo.ru/widget/dxg5looTDX" async></script>
 </head>
 <body>
-
     <!-- Плавающие элементы -->
     <div class="floating-elements">
         <div class="floating-icon" style="top: 15%; left: 5%;">📦</div>
@@ -43,7 +42,7 @@
         <div class="floating-icon" style="bottom: 20%; right: 15%;">📝</div>
         <div class="floating-icon" style="top: 50%; left: 15%;">💎</div>
     </div>
-
+    
     <!-- Хедер -->
     <header class="header" id="mainHeader">
         <div class="container header-container">
@@ -72,44 +71,44 @@
             </nav>
         </div>
     </header>
-
+    
     <main>
-       <!-- Герой -->
-<section class="hero">
-    <div class="container">
-        <div class="hero-content">
-            <h1 class="gradient-text animate-text">Карточки, которые <br>продают за 5 секунд</h1>
-            <p class="hero-subtitle">Нейросеть создаёт продающие описания, фото и видео для Wildberries и Ozon. Экономьте 3 часа на каждой карточке.</p>
-            <div class="hero-cta">
-                <a href="/news.html" class="btn btn-large btn-gold">Личный кабинет</a>
-                <a href="#features" class="btn btn-large btn-outline">Узнать больше</a>
+        <!-- Герой -->
+        <section class="hero">
+            <div class="container">
+                <div class="hero-content">
+                    <h1 class="gradient-text animate-text">Карточки, которые <br>продают за 5 секунд</h1>
+                    <p class="hero-subtitle">Нейросеть создаёт продающие описания, фото и видео для Wildberries и Ozon. Экономьте 3 часа на каждой карточке.</p>
+                    <div class="hero-cta">
+                        <a href="/news.html" class="btn btn-large btn-gold">Личный кабинет</a>
+                        <a href="#features" class="btn btn-large btn-outline">Узнать больше</a>
+                    </div>
+                </div>
+                <div class="hero-3d">
+                    <div class="cube" id="demoCube">
+                        <div class="face front">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg" alt="Lamborghini">
+                        </div>
+                        <div class="face back">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
+                        </div>
+                        <div class="face right">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg" alt="Waka Blast">
+                        </div>
+                        <div class="face left">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg" alt="ASUS ROG">
+                        </div>
+                        <div class="face top">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg" alt="iPhone 17 Pro">
+                        </div>
+                        <div class="face bottom">
+                            <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="hero-3d">
-            <div class="cube" id="demoCube">
-                <div class="face front">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg" alt="Lamborghini">
-                </div>
-                <div class="face back">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
-                </div>
-                <div class="face right">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg" alt="Waka Blast">
-                </div>
-                <div class="face left">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg" alt="ASUS ROG">
-                </div>
-                <div class="face top">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg" alt="iPhone 17 Pro">
-                </div>
-                <div class="face bottom">
-                    <img src="https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg" alt="AirPods Max">
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
+        </section>
+        
         <!-- Статистика -->
         <section class="stats-section">
             <div class="container">
@@ -133,7 +132,7 @@
                 </div>
             </div>
         </section>
-
+        
         <!-- Возможности -->
         <section id="features" class="features">
             <div class="container">
@@ -178,7 +177,7 @@
                 </div>
             </div>
         </section>
-
+        
         <!-- Как это работает -->
         <section id="how-it-works" class="how-it-works">
             <div class="container">
@@ -211,28 +210,28 @@
                 </div>
             </div>
         </section>
-
-       <!-- Примеры работ -->
-<section id="examples" class="examples">
-    <div class="container">
-        <h2 class="gradient-text">Примеры готовых карточек</h2>
         
-        <div class="carousel-container" id="carouselContainer">
-            <button class="carousel-btn prev" onclick="moveCarousel(-1)">←</button>
-            
-            <div class="carousel-wrapper">
-                <div class="carousel-track" id="carouselTrack">
-                    <!-- Слайды добавляются динамически из JS -->
+        <!-- Примеры работ -->
+        <section id="examples" class="examples">
+            <div class="container">
+                <h2 class="gradient-text">Примеры готовых карточек</h2>
+                
+                <div class="carousel-container" id="carouselContainer">
+                    <button class="carousel-btn prev" onclick="moveCarousel(-1)">←</button>
+                    
+                    <div class="carousel-wrapper">
+                        <div class="carousel-track" id="carouselTrack">
+                            <!-- Слайды будут добавлены динамически из JS -->
+                        </div>
+                    </div>
+                    
+                    <button class="carousel-btn next" onclick="moveCarousel(1)">→</button>
                 </div>
+                
+                <div class="carousel-dots" id="carouselDots"></div>
             </div>
-            
-            <button class="carousel-btn next" onclick="moveCarousel(1)">→</button>
-        </div>
+        </section>
         
-        <div class="carousel-dots" id="carouselDots"></div>
-    </div>
-</section>
-
         <!-- Отзывы -->
         <section id="reviews" class="reviews">
             <div class="container">
@@ -283,115 +282,184 @@
                 </div>
             </div>
         </section>
-
+        
         <!-- Футер -->
-      <footer class="footer">
-    <div class="container">
-        <!-- Только нужные страницы -->
-        <div class="footer-main" style="grid-template-columns: repeat(4, 1fr);">
-            <div class="footer-col">
-                <h4>Документы</h4>
-                <a href="/privacy.html">Политика конфиденциальности</a>
-                <a href="/offer.html">Договор оферты</a>
-            </div>
-            <div class="footer-col">
-                <h4>Партнерам</h4>
-                <a href="#">Партнерская программа</a>
-                <a href="#">API для интеграции</a>
-            </div>
-            <div class="footer-col">
-                <h4>Контакты</h4>
-                <a href="mailto:support@prodiger.ru">support@prodiger.ru</a>
-                <a href="https://t.me/prodiger" target="_blank">Telegram-группа</a>
-                <a href="#">Поддержка (Jivo)</a>
-            </div>
-            <div class="footer-col">
-                <h4>Prodiger</h4>
-                <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">Премиальный AI-генератор карточек для маркетплейсов</p>
-                <div class="footer-social">
-                    <a href="#" class="social-link" aria-label="Telegram">📘</a>
-                    <a href="#" class="social-link" aria-label="Instagram">📷</a>
-                    <a href="#" class="social-link" aria-label="Twitter">🐦</a>
+        <footer class="footer">
+            <div class="container">
+                <!-- Только нужные страницы -->
+                <div class="footer-main" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="footer-col">
+                        <h4>Документы</h4>
+                        <a href="/privacy.html">Политика конфиденциальности</a>
+                        <a href="/offer.html">Договор оферты</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Партнерам</h4>
+                        <a href="#">Партнерская программа</a>
+                        <a href="#">API для интеграции</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Контакты</h4>
+                        <a href="mailto:support@prodiger.ru">support@prodiger.ru</a>
+                        <a href="https://t.me/prodiger" target="_blank">Telegram-группа</a>
+                        <a href="#">Поддержка (Jivo)</a>
+                    </div>
+                    <div class="footer-col">
+                        <h4>Prodiger</h4>
+                        <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 10px;">Премиальный AI-генератор карточек для маркетплейсов</p>
+                        <div class="footer-social">
+                            <a href="#" class="social-link" aria-label="Telegram">📘</a>
+                            <a href="#" class="social-link" aria-label="Instagram">📷</a>
+                            <a href="#" class="social-link" aria-label="Twitter">🐦</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Данные для ЮKassa -->
+                <div class="payment-info" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-muted);">
+                    <p>ИП Григорян Алексей Эдуардович</p>
+                    <p>ИНН 234213458277</p>
+                    <p>© 2026 Prodiger. Все права защищены.</p>
                 </div>
             </div>
-        </div>
-        
-        <!-- Данные для ЮKassa -->
-        <div class="payment-info" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--text-muted);">
-            <p>ИП Григорян Алексей Эдуардович</p>
-            <p>ИНН 234213458277</p>
-            <p>© 2026 Prodiger. Все права защищены.</p>
-        </div>
-    </div>
-</footer>
+        </footer>
         
     </main>
-
+    
     <script type="module" src="js/main.js"></script>
-    <script>
-      // ===== КАРУСЕЛЬ =====
-const images = [
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773192062133_4.jpg",
-    "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773190339891_3.jpg"
-];
-
+    <script type="module">
+        import { getCubeImages, getCarouselImages, clearHomeCache } from './js/home-settings.js';
+        
+        // ===== 3D КУБ =====
+        async function initCube() {
+            const images = await getCubeImages();
+            
+            // Обновляем изображения на гранях куба
+            const faces = document.querySelectorAll('.cube .face img');
+            if (faces.length >= 6) {
+                faces.forEach((img, index) => {
+                    if (index < images.length) {
+                        img.src = images[index];
+                        img.alt = `Грань ${index + 1}`;
+                    }
+                });
+                console.log('🔄 Куб обновлён, изображений:', images.length);
+            }
+        }
+        
+        // ===== КАРУСЕЛЬ =====
         let currentIndex = 0;
+        let carouselImages = [];
+        let slides = [];
+        let totalSlides = 0;
         const track = document.getElementById('carouselTrack');
         const dotsContainer = document.getElementById('carouselDots');
-
-        // Создаём слайды
-        images.forEach((src, index) => {
-            const slide = document.createElement('div');
-            slide.className = 'carousel-slide';
+        
+        async function initCarousel() {
+            carouselImages = await getCarouselImages();
             
-            const img = document.createElement('img');
-            img.src = src;
-            img.alt = `Пример ${index + 1}`;
-            img.loading = 'lazy';
+            if (!track || !dotsContainer) return;
             
-            slide.appendChild(img);
-            track.appendChild(slide);
+            // Очищаем старые слайды
+            track.innerHTML = '';
+            dotsContainer.innerHTML = '';
             
-            // Создаём точки
-            const dot = document.createElement('span');
-            dot.className = 'dot' + (index === 0 ? ' active' : '');
-            dot.onclick = () => goToSlide(index);
-            dotsContainer.appendChild(dot);
-        });
-
-        const slides = document.querySelectorAll('.carousel-slide');
-        const totalSlides = slides.length;
-
+            if (carouselImages.length === 0) {
+                console.warn('Нет изображений для карусели');
+                return;
+            }
+            
+            // Создаём новые слайды
+            carouselImages.forEach((src, index) => {
+                const slide = document.createElement('div');
+                slide.className = 'carousel-slide';
+                
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = `Пример ${index + 1}`;
+                img.loading = 'lazy';
+                
+                slide.appendChild(img);
+                track.appendChild(slide);
+                
+                // Создаём точки
+                const dot = document.createElement('span');
+                dot.className = 'dot' + (index === 0 ? ' active' : '');
+                dot.onclick = () => goToSlide(index);
+                dotsContainer.appendChild(dot);
+            });
+            
+            slides = document.querySelectorAll('.carousel-slide');
+            totalSlides = slides.length;
+            currentIndex = 0;
+            
+            goToSlide(0);
+            console.log(`🔄 Карусель обновлена: ${totalSlides} слайдов`);
+        }
+        
         function updateDots() {
             document.querySelectorAll('.dot').forEach((dot, index) => {
                 dot.classList.toggle('active', index === currentIndex);
             });
         }
-
+        
         function goToSlide(index) {
             if (index < 0 || index >= totalSlides) return;
             currentIndex = index;
             
-            const slideWidth = slides[0].offsetWidth + 20;
-            track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+            if (slides.length > 0) {
+                const slideWidth = slides[0].offsetWidth + 20;
+                track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+            }
             
             updateDots();
         }
-
+        
         window.moveCarousel = function(direction) {
             goToSlide(currentIndex + direction);
         };
-
+        
         window.addEventListener('resize', () => {
-            goToSlide(currentIndex);
+            if (slides.length > 0) {
+                goToSlide(currentIndex);
+            }
         });
-
-        goToSlide(0);
+        
+        // ===== СЛУШАЕМ ОБНОВЛЕНИЯ НАСТРОЕК =====
+        function listenForSettingsUpdates() {
+            try {
+                // Используем BroadcastChannel для связи между вкладками
+                const channel = new BroadcastChannel('settings-updates');
+                channel.onmessage = (event) => {
+                    if (event.data && event.data.type === 'settings-updated') {
+                        console.log('🔄 Получено обновление настроек, перезагружаем...');
+                        clearHomeCache();
+                        initCube();
+                        initCarousel();
+                    }
+                };
+            } catch (e) {
+                console.log('BroadcastChannel не поддерживается, используем polling');
+                // Fallback: опрашиваем каждые 30 секунд
+                setInterval(() => {
+                    clearHomeCache();
+                    initCube();
+                    initCarousel();
+                }, 30000);
+            }
+        }
+        
+        // ===== ЗАПУСК =====
+        // Инициализируем всё при загрузке
+        Promise.all([
+            initCube(),
+            initCarousel()
+        ]).then(() => {
+            console.log('✅ Главная страница полностью загружена');
+            listenForSettingsUpdates();
+        }).catch(error => {
+            console.error('❌ Ошибка инициализации:', error);
+        });
     </script>
 </body>
 </html>
