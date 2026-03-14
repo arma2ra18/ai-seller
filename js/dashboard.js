@@ -58,8 +58,10 @@ onAuthStateChanged(auth, async (user) => {
     const path = window.location.pathname;
     console.log('Текущая страница:', path);
     
-    // Загружаем историю только если это не страница новостей
-    if (!path.includes('news.html')) {
+    // Загружаем историю ТОЛЬКО если есть элемент historyList на странице
+    const historyList = document.getElementById('historyList');
+    
+    if (historyList) {
         if (path.includes('history.html')) {
             console.log('Загружаем всю историю...');
             await loadAllHistory();
@@ -68,7 +70,7 @@ onAuthStateChanged(auth, async (user) => {
             await loadRecentHistory();
         }
     } else {
-        console.log('Страница новостей, историю не загружаем');
+        console.log('На этой странице нет истории, пропускаем загрузку');
     }
 });
 
