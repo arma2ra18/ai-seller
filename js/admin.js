@@ -1721,7 +1721,7 @@ async function loadCubeSettings() {
         } else {
             // Изображения по умолчанию (можно взять из ваших существующих)
             cubeImages = [
-             
+                "https://storage.googleapis.com/prodiger-cc1c5.firebasestorage.app/generated/card_1773454732102_0.jpg",
             ];
         }
         
