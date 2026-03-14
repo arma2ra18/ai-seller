@@ -101,7 +101,7 @@ window.verifyPhoneCode = async function() {
                 email: user.email || '',
                 displayName: user.displayName || '',
                 plan: 'start',
-                balance: 500,
+                balance: 100,
                 usedSpent: 0,
                 createdAt: new Date().toISOString()
             });
