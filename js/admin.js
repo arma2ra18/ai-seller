@@ -1868,6 +1868,16 @@ window.saveCubeSettings = async function() {
         
         showNotification('✅ Настройки куба сохранены', 'success');
         
+// Отправляем событие, чтобы главная страница обновилась (если она открыта)
+try {
+    // Пытаемся отправить событие через BroadcastChannel (если поддерживается)
+    const channel = new BroadcastChannel('settings-updates');
+    channel.postMessage({ type: 'settings-updated' });
+    channel.close();
+} catch (e) {
+    console.log('BroadcastChannel не поддерживается');
+}
+
     } catch (error) {
         console.error('Ошибка сохранения куба:', error);
         showNotification('❌ Ошибка: ' + error.message, 'error');
@@ -2044,6 +2054,16 @@ window.saveCarouselSettings = async function() {
         
         showNotification('✅ Настройки карусели сохранены', 'success');
         
+// Отправляем событие, чтобы главная страница обновилась (если она открыта)
+try {
+    // Пытаемся отправить событие через BroadcastChannel (если поддерживается)
+    const channel = new BroadcastChannel('settings-updates');
+    channel.postMessage({ type: 'settings-updated' });
+    channel.close();
+} catch (e) {
+    console.log('BroadcastChannel не поддерживается');
+}
+
     } catch (error) {
         console.error('Ошибка сохранения карусели:', error);
         showNotification('❌ Ошибка: ' + error.message, 'error');
