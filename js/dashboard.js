@@ -229,7 +229,14 @@ function showGenerationModal() {
         const timerEl = document.getElementById('generationTimer');
         if (timerEl) timerEl.textContent = '0 сек.';
         generationStartTime = Date.now();
-        if (generationInterval) clearInterval(generationInterval);
+        
+        // Очищаем предыдущий интервал, если есть
+        if (generationInterval) {
+            clearInterval(generationInterval);
+            generationInterval = null;
+        }
+        
+        // Запускаем новый
         generationInterval = setInterval(updateGenerationTimer, 1000);
     }
 }
