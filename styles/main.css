@@ -36,8 +36,6 @@
 /* Утилиты и адаптация */
 @import url('21-utilities.css');
 
-/* Шаблоны */
-@import url('23-templates.css');
 
 /* Новости */
 @import url('24-news.css');
@@ -51,8 +49,6 @@
 /* История описаний */
 @import url('27-description-history.css');
 
-/* Страница шаблонов (дополнительные стили) */
-@import url('28-templates-page.css');
 
 /* Настройки профиля */
 @import url('29-settings.css');
