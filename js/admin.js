@@ -141,8 +141,10 @@ onAuthStateChanged(auth, async (user) => {
             await loadPayments();
             initLogsFilters();
         } else if (path.includes('settings.html')) {
-            await loadSettings();
-        }
+    await loadSettings();
+    await loadCubeSettings();     // Добавить
+    await loadCarouselSettings(); // Добавить
+}
     } catch (error) {
         console.error('Ошибка загрузки данных:', error);
         showNotification('Ошибка загрузки: ' + error.message, 'error');
