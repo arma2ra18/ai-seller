@@ -38,7 +38,7 @@ if (!apiKey) {
 const ai = new GoogleGenAI({ apiKey: apiKey || '' });
 
 /**
- * Генерация одного изображения через Gemini
+ * Генерация изображения через Gemini с референсом
  */
 async function generateGeminiImage(prompt, referenceImage) {
     try {
@@ -81,6 +81,55 @@ async function generateGeminiImage(prompt, referenceImage) {
         console.error('Gemini generation error:', error);
         throw error;
     }
+}
+
+/**
+ * Генерация изображения через Gemini БЕЗ референса (только по тексту)
+ */
+async function generateGeminiImageFromText(prompt) {
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3.1-flash-image-preview',
+            contents: [prompt],
+            config: {
+                responseModalities: ['Image'],
+                aspectRatio: '3:4',
+                googleSearch: {
+                    enable: true
+                }
+            }
+        });
+
+        if (!response.candidates || !response.candidates[0]) {
+            throw new Error('Нет ответа от Gemini');
+        }
+
+        if (response.candidates[0].content?.parts) {
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                }
+            }
+        }
+        throw new Error('Ответ не содержит изображения');
+    } catch (error) {
+        console.error('Gemini generation error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Создание пустого референса для случаев, когда фото не загружено
+ */
+function createEmptyReference() {
+    // Создаем простой серый квадрат как референс для Gemini
+    const svg = `<svg width="900" height="1200" xmlns="http://www.w3.org/2000/svg">
+        <rect width="900" height="1200" fill="#f0f0f0"/>
+        <text x="450" y="600" font-family="Arial" font-size="24" fill="#333333" text-anchor="middle">
+            Генерация по описанию...
+        </text>
+    </svg>`;
+    return Buffer.from(svg);
 }
 
 /**
@@ -199,8 +248,9 @@ export default async function handler(req, res) {
 
         let referenceBuffer = null;
         let savedOriginalId = null;
+        let isGeneratedFromText = false; // Флаг, что картинка сгенерирована без фото
 
-        // Загружаем референсное изображение
+        // Загружаем референсное изображение (если есть)
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             if (photoArray.length) {
@@ -219,11 +269,23 @@ export default async function handler(req, res) {
             }
         }
 
-        if (!referenceBuffer) {
-            return res.status(400).json({ error: 'No photo uploaded or original image not found' });
+        // Если нет фото и это первая попытка - генерируем с нуля
+        if (!referenceBuffer && attempt === 0) {
+            console.log('📝 Фото не загружено, генерируем изображение с нуля по описанию');
+            isGeneratedFromText = true;
+            // Создаем пустой референс (некоторые модели Gemini требуют изображение)
+            referenceBuffer = createEmptyReference();
+        } else if (!referenceBuffer && attempt > 0) {
+            // Для повторных генераций нужно исходное изображение
+            return res.status(400).json({ error: 'Для повторной генерации необходимо исходное изображение' });
         }
 
-        if (attempt === 0 && files.photos) {
+        if (!referenceBuffer) {
+            return res.status(400).json({ error: 'No photo uploaded' });
+        }
+
+        // Сохраняем оригинал только если было загружено фото (не генерируем с нуля)
+        if (attempt === 0 && files.photos && !isGeneratedFromText) {
             try {
                 const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
                 if (photoArray.length) {
@@ -241,7 +303,7 @@ export default async function handler(req, res) {
             }
         }
 
-        // ===== БАЗОВЫЙ ПРОМПТ СО СТИЛЯМИ, ЦВЕТАМИ И 3D-ЭФФЕКТАМИ (ОБЩИЙ ДЛЯ ОБЕИХ ПЛАТФОРМ) =====
+        // ===== БАЗОВЫЙ ПРОМПТ СО СТИЛЯМИ, ЦВЕТАМИ И 3D-ЭФФЕКТАМИ =====
         const baseStylePrompt = `Ты — ведущий дизайнер инфографики с 10-летним опытом. Твоя задача создать фото-карточку товара, которая взорвет продажи, выглядит премиально и современно.
 
 **Товар:** "${productName}"
@@ -346,6 +408,11 @@ export default async function handler(req, res) {
             console.log('🎯 Используем промпт для Ozon');
         }
 
+        // Добавляем информацию о том, что фото генерируется с нуля
+        if (isGeneratedFromText) {
+            finalPrompt += `\n\n### **ВАЖНО:** У тебя нет фотографии товара. Создай изображение товара "${productName}" с нуля, основываясь на описании. Товар должен выглядеть реалистично, как на профессиональной предметной съемке.`;
+        }
+
         const variation = `\n\nЭто попытка №${attempt + 1} из 5. Сделай этот вариант максимально отличным от предыдущих: поменяй ракурс, цветовую гамму, композицию, но сохрани все ключевые элементы и реальные характеристики.`;
         
         finalPrompt += variation;
@@ -353,7 +420,15 @@ export default async function handler(req, res) {
         let imageDataUrl;
         try {
             console.log(`🎨 Генерация изображения (попытка ${attempt + 1})...`);
-            imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer);
+            
+            if (isGeneratedFromText && attempt === 0) {
+                // Генерируем с нуля (без референса)
+                imageDataUrl = await generateGeminiImageFromText(finalPrompt);
+            } else {
+                // Генерируем с референсом
+                imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer);
+            }
+            
             console.log('✅ Изображение сгенерировано');
         } catch (err) {
             console.error(`❌ Ошибка при генерации изображения:`, err);
@@ -375,13 +450,16 @@ export default async function handler(req, res) {
         }
 
         console.log('✅ Успешно сгенерировано изображение 900x1200');
+        
+        // Возвращаем результат с флагом генерации
         res.status(200).json({ 
             images: [publicUrl], 
             descriptions: [],
             originalImageId: savedOriginalId,
             attempt: attempt,
             dimensions: '900x1200',
-            size: processed.size
+            size: processed.size,
+            generatedFromText: isGeneratedFromText
         });
 
     } catch (error) {
