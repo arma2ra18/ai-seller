@@ -4,7 +4,7 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
 
 const firebaseConfig = {
-    apiKey: "GOOGLE_API_KEY",
+    apiKey: "AIzaSyC6NtEWdvBXXz9seWn9pchaSMeBAI8VPsg",
     authDomain: "prodiger-cc1c5.firebaseapp.com",
     projectId: "prodiger-cc1c5",
     storageBucket: "prodiger-cc1c5.firebasestorage.app",
