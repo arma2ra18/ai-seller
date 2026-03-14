@@ -1460,38 +1460,65 @@ async function loadSettings() {
     try {
         console.log('📥 Загрузка настроек сайта...');
         
-        const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+        // Пробуем загрузить из Firestore
         let settings = {};
-        
-        if (settingsDoc.exists()) {
-            settings = settingsDoc.data();
-            console.log('✅ Настройки загружены из Firestore');
-        } else {
-            console.log('⚠️ Документ settings/general не найден, используем значения по умолчанию');
+        try {
+            const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+            if (settingsDoc.exists()) {
+                settings = settingsDoc.data();
+                console.log('✅ Настройки загружены из Firestore');
+            }
+        } catch (e) {
+            console.warn('⚠️ Не удалось загрузить из Firestore:', e.message);
         }
 
-        // ===== БЕЗОПАСНО УСТАНАВЛИВАЕМ ЗНАЧЕНИЯ =====
-        // Проверяем существование каждого элемента перед обращением
+        // ===== БЕЗОПАСНАЯ УСТАНОВКА ЗНАЧЕНИЙ =====
+        // Каждый элемент проверяется перед использованием
         
+        // Основные настройки
         const siteNameEl = document.getElementById('siteName');
-        if (siteNameEl) siteNameEl.value = settings.siteName || 'Prodiger';
+        if (siteNameEl) {
+            siteNameEl.value = settings.siteName || 'Prodiger';
+            console.log('✓ siteName установлен');
+        } else {
+            console.warn('⚠️ Элемент #siteName не найден в HTML');
+        }
         
         const welcomeBonusEl = document.getElementById('welcomeBonus');
-        if (welcomeBonusEl) welcomeBonusEl.value = settings.welcomeBonus || 500;
+        if (welcomeBonusEl) {
+            welcomeBonusEl.value = settings.welcomeBonus || 500;
+            console.log('✓ welcomeBonus установлен');
+        } else {
+            console.warn('⚠️ Элемент #welcomeBonus не найден');
+        }
         
         const genPriceEl = document.getElementById('genPrice');
         if (genPriceEl) {
             genPriceEl.value = settings.genPrice || 100;
             genPriceEl.readOnly = true; // Фиксированная цена
+            console.log('✓ genPrice установлен');
+        } else {
+            console.warn('⚠️ Элемент #genPrice не найден');
         }
         
+        // ⚠️ ЭТОТ ЭЛЕМЕНТ ОТСУТСТВУЕТ В ВАШЕМ HTML
+        // Проверяем, есть ли он вообще, и только тогда используем
         const maxLoginAttemptsEl = document.getElementById('maxLoginAttempts');
-        if (maxLoginAttemptsEl) maxLoginAttemptsEl.value = settings.maxLoginAttempts || 5;
+        if (maxLoginAttemptsEl) {
+            maxLoginAttemptsEl.value = settings.maxLoginAttempts || 5;
+            console.log('✓ maxLoginAttempts установлен');
+        } else {
+            // Не падаем, просто логируем
+            console.log('ℹ️ Элемент #maxLoginAttempts не найден (опционально)');
+        }
         
         // Статус API
         const apiStatusEl = document.getElementById('apiStatus');
         if (apiStatusEl) {
             apiStatusEl.innerHTML = '<span class="badge badge-success">Работает</span>';
+            console.log('✓ apiStatus установлен');
+        } else {
+            console.warn('⚠️ Элемент #apiStatus не найден');
         }
         
         // Дата последнего деплоя
@@ -1499,33 +1526,40 @@ async function loadSettings() {
         if (lastDeployEl) {
             const deployDate = new Date().toLocaleString('ru-RU');
             lastDeployEl.innerHTML = deployDate;
+            console.log('✓ lastDeploy установлен');
+        } else {
+            console.warn('⚠️ Элемент #lastDeploy не найден');
         }
         
-        console.log('✅ Настройки успешно загружены');
+        console.log('✅ Загрузка настроек завершена');
         
     } catch (error) {
-        console.error('❌ Ошибка загрузки настроек:', error);
+        console.error('❌ Критическая ошибка загрузки настроек:', error);
         
-        // Устанавливаем значения по умолчанию при ошибке
-        const siteNameEl = document.getElementById('siteName');
-        if (siteNameEl) siteNameEl.value = 'Prodiger';
-        
-        const welcomeBonusEl = document.getElementById('welcomeBonus');
-        if (welcomeBonusEl) welcomeBonusEl.value = '500';
-        
-        const genPriceEl = document.getElementById('genPrice');
-        if (genPriceEl) {
-            genPriceEl.value = '100';
-            genPriceEl.readOnly = true;
+        // Аварийная установка значений по умолчанию
+        try {
+            const siteNameEl = document.getElementById('siteName');
+            if (siteNameEl) siteNameEl.value = 'Prodiger';
+            
+            const welcomeBonusEl = document.getElementById('welcomeBonus');
+            if (welcomeBonusEl) welcomeBonusEl.value = '500';
+            
+            const genPriceEl = document.getElementById('genPrice');
+            if (genPriceEl) {
+                genPriceEl.value = '100';
+                genPriceEl.readOnly = true;
+            }
+            
+            const apiStatusEl = document.getElementById('apiStatus');
+            if (apiStatusEl) {
+                apiStatusEl.innerHTML = '<span class="badge badge-warning">Ошибка</span>';
+            }
+        } catch (e) {
+            console.error('❌ Даже аварийная установка не сработала:', e);
         }
         
-        const maxLoginAttemptsEl = document.getElementById('maxLoginAttempts');
-        if (maxLoginAttemptsEl) maxLoginAttemptsEl.value = '5';
-        
-        const apiStatusEl = document.getElementById('apiStatus');
-        if (apiStatusEl) apiStatusEl.innerHTML = '<span class="badge badge-warning">Проверка...</span>';
-        
-        showNotification('Ошибка загрузки настроек, используются значения по умолчанию', 'warning');
+        // Показываем уведомление
+        showNotification('Ошибка загрузки настроек', 'error');
     }
 }
 
