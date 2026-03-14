@@ -30,6 +30,7 @@
     </script>
 </head>
 <body>
+    <!-- Видеофон убран -->
 
     <div class="dashboard-wrapper">
         <!-- Сайдбар -->
@@ -156,18 +157,15 @@
         import { auth, db } from './js/firebase.js';
         import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
         import { 
-            doc, getDoc, collection, query, orderBy, getDocs, limit, startAfter, deleteDoc 
+            doc, getDoc, collection, query, orderBy, getDocs, deleteDoc 
         } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
-        import { cacheSessions, clearCache } from './js/cache.js';
 
         let currentUser = null;
-        let allSessions = [];
-        let filteredSessions = [];
+        let allSessions = [];           // Все загруженные сессии
+        let filteredSessions = [];       // Отфильтрованные для отображения
         let currentPage = 1;
-        const SESSIONS_PER_PAGE = 5;
-        let lastVisible = null;
-        let hasMore = true;
-        let isLoading = false;
+        const SESSIONS_PER_PAGE = 5;     // Сколько показывать на странице
+        let isLoading = false;           // Идёт ли загрузка
 
         // Проверка авторизации
         onAuthStateChanged(auth, async (user) => {
@@ -177,7 +175,7 @@
             }
             currentUser = user;
             await loadUserData();
-            await loadSessions(true);
+            await loadAllSessions();      // Загружаем ВСЕ сессии сразу
         });
 
         // Загрузка данных пользователя
@@ -194,61 +192,42 @@
             }
         }
 
-        // Загрузка сессий с кэшированием
-        async function loadSessions(isFirstLoad = false, forceRefresh = false) {
-            if (isLoading || (!hasMore && !isFirstLoad)) return;
+        // Загружаем ВСЕ сессии без ограничений
+        async function loadAllSessions(forceRefresh = false) {
+            if (isLoading) return;
             
             isLoading = true;
 
             try {
-                const fetchSessions = async () => {
-                    const sessionsRef = collection(db, 'users', currentUser.uid, 'generationSessions');
-                    let q;
-                    
-                    if (isFirstLoad) {
-                        q = query(sessionsRef, orderBy('createdAt', 'desc'), limit(SESSIONS_PER_PAGE));
-                    } else {
-                        if (!lastVisible) return [];
-                        q = query(sessionsRef, orderBy('createdAt', 'desc'), startAfter(lastVisible), limit(SESSIONS_PER_PAGE));
-                    }
-
-                    const snapshot = await getDocs(q);
-                    
-                    if (snapshot.docs.length > 0 && isFirstLoad) {
-                        lastVisible = snapshot.docs[snapshot.docs.length - 1];
-                    }
-                    
-                    hasMore = snapshot.docs.length === SESSIONS_PER_PAGE;
-                    
-                    return snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                };
+                const sessionsRef = collection(db, 'users', currentUser.uid, 'generationSessions');
+                const q = query(sessionsRef, orderBy('createdAt', 'desc'));
                 
-                let newSessions;
-                if (isFirstLoad) {
-                    newSessions = await cacheSessions(
-                        currentUser.uid, 
-                        currentPage, 
-                        fetchSessions, 
-                        forceRefresh
-                    ) || [];
-                    
-                    if (newSessions.length > 0) {
-                        allSessions = newSessions;
-                    }
-                } else {
-                    newSessions = await fetchSessions();
-                    allSessions = [...allSessions, ...newSessions];
-                }
-
+                const snapshot = await getDocs(q);
+                
+                allSessions = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                console.log(`✅ Загружено всего сессий: ${allSessions.length}`);
+                
                 updateStats();
-                applySort();
+                filteredSessions = [...allSessions]; // Копируем все
+                applySort(); // Применяем сортировку и отображаем
 
             } catch (error) {
                 console.error('Ошибка загрузки сессий:', error);
                 showNotification('Ошибка загрузки: ' + error.message, 'error');
+                
+                // Показываем пустой список с ошибкой
+                document.getElementById('sessionsList').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">❌</div>
+                        <h3>Ошибка загрузки</h3>
+                        <p>Не удалось загрузить историю. Попробуйте обновить страницу.</p>
+                        <button class="btn btn-primary" onclick="refreshSessions()">🔄 Попробовать снова</button>
+                    </div>
+                `;
             } finally {
                 isLoading = false;
             }
@@ -256,7 +235,7 @@
 
         // Функция для принудительного обновления
         window.refreshSessions = function() {
-            loadSessions(true, true);
+            loadAllSessions(true);
         };
 
         // Обновление статистики
@@ -298,7 +277,7 @@
             displaySessions();
         };
 
-        // Отображение сессий
+        // Отображение сессий с пагинацией
         function displaySessions() {
             const list = document.getElementById('sessionsList');
             
@@ -325,6 +304,7 @@
                 return;
             }
 
+            // Пагинация: показываем только текущую страницу
             const start = (currentPage - 1) * SESSIONS_PER_PAGE;
             const paginated = filteredSessions.slice(start, start + SESSIONS_PER_PAGE);
 
@@ -410,13 +390,6 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        // Загрузить ещё
-        window.loadMore = function() {
-            if (!isLoading && hasMore) {
-                loadSessions(false);
-            }
-        };
-
         // Просмотр сессии
         window.viewSession = async function(sessionId) {
             const session = allSessions.find(s => s.id === sessionId);
@@ -472,8 +445,18 @@
                 filteredSessions = filteredSessions.filter(s => s.id !== sessionId);
                 
                 updateStats();
-                displaySessions();
                 
+                // Если текущая страница стала пустой, переходим на предыдущую
+                if (filteredSessions.length > 0) {
+                    const maxPage = Math.ceil(filteredSessions.length / SESSIONS_PER_PAGE);
+                    if (currentPage > maxPage) {
+                        currentPage = maxPage;
+                    }
+                } else {
+                    currentPage = 1;
+                }
+                
+                displaySessions();
                 showNotification('✅ Сессия удалена', 'success');
                 
             } catch (error) {
@@ -581,7 +564,6 @@
                 'balance': '/balance.html',
                 'generate': '/generate.html',
                 'description': '/description.html',
-                'templates': '/templates.html',
                 'description-history': '/description-history.html',
                 'history': '/history.html',
                 'settings': '/settings.html'
