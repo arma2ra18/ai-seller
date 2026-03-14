@@ -33,6 +33,7 @@ let currentGenerationSession = {
     category: null,
     price: null,
     features: [],
+    platform: 'wb',            // wb или ozon
     originalImageId: null,
     attemptsMade: 0,
     maxAttempts: 5,
@@ -200,20 +201,21 @@ window.updateFileInfo = function(inputId, infoId) {
     }
 };
 
-// ----- Сброс сессии генерации (только для новой карточки) -----
-function resetGenerationSession() {
+// ----- Сброс сессии генерации -----
+function resetGenerationSession(platform = 'wb') {
     currentGenerationSession = {
-        sessionId: null,           // Сбрасываем, чтобы создать новую сессию
+        sessionId: null,
         productName: null,
         brand: null,
         category: null,
         price: null,
         features: [],
+        platform: platform,
         originalImageId: null,
         attemptsMade: 0,
         maxAttempts: 5,
-        generatedImages: [],       // Массив URL всех фото в этой сессии
-        imageIds: []               // Массив ID изображений в Storage
+        generatedImages: [],
+        imageIds: []
     };
 }
 
@@ -270,11 +272,14 @@ function updateRegenerationUI() {
 
     const remaining = currentGenerationSession.maxAttempts - currentGenerationSession.attemptsMade;
     const nextCost = 15;
+    const platformName = currentGenerationSession.platform === 'wb' ? 'Wildberries' : 'Ozon';
+    const platformColor = currentGenerationSession.platform === 'wb' ? '#8b5cf6' : '#009fe3';
 
     infoBlock.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <div>
                 <strong>${currentGenerationSession.productName}</strong> · 
+                <span style="color: ${platformColor};">${platformName}</span> · 
                 ${currentGenerationSession.attemptsMade}/${currentGenerationSession.maxAttempts} фото
             </div>
             <div>
@@ -302,21 +307,39 @@ function updateRegenerationUI() {
     }
 }
 
-// ----- Генерация карточки товара -----
+// ----- Генерация карточки для Wildberries -----
 window.generateWBCard = async function() {
+    await generateCard('wb');
+};
+
+// ----- Генерация карточки для Ozon -----
+window.generateOzonCard = async function() {
+    await generateCard('ozon');
+};
+
+// ----- Общая функция генерации -----
+async function generateCard(platform) {
     if (!currentUser || !userData) return;
 
-    const fileInput = document.getElementById('wbPhotos');
+    const inputId = platform === 'wb' ? 'wbPhotos' : 'ozonPhotos';
+    const nameId = platform === 'wb' ? 'wbProductName' : 'ozonProductName';
+    const brandId = platform === 'wb' ? 'wbBrand' : 'ozonBrand';
+    const categoryId = platform === 'wb' ? 'wbCategory' : 'ozonCategory';
+    const priceId = platform === 'wb' ? 'wbPrice' : 'ozonPrice';
+    const featuresId = platform === 'wb' ? 'wbFeatures' : 'ozonFeatures';
+    const btnId = platform === 'wb' ? 'generateWBBtn' : 'generateOzonBtn';
+
+    const fileInput = document.getElementById(inputId);
     if (!fileInput) {
         showNotification('Ошибка: элемент загрузки не найден.', 'error');
         return;
     }
     
-    const productName = document.getElementById('wbProductName')?.value.trim();
-    const brand = document.getElementById('wbBrand')?.value.trim();
-    const category = document.getElementById('wbCategory')?.value;
-    const price = document.getElementById('wbPrice')?.value.trim() || '1990';
-    const featuresInput = document.getElementById('wbFeatures')?.value;
+    const productName = document.getElementById(nameId)?.value.trim();
+    const brand = document.getElementById(brandId)?.value.trim();
+    const category = document.getElementById(categoryId)?.value;
+    const price = document.getElementById(priceId)?.value.trim() || '1990';
+    const featuresInput = document.getElementById(featuresId)?.value;
     const features = featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : [];
     const files = fileInput.files;
     
@@ -330,7 +353,7 @@ window.generateWBCard = async function() {
     }
 
     if (featuresInput && featuresInput.includes('@')) {
-        document.getElementById('wbFeatures').value = '';
+        document.getElementById(featuresId).value = '';
         showNotification('Пожалуйста, введите характеристики товара, а не email', 'warning');
         return;
     }
@@ -341,15 +364,16 @@ window.generateWBCard = async function() {
         return;
     }
 
-    resetGenerationSession();
+    resetGenerationSession(platform);
     currentGenerationSession.productName = productName;
     currentGenerationSession.brand = brand;
     currentGenerationSession.category = category;
     currentGenerationSession.price = price;
     currentGenerationSession.features = features;
+    currentGenerationSession.platform = platform;
 
-    await performGeneration(files, 0);
-};
+    await performGeneration(files, 0, platform, btnId);
+}
 
 // ----- Повторная генерация -----
 window.regeneratePhoto = async function() {
@@ -372,7 +396,10 @@ window.regeneratePhoto = async function() {
         return;
     }
 
-    await performGeneration(null, nextAttempt);
+    const platform = currentGenerationSession.platform;
+    const btnId = platform === 'wb' ? 'generateWBBtn' : 'generateOzonBtn';
+    
+    await performGeneration(null, nextAttempt, platform, btnId);
 };
 
 // ----- Уведомления -----
@@ -390,10 +417,10 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// ----- Общая функция генерации (ИСПРАВЛЕННАЯ) -----
-async function performGeneration(files, attempt) {
+// ----- Общая функция генерации (исправленная) -----
+async function performGeneration(files, attempt, platform, btnId) {
     const cost = attempt === 0 ? 100 : 15;
-    const btn = document.getElementById('generateWBBtn');
+    const btn = document.getElementById(btnId);
 
     if (btn) {
         btn.disabled = true;
@@ -412,7 +439,7 @@ async function performGeneration(files, attempt) {
         formData.append('category', currentGenerationSession.category || '');
         formData.append('price', currentGenerationSession.price || '1990');
         formData.append('features', currentGenerationSession.features.join(','));
-        formData.append('platform', 'wb');
+        formData.append('platform', platform);
         formData.append('attempt', attempt);
         if (currentGenerationSession.originalImageId) {
             formData.append('originalImageId', currentGenerationSession.originalImageId);
@@ -440,7 +467,7 @@ async function performGeneration(files, attempt) {
         const newAttemptCount = attempt + 1;
         currentGenerationSession.attemptsMade = newAttemptCount;
 
-        // ВАЖНО: Всегда используем sessionId, если он есть
+        // Сохраняем в Firestore
         if (currentGenerationSession.sessionId) {
             // Обновляем существующую сессию
             const sessionRef = doc(db, 'users', currentUser.uid, 'generationSessions', currentGenerationSession.sessionId);
@@ -453,7 +480,7 @@ async function performGeneration(files, attempt) {
             });
             console.log('✅ Сессия обновлена:', currentGenerationSession.sessionId);
         } else {
-            // Создаём новую сессию (только для первой генерации)
+            // Создаём новую сессию
             const sessionData = {
                 type: 'product-session',
                 productName: currentGenerationSession.productName,
@@ -461,6 +488,7 @@ async function performGeneration(files, attempt) {
                 category: currentGenerationSession.category,
                 price: currentGenerationSession.price,
                 features: currentGenerationSession.features,
+                platform: platform,
                 attempts: 1,
                 totalSpent: cost,
                 images: [result.images[0]],
@@ -474,6 +502,7 @@ async function performGeneration(files, attempt) {
             console.log('✅ Новая сессия создана:', sessionRef.id);
         }
 
+        // Списываем средства
         await updateDoc(doc(db, 'users', currentUser.uid), { 
             balance: increment(-cost),
             usedSpent: increment(cost)
@@ -485,7 +514,7 @@ async function performGeneration(files, attempt) {
         }
         updateUI();
         
-        // Обновляем историю в зависимости от страницы
+        // Обновляем историю
         const path = window.location.pathname;
         if (path.includes('history.html')) {
             await loadAllHistory();
@@ -493,17 +522,17 @@ async function performGeneration(files, attempt) {
             await loadRecentHistory();
         }
         
-        displayCardResults(result, attempt);
+        displayCardResults(result, attempt, platform);
         
+        const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
         const message = attempt === 0 
-            ? '✅ Первое фото готово! Можете сгенерировать ещё за 15 ₽' 
-            : `✅ Фото №${attempt + 1} готово! Списано ${cost} ₽`;
+            ? `✅ Первое фото для ${platformName} готово! Можете сгенерировать ещё за 15 ₽` 
+            : `✅ Фото №${attempt + 1} для ${platformName} готово! Списано ${cost} ₽`;
         showNotification(message, 'success');
 
     } catch (error) {
         console.error('❌ Ошибка генерации:', error);
         
-        // Парсим ошибку
         let errorMessage = 'Неизвестная ошибка';
         try {
             if (error.message) {
@@ -516,7 +545,6 @@ async function performGeneration(files, attempt) {
             errorMessage = error.message || 'Ошибка соединения';
         }
         
-        // Показываем понятное сообщение
         if (errorMessage.includes('API key')) {
             showNotification('❌ Ошибка API ключа', 'error');
         } else if (errorMessage.includes('model')) {
@@ -534,8 +562,9 @@ async function performGeneration(files, attempt) {
         hideGenerationModal();
         if (btn) {
             btn.disabled = false;
+            const platformName = platform === 'wb' ? 'Wildberries' : 'Ozon';
             btn.innerHTML = attempt === 0 
-                ? '✨ Создать первое фото (100 ₽)' 
+                ? `✨ Создать первое фото для ${platformName} (100 ₽)` 
                 : '🔄 Сделать ещё (15 ₽)';
         }
         updateRegenerationUI();
@@ -543,7 +572,7 @@ async function performGeneration(files, attempt) {
 }
 
 // ----- Отображение результатов -----
-function displayCardResults(result, attempt) {
+function displayCardResults(result, attempt, platform) {
     const container = document.getElementById('cardResults');
     if (!container) return;
     container.style.display = 'block';
@@ -562,27 +591,12 @@ function displayCardResults(result, attempt) {
             if (!existingImages.includes(url)) {
                 const img = document.createElement('img');
                 img.src = url;
-                img.alt = `Фото товара`;
+                img.alt = `Фото товара для ${platform === 'wb' ? 'Wildberries' : 'Ozon'}`;
                 img.onclick = () => window.openLightbox(url);
                 gallery.appendChild(img);
             }
         });
     }
-
-    const descList = document.getElementById('resultDescriptions');
-    if (descList) {
-        descList.remove();
-    }
-
-    const unwantedSelectors = [
-        '.photo-caption',
-        '.result-item',
-        '.description-list'
-    ];
-    
-    unwantedSelectors.forEach(selector => {
-        document.querySelectorAll(selector).forEach(el => el.remove());
-    });
 
     updateRegenerationUI();
 }
@@ -622,7 +636,8 @@ async function loadRecentHistory() {
                         productName: item.productName,
                         attempts: 1,
                         images: item.result?.images || [],
-                        timestamp: item.timestamp
+                        timestamp: item.timestamp,
+                        platform: item.platform || 'wb'
                     };
                 } else {
                     groupedByProduct[key].attempts++;
@@ -690,6 +705,7 @@ async function loadAllHistory() {
                         attempts: 1,
                         images: item.result?.images || [],
                         timestamp: item.timestamp,
+                        platform: item.platform || 'wb',
                         oldFormat: true
                     };
                 } else {
@@ -751,12 +767,16 @@ function displayAllHistory() {
         ).join('');
         
         const moreBadge = images.length > 3 ? `<span class="more-badge">+${images.length - 3}</span>` : '';
+        const platform = session.platform || 'wb';
+        const platformColor = platform === 'wb' ? '#8b5cf6' : '#009fe3';
+        const platformName = platform === 'wb' ? 'WB' : 'Ozon';
 
         historyList.innerHTML += `
             <div class="history-item" onclick="viewHistorySession('${session.id}')">
                 <div class="history-item-header">
                     <div>
                         <strong>${session.productName || 'Без названия'}</strong>
+                        <span class="history-type" style="color: ${platformColor};">${platformName}</span>
                         <span class="history-type">${session.attempts || 1} фото</span>
                         <div class="history-date">${date}</div>
                     </div>
@@ -800,12 +820,16 @@ function displayHistory(sessions, isRecent = true) {
         ).join('');
         
         const moreBadge = images.length > 3 ? `<span class="more-badge">+${images.length - 3}</span>` : '';
+        const platform = session.platform || 'wb';
+        const platformColor = platform === 'wb' ? '#8b5cf6' : '#009fe3';
+        const platformName = platform === 'wb' ? 'WB' : 'Ozon';
 
         historyList.innerHTML += `
             <div class="history-item" onclick="viewHistorySession('${session.id}')">
                 <div class="history-item-header">
                     <div>
                         <strong>${session.productName || 'Без названия'}</strong>
+                        <span class="history-type" style="color: ${platformColor};">${platformName}</span>
                         <span class="history-type">${session.attempts || 1} фото</span>
                         <div class="history-date">${date}</div>
                     </div>
@@ -904,6 +928,7 @@ window.viewHistorySession = async function(sessionId) {
                 category: session.category,
                 price: session.price,
                 features: session.features || [],
+                platform: session.platform || 'wb',
                 originalImageId: null,
                 attemptsMade: session.attempts,
                 maxAttempts: 5,
