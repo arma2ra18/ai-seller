@@ -1458,34 +1458,74 @@ async function loadPayments() {
  */
 async function loadSettings() {
     try {
+        console.log('📥 Загрузка настроек сайта...');
+        
         const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+        let settings = {};
+        
         if (settingsDoc.exists()) {
-            const settings = settingsDoc.data();
-            document.getElementById('siteName').value = settings.siteName || 'Prodiger';
-            document.getElementById('welcomeBonus').value = settings.welcomeBonus || 500;
-            document.getElementById('genPrice').value = settings.genPrice || 100;
-            document.getElementById('maxLoginAttempts').value = settings.maxLoginAttempts || 5;
+            settings = settingsDoc.data();
+            console.log('✅ Настройки загружены из Firestore');
         } else {
-            // Если документа нет, используем значения по умолчанию
-            document.getElementById('siteName').value = 'Prodiger';
-            document.getElementById('welcomeBonus').value = '500';
-            document.getElementById('genPrice').value = '100';
-            document.getElementById('maxLoginAttempts').value = '5';
+            console.log('⚠️ Документ settings/general не найден, используем значения по умолчанию');
+        }
+
+        // ===== БЕЗОПАСНО УСТАНАВЛИВАЕМ ЗНАЧЕНИЯ =====
+        // Проверяем существование каждого элемента перед обращением
+        
+        const siteNameEl = document.getElementById('siteName');
+        if (siteNameEl) siteNameEl.value = settings.siteName || 'Prodiger';
+        
+        const welcomeBonusEl = document.getElementById('welcomeBonus');
+        if (welcomeBonusEl) welcomeBonusEl.value = settings.welcomeBonus || 500;
+        
+        const genPriceEl = document.getElementById('genPrice');
+        if (genPriceEl) {
+            genPriceEl.value = settings.genPrice || 100;
+            genPriceEl.readOnly = true; // Фиксированная цена
         }
         
-        document.getElementById('apiStatus').innerHTML = '<span class="badge badge-success">Работает</span>';
+        const maxLoginAttemptsEl = document.getElementById('maxLoginAttempts');
+        if (maxLoginAttemptsEl) maxLoginAttemptsEl.value = settings.maxLoginAttempts || 5;
         
-        const deployDate = new Date().toLocaleString('ru-RU');
-        document.getElementById('lastDeploy').innerHTML = deployDate;
+        // Статус API
+        const apiStatusEl = document.getElementById('apiStatus');
+        if (apiStatusEl) {
+            apiStatusEl.innerHTML = '<span class="badge badge-success">Работает</span>';
+        }
+        
+        // Дата последнего деплоя
+        const lastDeployEl = document.getElementById('lastDeploy');
+        if (lastDeployEl) {
+            const deployDate = new Date().toLocaleString('ru-RU');
+            lastDeployEl.innerHTML = deployDate;
+        }
+        
+        console.log('✅ Настройки успешно загружены');
         
     } catch (error) {
-        console.error('Ошибка загрузки настроек:', error);
-        // Используем значения по умолчанию при ошибке
-        document.getElementById('siteName').value = 'Prodiger';
-        document.getElementById('welcomeBonus').value = '500';
-        document.getElementById('genPrice').value = '100';
-        document.getElementById('maxLoginAttempts').value = '5';
-        document.getElementById('apiStatus').innerHTML = '<span class="badge badge-warning">Проверка...</span>';
+        console.error('❌ Ошибка загрузки настроек:', error);
+        
+        // Устанавливаем значения по умолчанию при ошибке
+        const siteNameEl = document.getElementById('siteName');
+        if (siteNameEl) siteNameEl.value = 'Prodiger';
+        
+        const welcomeBonusEl = document.getElementById('welcomeBonus');
+        if (welcomeBonusEl) welcomeBonusEl.value = '500';
+        
+        const genPriceEl = document.getElementById('genPrice');
+        if (genPriceEl) {
+            genPriceEl.value = '100';
+            genPriceEl.readOnly = true;
+        }
+        
+        const maxLoginAttemptsEl = document.getElementById('maxLoginAttempts');
+        if (maxLoginAttemptsEl) maxLoginAttemptsEl.value = '5';
+        
+        const apiStatusEl = document.getElementById('apiStatus');
+        if (apiStatusEl) apiStatusEl.innerHTML = '<span class="badge badge-warning">Проверка...</span>';
+        
+        showNotification('Ошибка загрузки настроек, используются значения по умолчанию', 'warning');
     }
 }
 
