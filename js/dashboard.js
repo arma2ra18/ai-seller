@@ -571,7 +571,7 @@ async function performGeneration(files, attempt, platform, btnId) {
     }
 }
 
-// ----- Отображение результатов -----
+// ----- Отображение результатов (с сохранением всех фото) -----
 function displayCardResults(result, attempt, platform) {
     const container = document.getElementById('cardResults');
     if (!container) return;
@@ -586,14 +586,15 @@ function displayCardResults(result, attempt, platform) {
     }
 
     if (result.images && result.images.length) {
-        // Очищаем галерею перед добавлением новых фото
-        // Это решит проблему с дублированием
-        gallery.innerHTML = '';
+        // Используем currentGenerationSession для отображения всех фото сессии
+        const allImages = currentGenerationSession.generatedImages || [];
         
-        result.images.forEach((url, index) => {
+        // Очищаем и показываем все
+        gallery.innerHTML = '';
+        allImages.forEach((url, index) => {
             const img = document.createElement('img');
             img.src = url;
-            img.alt = `Фото ${index + 1} для ${platform === 'wb' ? 'Wildberries' : 'Ozon'}`;
+            img.alt = `Фото ${index + 1}`;
             img.onclick = () => window.openLightbox(url);
             gallery.appendChild(img);
         });
