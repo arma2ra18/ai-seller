@@ -99,16 +99,16 @@ if (!userDoc.exists()) {
     console.log('Creating new user in Firestore');
     
     // Загружаем настройки, чтобы узнать размер бонуса
-    let welcomeBonus = 100; // Значение по умолчанию
+    let welcomeBonus = 500; // Значение по умолчанию
     
     try {
         const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
         if (settingsDoc.exists()) {
-            welcomeBonus = settingsDoc.data().welcomeBonus || 100;
+            welcomeBonus = settingsDoc.data().welcomeBonus || 500;
             console.log('✅ Бонус при регистрации:', welcomeBonus);
         }
     } catch (e) {
-        console.warn('Не удалось загрузить настройки, используется 100');
+        console.warn('Не удалось загрузить настройки, используется 500');
     }
     
     await setDoc(userRef, {
