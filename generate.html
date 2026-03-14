@@ -3,17 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Генерация карточек — Prodiger</title>
+    <title>Генерация фото — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
+    
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Prodiger">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     
     <!-- Jivo Chat Widget -->
     <script src="//code.jivo.ru/widget/dxg5looTDX" async></script>
+    
+    <style>
+        /* Дополнительные стили для страницы */
+        .instruction-card {
+            background: linear-gradient(135deg, rgba(0,113,227,0.1), rgba(155,94,240,0.1));
+            border: 1px solid rgba(0,113,227,0.2);
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .instruction-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .instruction-title h3 {
+            font-size: 22px;
+            color: white;
+            margin: 0;
+        }
+        
+        .instruction-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+        
+        .instruction-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .instruction-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .instruction-item:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+            background: rgba(0,113,227,0.05);
+        }
+        
+        .instruction-item-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .instruction-step {
+            width: 28px;
+            height: 28px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: white;
+        }
+        
+        .instruction-item h4 {
+            margin: 0;
+            font-size: 18px;
+            color: white;
+        }
+        
+        .instruction-item p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        
+        .instruction-highlight {
+            background: rgba(0,113,227,0.1);
+            border-left: 4px solid var(--accent);
+            padding: 15px 20px;
+            border-radius: 16px;
+            margin-top: 20px;
+        }
+        
+        .instruction-highlight p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+        
+        .instruction-highlight strong {
+            color: var(--accent);
+        }
+        
+        .pricing-badge {
+            display: inline-block;
+            background: rgba(245, 176, 65, 0.15);
+            border: 1px solid rgba(245, 176, 65, 0.3);
+            color: #f5b041;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .feature-tag {
+            display: inline-block;
+            background: rgba(48, 209, 88, 0.1);
+            border: 1px solid rgba(48, 209, 88, 0.2);
+            color: var(--success);
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .instruction-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-
+    <!-- Плавающие элементы для атмосферы -->
     <div class="floating-elements">
-        <div class="floating-icon" style="top: 10%; left: 5%;">📊</div>
-        <div class="floating-icon" style="top: 80%; right: 10%;">💰</div>
+        <div class="floating-icon" style="top: 15%; left: 5%;">📸</div>
+        <div class="floating-icon" style="top: 70%; left: 10%;">✨</div>
+        <div class="floating-icon" style="top: 30%; right: 8%;">🎨</div>
+        <div class="floating-icon" style="bottom: 20%; right: 15%;">🖼️</div>
     </div>
 
     <div class="dashboard-wrapper">
@@ -38,39 +185,25 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li class="menu-item" data-section="news">
-                        <a href="/news.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📰 Новости
-                        </a>
+                        <a href="/news.html">📰 Новости</a>
                     </li>
                     <li class="menu-item" data-section="balance">
-                        <a href="/balance.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            💰 Баланс
-                        </a>
+                        <a href="/balance.html">💰 Баланс</a>
                     </li>
                     <li class="menu-item active" data-section="generate">
-                        <a href="/generate.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ✨ Генерация
-                        </a>
+                        <a href="/generate.html">✨ Генерация фото</a>
                     </li>
- <li class="menu-item" data-section="description">
-                        <a href="/description.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📝 Описание товара
-                        </a>
+                    <li class="menu-item" data-section="description">
+                        <a href="/description.html">📝 Описание товара</a>
                     </li>
-<li class="menu-item" data-section="description-history">
-                        <a href="/description-history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📚 История описаний
-                        </a>
+                    <li class="menu-item" data-section="description-history">
+                        <a href="/description-history.html">📚 История описаний</a>
                     </li>
                     <li class="menu-item" data-section="history">
-                        <a href="/history.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            📜 История фото
-                        </a>
+                        <a href="/history.html">📜 История фото</a>
                     </li>
                     <li class="menu-item" data-section="settings">
-                        <a href="/settings.html" style="color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; width: 100%;">
-                            ⚙️ Настройки
-                        </a>
+                        <a href="/settings.html">⚙️ Настройки</a>
                     </li>
                 </ul>
             </nav>
@@ -90,91 +223,171 @@
         <!-- Основной контент -->
         <main class="main-content">
             <div class="welcome-block">
-                <h1 class="gradient-text">✨ Создание карточек товара</h1>
-                <p>Загрузите фото и получите готовые изображения с инфографикой</p>
+                <h1 class="gradient-text">✨ Создание фото</h1>
+                <p>Превратите обычное фото в продающую карточку за 30 секунд</p>
             </div>
 
-            <!-- Блок описания процесса (как в dashboard) -->
-            <div class="info-block glass" style="margin-bottom: 30px; padding: 20px; border-left: 4px solid var(--accent);">
-                <h3 style="color: var(--accent); margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
-                    <span>🎯</span> Как это работает
-                </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                        <div style="font-size: 24px; font-weight: 700; color: var(--accent); margin-bottom: 5px;">100 ₽</div>
-                        <div style="color: var(--text-secondary);">Первая генерация</div>
+            <!-- Карточки с ценами -->
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card glass">
+                    <div class="stat-icon" style="font-size: 32px;">💰</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Первая генерация</span>
+                        <span class="stat-value" style="color: var(--accent);">100 ₽</span>
                         <small style="color: var(--text-muted);">1 фото</small>
                     </div>
-                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                        <div style="font-size: 24px; font-weight: 700; color: #f5b041; margin-bottom: 5px;">15 ₽</div>
-                        <div style="color: var(--text-secondary);">Повторные генерации</div>
-                        <small style="color: var(--text-muted);">до 4 раз, новые варианты</small>
-                    </div>
-                    <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px;">
-                        <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 5px;">5 фото</div>
-                        <div style="color: var(--text-secondary);">Максимум за сессию</div>
-                        <small style="color: var(--text-muted);">100 + 15×4 = 160 ₽</small>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon" style="font-size: 32px;">🔄</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Повторные</span>
+                        <span class="stat-value" style="color: #f5b041;">15 ₽</span>
+                        <small style="color: var(--text-muted);">до 4 раз</small>
                     </div>
                 </div>
-                <p style="margin-top: 15px; color: var(--text-secondary); font-size: 14px;">
-                    ✨ После первой генерации вы сможете нажимать "Сделать ещё" и получать новые варианты фото на основе того же товара.
-                </p>
+                <div class="stat-card glass">
+                    <div class="stat-icon" style="font-size: 32px;">📸</div>
+                    <div class="stat-info">
+                        <span class="stat-label">За сессию</span>
+                        <span class="stat-value" style="color: var(--success);">5 фото</span>
+                        <small style="color: var(--text-muted);">160 ₽ всего</small>
+                    </div>
+                </div>
             </div>
 
-            <!-- Форма генерации (скопирована из dashboard) -->
-            <div class="content-area glass">
-                <div class="generation-form">
-                    <div class="form-group">
-                        <label>Название товара</label>
-                        <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4" autocomplete="off">
+            <!-- Подробная инструкция -->
+            <div class="instruction-card">
+                <div class="instruction-title">
+                    <div class="instruction-icon">🎯</div>
+                    <h3>Как получить идеальную карточку</h3>
+                </div>
+                
+                <div class="instruction-grid">
+                    <div class="instruction-item">
+                        <div class="instruction-item-header">
+                            <span class="instruction-step">1</span>
+                            <h4>Точное название</h4>
+                        </div>
+                        <p>Введите полное название товара с брендом и моделью. Например: <strong>"Наушники Xiaomi Redmi Buds 4 Pro"</strong>, а не просто "наушники".</p>
                     </div>
+                    
+                    <div class="instruction-item">
+                        <div class="instruction-item-header">
+                            <span class="instruction-step">2</span>
+                            <h4>Проверка в интернете</h4>
+                        </div>
+                        <p>ИИ ищет реальные характеристики в интернете. Чем точнее название, тем правдивее информация на карточке.</p>
+                    </div>
+                    
+                    <div class="instruction-item">
+                        <div class="instruction-item-header">
+                            <span class="instruction-step">3</span>
+                            <h4>Качественное фото</h4>
+                        </div>
+                        <p>Загрузите чёткое фото товара на нейтральном фоне. Можно несколько, но для генерации используется первое.</p>
+                    </div>
+                    
+                    <div class="instruction-item">
+                        <div class="instruction-item-header">
+                            <span class="instruction-step">4</span>
+                            <h4>Особенности товара</h4>
+                        </div>
+                        <p>Укажите ключевые фишки через запятую. Например: <strong>"шумоподавление, влагозащита, 30ч работы"</strong></p>
+                    </div>
+                </div>
+                
+                <div class="instruction-highlight">
+                    <p>🔍 <strong>Важно:</strong> ИИ ищет информацию в интернете по точному названию товара. Если написать просто "телефон", он не сможет найти реальные характеристики. Указывайте бренд и модель полностью — это гарантирует достоверность данных на карточке.</p>
+                </div>
+            </div>
+
+            <!-- Форма генерации -->
+            <div class="content-area glass">
+                <h2 style="margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
+                    <span>📋</span> Данные товара
+                </h2>
+                
+                <div class="generation-form">
+                    <!-- Название товара -->
+                    <div class="form-group">
+                        <label>
+                            Название товара <span style="color: var(--accent);">*</span>
+                            <span class="feature-tag">обязательно</span>
+                        </label>
+                        <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4 Pro" autocomplete="off">
+                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">Чем точнее, тем реалистичнее карточка</small>
+                    </div>
+
+                    <!-- Ряд с брендом и ценой -->
                     <div class="form-row">
                         <div class="form-group half">
                             <label>Бренд</label>
-                            <input type="text" id="wbBrand" placeholder="Xiaomi" autocomplete="off">
+                            <input type="text" id="wbBrand" placeholder="Xiaomi, Samsung и т.д." autocomplete="off">
                         </div>
                         <div class="form-group half">
-                            <i>📋</i> Категория товара
-    </div>
-    <select id="wbCategory" class="category-select">
-        <option value="electronics">📱 Электроника</option>
-        <option value="clothing">👕 Одежда</option>
-        <option value="home">🏠 Товары для дома</option>
-        <option value="beauty">💄 Красота и здоровье</option>
-        <option value="food">🍎 Продукты</option>
-    </select>
-</div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group half">
-                            <label>Цена товара (₽)</label>
-                            <input type="number" id="wbPrice" placeholder="1990" min="0" step="1" value="1990" autocomplete="off">
+                            <label>Цена (₽)</label>
+                            <input type="number" id="wbPrice" placeholder="1990" min="0" step="1" value="1990">
                         </div>
-                        <div class="form-group half"></div>
                     </div>
+
+                    <!-- Категория -->
                     <div class="form-group">
-                        <label>Ключевые особенности (через запятую)</label>
-                        <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 20 часов работы" autocomplete="off">
+                        <label>Категория</label>
+                        <div class="category-select-wrapper">
+                            <select id="wbCategory" class="category-select">
+                                <option value="electronics">📱 Электроника</option>
+                                <option value="clothing">👕 Одежда</option>
+                                <option value="home">🏠 Товары для дома</option>
+                                <option value="beauty">💄 Красота и здоровье</option>
+                                <option value="food">🍎 Продукты</option>
+                                <option value="sport">⚽ Спорт</option>
+                                <option value="auto">🚗 Автотовары</option>
+                                <option value="kids">🧸 Детям</option>
+                            </select>
+                        </div>
                     </div>
+
+                    <!-- Особенности -->
                     <div class="form-group">
-                        <label>Загрузите фото товара (до 3 шт, до 3 МБ)</label>
+                        <label>Ключевые особенности <span class="pricing-badge">+15% к CTR</span></label>
+                        <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 30 часов работы" autocomplete="off">
+                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">Через запятую, например: шумоподавление, влагозащита, 30ч</small>
+                    </div>
+
+                    <!-- Загрузка фото -->
+                    <div class="form-group">
+                        <label>Фото товара <span style="color: var(--accent);">*</span></label>
                         <div class="file-upload-wrapper">
-                            <button type="button" class="btn btn-outline file-upload-button" onclick="document.getElementById('wbPhotos').click()">Выбрать файлы</button>
+                            <button type="button" class="file-upload-button" onclick="document.getElementById('wbPhotos').click()">
+                                Выбрать файлы
+                            </button>
                             <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('wbPhotos', 'wbFileInfo')">
                             <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
                         </div>
+                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">Поддерживаются JPG, PNG. До 3 файлов, до 5 МБ каждый.</small>
                     </div>
-                    <button class="btn btn-primary btn-large glow" id="generateWBBtn" onclick="generateWBCard()">✨ Создать первое фото (100 ₽)</button>
+
+                    <!-- Кнопка генерации -->
+                    <button class="btn-generate" id="generateWBBtn" onclick="generateWBCard()">
+                        <span class="btn-icon">✨</span>
+                        Создать первое фото (100 ₽)
+                    </button>
                 </div>
             </div>
 
             <!-- Результаты генерации -->
-            <div id="cardResults" class="results-section glass" style="display: none; margin-top: 30px;">
-                <h2>Результаты генерации</h2>
+            <div id="cardResults" class="results-section glass" style="display: none;">
+                <h2>Результаты</h2>
                 <div class="result-block">
-                    <h3>Изображения</h3>
                     <div class="image-gallery" id="resultImages"></div>
                 </div>
+                
+                <!-- Блок повторной генерации будет добавлен сюда скриптом -->
+            </div>
+            
+            <!-- Подсказка внизу -->
+            <div class="info-note" style="margin-top: 30px; text-align: center; color: var(--text-muted); font-size: 14px;">
+                ⚡ После первой генерации вы сможете создавать ещё до 4 вариантов за 15 ₽ каждый
             </div>
         </main>
     </div>
@@ -221,8 +434,9 @@
                     <div class="progress-fill" id="generationProgress" style="width: 0%;"></div>
                 </div>
             </div>
-            <p>Подождите, создаём шедевры...</p>
+            <p>ИИ создаёт продающую карточку...</p>
             <p class="timer" id="generationTimer">0 сек.</p>
+            <small style="color: var(--text-muted);">Ищем реальные характеристики в интернете</small>
         </div>
     </div>
 
@@ -240,6 +454,8 @@
                 'news': '/news.html',
                 'balance': '/balance.html',
                 'generate': '/generate.html',
+                'description': '/description.html',
+                'description-history': '/description-history.html',
                 'history': '/history.html',
                 'settings': '/settings.html'
             };
@@ -277,7 +493,7 @@
             closeModal();
         };
 
-        // Функции для генерации (будут использоваться из dashboard.js)
+        // Функции для генерации
         window.updateFileInfo = function(inputId, infoId) {
             const input = document.getElementById(inputId);
             const info = document.getElementById(infoId);
@@ -285,7 +501,7 @@
                 info.textContent = 'Файлы не выбраны';
             } else {
                 const names = Array.from(input.files).map(f => f.name).join(', ');
-                info.textContent = names.length > 50 ? names.substring(0, 50) + '…' : names;
+                info.textContent = names.length > 40 ? names.substring(0, 40) + '…' : names;
             }
         };
 
@@ -294,10 +510,10 @@
             document.body.style.overflow = '';
         };
 
-        // Загрузка данных пользователя
+        // Загрузка данных пользователя (временная, реальная будет из dashboard.js)
         async function loadUserData() {
             try {
-                // Здесь будет загрузка из Firebase
+                // Реальная загрузка будет из dashboard.js
                 document.getElementById('sidebarBalance').textContent = '1250';
                 document.getElementById('userEmail').textContent = 'user@example.com';
             } catch (error) {
