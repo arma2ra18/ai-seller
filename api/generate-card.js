@@ -240,7 +240,7 @@ export default async function handler(req, res) {
         const attempt = parseInt(fields.attempt?.[0]) || 0;
         const originalImageId = fields.originalImageId?.[0] || null;
 
-        console.log('📦 Данные:', { productName, brand, price, userFeatures, platform, attempt });
+        console.log('📦 Данные:', { productName, brand, price, userFeatures, platform, attempt, originalImageId });
 
         if (!productName) {
             return res.status(400).json({ error: 'Product name is required' });
@@ -248,59 +248,45 @@ export default async function handler(req, res) {
 
         let referenceBuffer = null;
         let savedOriginalId = null;
-        let isGeneratedFromText = false; // Флаг, что картинка сгенерирована без фото
+        let isGeneratedFromText = false;
 
-        // Загружаем референсное изображение (если есть)
-        if (files.photos) {
-            const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
-            if (photoArray.length) {
-                referenceBuffer = fs.readFileSync(photoArray[0].filepath);
-                console.log(`✅ Загружено референсное изображение: ${photoArray[0].originalFilename}`);
-            }
-        } else if (originalImageId) {
+        // Если передан originalImageId - загружаем его для повторной генерации
+        if (originalImageId) {
             try {
+                console.log('🔄 Загружаем оригинал из Storage:', originalImageId);
                 const file = bucket.file(`originals/${originalImageId}`);
                 const [fileBuffer] = await file.download();
                 referenceBuffer = fileBuffer;
-                console.log(`✅ Загружен оригинал из Storage: ${originalImageId}`);
+                console.log('✅ Оригинал загружен');
             } catch (err) {
                 console.error('❌ Не удалось загрузить оригинал из Storage:', err);
                 return res.status(400).json({ error: 'Original image not found' });
             }
         }
-
-        // Если нет фото и это первая попытка - генерируем с нуля
-        if (!referenceBuffer && attempt === 0) {
+        // Если нет originalImageId, но есть загруженные фото - используем их
+        else if (files.photos) {
+            const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
+            if (photoArray.length) {
+                referenceBuffer = fs.readFileSync(photoArray[0].filepath);
+                console.log(`✅ Загружено референсное изображение: ${photoArray[0].originalFilename}`);
+            }
+        }
+        // Если нет ни originalImageId, ни фото - генерируем с нуля
+        else {
             console.log('📝 Фото не загружено, генерируем изображение с нуля по описанию');
             isGeneratedFromText = true;
             // Создаем пустой референс (некоторые модели Gemini требуют изображение)
             referenceBuffer = createEmptyReference();
-        } else if (!referenceBuffer && attempt > 0) {
-            // Для повторных генераций нужно исходное изображение
-            return res.status(400).json({ error: 'Для повторной генерации необходимо исходное изображение' });
         }
 
         if (!referenceBuffer) {
-            return res.status(400).json({ error: 'No photo uploaded' });
+            return res.status(400).json({ error: 'No reference image available' });
         }
 
-        // Сохраняем оригинал только если было загружено фото (не генерируем с нуля)
-        if (attempt === 0 && files.photos && !isGeneratedFromText) {
-            try {
-                const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
-                if (photoArray.length) {
-                    const originalFileName = `original_${Date.now()}_${photoArray[0].originalFilename}`;
-                    const file = bucket.file(`originals/${originalFileName}`);
-                    await file.save(referenceBuffer, { 
-                        metadata: { contentType: photoArray[0].mimetype }, 
-                        public: false 
-                    });
-                    savedOriginalId = originalFileName;
-                    console.log(`✅ Оригинал сохранён как: ${originalFileName}`);
-                }
-            } catch (err) {
-                console.error('❌ Ошибка сохранения оригинала:', err);
-            }
+        // Сохраняем оригинал только для первой генерации (attempt === 0)
+        // Это нужно для будущих повторных генераций
+        if (attempt === 0 && !originalImageId) {
+            // Оригинал будет сохранен после генерации
         }
 
         // ===== БАЗОВЫЙ ПРОМПТ СО СТИЛЯМИ, ЦВЕТАМИ И 3D-ЭФФЕКТАМИ =====
@@ -421,7 +407,7 @@ export default async function handler(req, res) {
         try {
             console.log(`🎨 Генерация изображения (попытка ${attempt + 1})...`);
             
-            if (isGeneratedFromText && attempt === 0) {
+            if (isGeneratedFromText && attempt === 0 && !originalImageId) {
                 // Генерируем с нуля (без референса)
                 imageDataUrl = await generateGeminiImageFromText(finalPrompt);
             } else {
@@ -437,9 +423,37 @@ export default async function handler(req, res) {
 
         const processed = await processImage(imageDataUrl);
         
+        // Сохраняем сгенерированное изображение
         const fileName = `card_${Date.now()}_${attempt}.jpg`;
         const publicUrl = await uploadToStorage(processed.buffer, fileName, processed.mimeType);
 
+        // ВАЖНО: Для первой генерации (attempt === 0) всегда сохраняем оригинал
+        // Это нужно для повторных генераций, даже если фото не было загружено
+        if (attempt === 0 && !originalImageId) {
+            try {
+                const originalFileName = `original_${Date.now()}.jpg`;
+                const originalFile = bucket.file(`originals/${originalFileName}`);
+                
+                await originalFile.save(processed.buffer, {
+                    metadata: { 
+                        contentType: 'image/jpeg',
+                        metadata: {
+                            productName: productName,
+                            platform: platform
+                        }
+                    },
+                    public: false
+                });
+                
+                savedOriginalId = originalFileName;
+                console.log('💾 Сохранен originalImageId для повторных генераций:', savedOriginalId);
+            } catch (err) {
+                console.error('❌ Ошибка сохранения оригинала:', err);
+                // Продолжаем, даже если не удалось сохранить оригинал
+            }
+        }
+
+        // Удаляем временные файлы, если они были
         if (files.photos) {
             const photoArray = Array.isArray(files.photos) ? files.photos : [files.photos];
             photoArray.forEach(file => {
@@ -451,11 +465,11 @@ export default async function handler(req, res) {
 
         console.log('✅ Успешно сгенерировано изображение 900x1200');
         
-        // Возвращаем результат с флагом генерации
+        // Возвращаем результат с originalImageId
         res.status(200).json({ 
             images: [publicUrl], 
             descriptions: [],
-            originalImageId: savedOriginalId,
+            originalImageId: savedOriginalId, // Всегда передаем, если сохранили
             attempt: attempt,
             dimensions: '900x1200',
             size: processed.size,
