@@ -2099,6 +2099,61 @@ window.resetCarouselToDefault = function() {
 // await loadCubeSettings();
 // await loadCarouselSettings();
 
+// ========== ОСНОВНЫЕ НАСТРОЙКИ САЙТА ==========
+
+/**
+ * Сохраняет основные настройки сайта
+ */
+window.saveMainSettings = async function() {
+    const siteName = document.getElementById('siteName')?.value;
+    const welcomeBonus = parseInt(document.getElementById('welcomeBonus')?.value) || 500;
+    const maxLoginAttempts = parseInt(document.getElementById('maxLoginAttempts')?.value) || 5;
+    
+    if (!siteName) {
+        showNotification('Введите название сайта', 'warning');
+        return;
+    }
+    
+    if (isNaN(welcomeBonus) || welcomeBonus < 0) {
+        showNotification('Введите корректную сумму бонуса', 'warning');
+        return;
+    }
+    
+    try {
+        // Сохраняем в Firestore
+        await setDoc(doc(db, 'settings', 'general'), {
+            siteName: siteName,
+            welcomeBonus: welcomeBonus,
+            genPrice: 100, // фиксированная цена
+            maxLoginAttempts: maxLoginAttempts,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentAdmin?.uid || 'unknown'
+        }, { merge: true });
+        
+        // Записываем лог
+        try {
+            await addDoc(collection(db, 'adminLogs'), {
+                action: 'update_settings',
+                performedBy: currentAdmin?.uid || 'unknown',
+                changes: { siteName, welcomeBonus, maxLoginAttempts },
+                timestamp: new Date().toISOString()
+            });
+        } catch (logError) {
+            console.warn('Не удалось записать лог:', logError);
+        }
+        
+        showNotification('✅ Основные настройки сохранены', 'success');
+        
+        // Обновляем отображаемые значения на всякий случай
+        await loadSettings();
+        
+    } catch (error) {
+        console.error('❌ Ошибка сохранения основных настроек:', error);
+        showNotification('Ошибка: ' + error.message, 'error');
+    }
+};
+
+
 // Инициализация обработчиков после загрузки DOM
 document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем фильтры логов, если мы на странице логов
