@@ -28,6 +28,23 @@ window.showTab = function(tab) {
     document.getElementById('authMessage').textContent = '';
 };
 
+/**
+ * Получает размер бонуса из настроек Firestore
+ */
+async function getWelcomeBonus() {
+    try {
+        const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+        if (settingsDoc.exists()) {
+            const bonus = settingsDoc.data().welcomeBonus;
+            console.log('📦 Бонус из настроек:', bonus);
+            return bonus || 500;
+        }
+    } catch (error) {
+        console.warn('⚠️ Не удалось загрузить настройки бонуса:', error);
+    }
+    return 500; // Значение по умолчанию
+}
+
 // ========== ОТПРАВКА КОДА (для входа или регистрации) ==========
 window.sendPhoneCode = async function(mode) {
     const phone = mode === 'login' 
@@ -96,12 +113,17 @@ window.verifyPhoneCode = async function() {
         
         if (!userDoc.exists()) {
             console.log('Creating new user in Firestore');
+            
+            // Получаем актуальный бонус из настроек
+            const welcomeBonus = await getWelcomeBonus();
+            console.log('🎁 Начисляем бонус:', welcomeBonus);
+            
             await setDoc(userRef, {
                 phoneNumber: user.phoneNumber,
                 email: user.email || '',
                 displayName: user.displayName || '',
                 plan: 'start',
-                balance: 100,
+                balance: welcomeBonus,
                 usedSpent: 0,
                 createdAt: new Date().toISOString()
             });
@@ -119,7 +141,7 @@ window.verifyPhoneCode = async function() {
         
         // Небольшая задержка перед редиректом
         setTimeout(() => {
-            window.location.href = '/news.html';  // Изменено с dashboard.html на news.html
+            window.location.href = '/news.html';
         }, 1500);
     } catch (error) {
         console.error('Verification error:', error);
@@ -150,12 +172,16 @@ window.handleGoogleLogin = async function() {
         
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (!userDoc.exists()) {
+            // Получаем актуальный бонус из настроек
+            const welcomeBonus = await getWelcomeBonus();
+            console.log('🎁 Начисляем бонус (Google):', welcomeBonus);
+            
             await setDoc(doc(db, 'users', user.uid), {
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 plan: 'start',
-                balance: 500,
+                balance: welcomeBonus,
                 usedSpent: 0,
                 createdAt: new Date().toISOString()
             });
@@ -163,7 +189,7 @@ window.handleGoogleLogin = async function() {
         
         messageEl.textContent = '✅ Вход выполнен! Перенаправляем...';
         messageEl.className = 'auth-message success';
-        setTimeout(() => window.location.href = '/news.html', 1500);  // Изменено с dashboard.html на news.html
+        setTimeout(() => window.location.href = '/news.html', 1500);
     } catch (error) {
         console.error('Google sign-in error:', error);
         messageEl.textContent = '❌ Ошибка входа через Google: ' + error.message;
