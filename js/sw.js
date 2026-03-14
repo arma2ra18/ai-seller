@@ -1,18 +1,6 @@
 const CACHE_NAME = 'prodiger-v1';
 const API_CACHE_NAME = 'prodiger-api-v1';
 
-self.addEventListener('fetch', event => {
-  // Логируем все запросы, которые обрабатывает SW
-  console.log('SW перехватил:', event.request.method, event.request.url);
-  
-  // Добавляем глобальный try-catch
-  try {
-    // Весь ваш существующий код обработки fetch
-    // ... (весь код из предыдущего ответа)
-  } catch (e) {
-    console.error('SW ОШИБКА:', e, 'URL:', event.request.url);
-  }
-});
 // Ресурсы для кэширования при установке
 const urlsToCache = [
   '/',
@@ -22,7 +10,6 @@ const urlsToCache = [
   '/description.html',
   '/history.html',
   '/description-history.html',
-  '/templates.html',
   '/settings.html',
   '/login.html',
   '/offline.html',
@@ -50,13 +37,20 @@ const urlsToCache = [
   '/styles/20-admin.css',
   '/styles/21-utilities.css',
   '/styles/22-legacy.css',
-  '/styles/23-templates.css',
+  '/styles/24-news.css',
+  '/styles/25-balance.css',
+  '/styles/26-description.css',
+  '/styles/27-description-history.css',
+  '/styles/29-settings.css',
+  '/styles/30-history.css',
+  '/styles/31-generate.css',
   '/js/firebase.js',
   '/js/auth.js',
   '/js/dashboard.js',
   '/js/main.js',
   '/js/cache.js',
-  '/js/templates.js',
+  '/js/admin.js',
+  '/js/home-settings.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js',
   'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js',
@@ -75,7 +69,6 @@ self.addEventListener('install', event => {
         console.log('Кэширование ресурсов');
         return cache.addAll(urlsToCache).catch(error => {
           console.error('Ошибка кэширования ресурсов:', error);
-          // Продолжаем, даже если некоторые ресурсы не закешировались
         });
       })
   );
@@ -111,9 +104,8 @@ self.addEventListener('fetch', event => {
   }
   
   // ⚡ ВАЖНО: НЕ перехватываем POST-запросы вообще
-  // (генерация карточек, логин, запросы к Firestore)
   if (event.request.method === 'POST') {
-    return; // Просто пропускаем, Service Worker не вмешивается
+    return;
   }
   
   // Для API GET-запросов - Network First
@@ -121,7 +113,6 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          // Кэшируем только успешные GET-запросы
           if (response.ok) {
             const responseToCache = response.clone();
             caches.open(API_CACHE_NAME)
@@ -152,7 +143,6 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         if (cachedResponse) {
-          // Обновляем кэш в фоне (не блокируем ответ)
           fetch(event.request)
             .then(response => {
               if (response.ok) {
@@ -204,7 +194,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Для всего остального (например, запросы к Firebase) - Network First
+  // Для всего остального - Network First
   event.respondWith(
     fetch(event.request)
       .then(response => {
