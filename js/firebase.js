@@ -4,12 +4,12 @@ import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase
 import { getStorage } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyAllWDGr8TKYeqtjgpM9EWWf5hqSfPJqoI",
-    authDomain: "ai-seller-prod-4c0c9.firebaseapp.com",
-    projectId: "ai-seller-prod-4c0c9",
-    storageBucket: "ai-seller-prod-4c0c9.firebasestorage.app",
-    messagingSenderId: "951491114415",
-    appId: "1:951491114415:web:de94518305c12d56602b5a"
+    apiKey: "AIzaSyC6NtEWdvBXXz9seWn9pchaSMeBAI8VPsg",
+    authDomain: "prodiger-cc1c5.firebaseapp.com",
+    projectId: "prodiger-cc1c5",
+    storageBucket: "prodiger-cc1c5.firebasestorage.app",
+    messagingSenderId: "349251703485",
+    appId: "1:349251703485:web:9bca36800ec5d6c16c9dd4"
 };
 
 const app = initializeApp(firebaseConfig);
