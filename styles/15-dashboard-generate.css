@@ -85,22 +85,3 @@
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(243, 156, 18, 0.5);
 }
-.image-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin: 20px 0;
-}
-.image-gallery img {
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    object-fit: cover;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: var(--transition);
-    box-shadow: var(--shadow-sm);
-}
-.image-gallery img:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow-lg);
-}
