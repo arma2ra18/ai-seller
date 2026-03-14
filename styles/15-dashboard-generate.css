@@ -73,6 +73,7 @@
     padding-top: 10px;
     border-top: 1px solid var(--border);
 }
+/* Убираем дублирование для кнопки */
 #regenerateBtn {
     margin-top: 20px;
     background: linear-gradient(135deg, #f5b041, #f39c12);
@@ -80,8 +81,18 @@
     font-weight: 700;
     border: none;
     box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+    position: relative;
+    overflow: hidden;
 }
+
 #regenerateBtn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(243, 156, 18, 0.5);
+}
+
+/* Убираем возможные дубли */
+#regenerateBtn .loading,
+#regenerateBtn::before,
+#regenerateBtn::after {
+    /* Никаких дублей */
 }
