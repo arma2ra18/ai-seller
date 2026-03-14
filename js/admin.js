@@ -1906,12 +1906,7 @@ async function loadCarouselSettings() {
         } else {
             // Изображения по умолчанию
             carouselImages = [
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773192062133_4.jpg"
+                "https://storage.googleapis.com/prodiger-cc1c5.firebasestorage.app/generated/card_1773454732102_0.jpg",
             ];
         }
         
