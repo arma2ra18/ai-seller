@@ -34,7 +34,7 @@ let currentGenerationSession = {
     price: null,
     features: [],
     platform: 'wb',            // wb или ozon
-    originalImageId: null,
+    originalImageId: null,     // ID исходного изображения в Storage
     attemptsMade: 0,
     maxAttempts: 5,
     generatedImages: [],       // Массив URL всех фото в этой сессии
@@ -413,7 +413,7 @@ function showNotification(message, type = 'info') {
     }, 3000);
 }
 
-// ----- Общая функция генерации (исправленная) -----
+// ----- Общая функция генерации (ИСПРАВЛЕННАЯ) -----
 async function performGeneration(files, attempt, platform, btnId) {
     const cost = attempt === 0 ? 100 : 15;
     const btn = document.getElementById(btnId);
@@ -427,9 +427,22 @@ async function performGeneration(files, attempt, platform, btnId) {
 
     try {
         const formData = new FormData();
-        if (files) {
+        
+        // Для повторной генерации (attempt > 0) - файлы не нужны, используем originalImageId
+        if (attempt === 0 && files && files.length > 0) {
+            // Первая генерация с фото
             for (let i = 0; i < files.length; i++) formData.append('photos', files[i]);
+            console.log(`📸 Первая генерация с ${files.length} фото`);
+        } else if (attempt === 0) {
+            // Первая генерация без фото
+            console.log('📝 Первая генерация без фото (по описанию)');
+            // Не добавляем фото, API сам поймет
+        } else {
+            // Повторная генерация - фото не нужно, используем originalImageId
+            console.log('🔄 Повторная генерация, используем оригинал:', currentGenerationSession.originalImageId);
+            // Не добавляем фото, только originalImageId
         }
+        
         formData.append('productName', currentGenerationSession.productName);
         formData.append('brand', currentGenerationSession.brand || '');
         formData.append('category', currentGenerationSession.category || '');
@@ -437,22 +450,29 @@ async function performGeneration(files, attempt, platform, btnId) {
         formData.append('features', currentGenerationSession.features.join(','));
         formData.append('platform', platform);
         formData.append('attempt', attempt);
+        
+        // ВАЖНО: всегда передаем originalImageId, если он есть
         if (currentGenerationSession.originalImageId) {
             formData.append('originalImageId', currentGenerationSession.originalImageId);
+            console.log('🆔 Передаем originalImageId:', currentGenerationSession.originalImageId);
         }
 
         const response = await fetch('/api/generate-card', {
             method: 'POST',
             body: formData
         });
+        
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(errorText);
         }
+        
         const result = await response.json();
 
+        // Сохраняем originalImageId если пришел (для первой генерации без фото это важно!)
         if (result.originalImageId) {
             currentGenerationSession.originalImageId = result.originalImageId;
+            console.log('💾 Сохранен originalImageId:', result.originalImageId);
         }
 
         if (result.images && result.images.length) {
@@ -472,6 +492,8 @@ async function performGeneration(files, attempt, platform, btnId) {
                 totalSpent: increment(cost),
                 images: currentGenerationSession.generatedImages,
                 imageIds: currentGenerationSession.imageIds,
+                // ВАЖНО: сохраняем originalImageId при обновлении
+                originalImageId: currentGenerationSession.originalImageId,
                 updatedAt: new Date().toISOString()
             });
             console.log('✅ Сессия обновлена:', currentGenerationSession.sessionId);
@@ -489,6 +511,8 @@ async function performGeneration(files, attempt, platform, btnId) {
                 totalSpent: cost,
                 images: [result.images[0]],
                 imageIds: [`generated/${result.images[0].split('/').pop()}`],
+                // ВАЖНО: сохраняем originalImageId в новую сессию
+                originalImageId: currentGenerationSession.originalImageId,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
@@ -927,7 +951,7 @@ window.viewHistorySession = async function(sessionId) {
                 price: session.price,
                 features: session.features || [],
                 platform: session.platform || 'wb',
-                originalImageId: null,
+                originalImageId: session.originalImageId || null, // Загружаем сохраненный ID
                 attemptsMade: session.attempts,
                 maxAttempts: 5,
                 generatedImages: session.images || []
