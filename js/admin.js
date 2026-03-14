@@ -1702,6 +1702,395 @@ window.confirmBulkAdd = async function() {
     }
 };
 
+// ========== НАСТРОЙКИ 3D КУБА ==========
+
+// Массив изображений куба
+let cubeImages = [];
+
+/**
+ * Загружает настройки куба из Firestore
+ */
+async function loadCubeSettings() {
+    try {
+        const settingsDoc = await getDoc(doc(db, 'settings', 'cube'));
+        if (settingsDoc.exists()) {
+            cubeImages = settingsDoc.data().images || [];
+            console.log('✅ Загружено изображений для куба:', cubeImages.length);
+        } else {
+            // Изображения по умолчанию (можно взять из ваших существующих)
+            cubeImages = [
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773192062133_4.jpg"
+            ];
+        }
+        
+        renderCubeImages();
+        renderCubePreview();
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки настроек куба:', error);
+        showNotification('Ошибка загрузки настроек куба', 'error');
+    }
+}
+
+/**
+ * Отображает список изображений куба
+ */
+function renderCubeImages() {
+    const list = document.getElementById('cubeImagesList');
+    if (!list) return;
+    
+    if (cubeImages.length === 0) {
+        list.innerHTML = '<div class="text-muted">Нет изображений. Добавьте ссылки на фото.</div>';
+        return;
+    }
+    
+    list.innerHTML = cubeImages.map((url, index) => `
+        <div class="image-item">
+            <img src="${url}" alt="Cube ${index + 1}" onerror="this.src='https://via.placeholder.com/60?text=Error'">
+            <input type="text" value="${url}" placeholder="https://..." onchange="updateCubeImage(${index}, this.value)">
+            <div class="image-actions">
+                <button class="btn-icon" onclick="moveCubeImage(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>↑</button>
+                <button class="btn-icon" onclick="moveCubeImage(${index}, 'down')" ${index === cubeImages.length - 1 ? 'disabled' : ''}>↓</button>
+                <button class="btn-icon delete" onclick="removeCubeImage(${index})">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Отображает превью изображений куба
+ */
+function renderCubePreview() {
+    const preview = document.getElementById('cubePreview');
+    if (!preview) return;
+    
+    if (cubeImages.length === 0) {
+        preview.innerHTML = '<div class="text-muted">Нет изображений для предпросмотра</div>';
+        return;
+    }
+    
+    preview.innerHTML = cubeImages.slice(0, 6).map((url, index) => `
+        <div class="preview-item">
+            <img src="${url}" alt="Preview ${index + 1}" onerror="this.src='https://via.placeholder.com/100?text=Error'">
+            <span>Грань ${index + 1}</span>
+        </div>
+    `).join('');
+}
+
+/**
+ * Добавляет новое изображение в список куба
+ */
+window.addCubeImage = function() {
+    const input = document.getElementById('newCubeImage');
+    const url = input.value.trim();
+    
+    if (!url) {
+        showNotification('Введите ссылку на изображение', 'warning');
+        return;
+    }
+    
+    cubeImages.push(url);
+    input.value = '';
+    
+    renderCubeImages();
+    renderCubePreview();
+    showNotification('Изображение добавлено', 'success');
+};
+
+/**
+ * Обновляет URL изображения куба
+ */
+window.updateCubeImage = function(index, newUrl) {
+    if (!newUrl.trim()) {
+        showNotification('URL не может быть пустым', 'warning');
+        return;
+    }
+    
+    cubeImages[index] = newUrl.trim();
+    renderCubeImages();
+    renderCubePreview();
+    showNotification('Изображение обновлено', 'success');
+};
+
+/**
+ * Удаляет изображение из списка куба
+ */
+window.removeCubeImage = function(index) {
+    if (!confirm('Удалить это изображение?')) return;
+    
+    cubeImages.splice(index, 1);
+    renderCubeImages();
+    renderCubePreview();
+    showNotification('Изображение удалено', 'success');
+};
+
+/**
+ * Перемещает изображение вверх/вниз
+ */
+window.moveCubeImage = function(index, direction) {
+    if (direction === 'up' && index > 0) {
+        [cubeImages[index - 1], cubeImages[index]] = [cubeImages[index], cubeImages[index - 1]];
+    } else if (direction === 'down' && index < cubeImages.length - 1) {
+        [cubeImages[index], cubeImages[index + 1]] = [cubeImages[index + 1], cubeImages[index]];
+    } else {
+        return;
+    }
+    
+    renderCubeImages();
+    renderCubePreview();
+    showNotification('Порядок изменён', 'success');
+};
+
+/**
+ * Сохраняет настройки куба в Firestore
+ */
+window.saveCubeSettings = async function() {
+    if (cubeImages.length < 6) {
+        showNotification('Для куба нужно минимум 6 изображений', 'warning');
+        return;
+    }
+    
+    try {
+        await setDoc(doc(db, 'settings', 'cube'), {
+            images: cubeImages,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentAdmin?.uid
+        });
+        
+        await addDoc(collection(db, 'adminLogs'), {
+            action: 'update_settings',
+            performedBy: currentAdmin?.uid,
+            target: 'cube',
+            timestamp: new Date().toISOString()
+        }).catch(() => {});
+        
+        showNotification('✅ Настройки куба сохранены', 'success');
+        
+    } catch (error) {
+        console.error('Ошибка сохранения куба:', error);
+        showNotification('❌ Ошибка: ' + error.message, 'error');
+    }
+};
+
+/**
+ * Сбрасывает настройки куба к фото по умолчанию
+ */
+window.resetCubeToDefault = function() {
+    if (!confirm('Сбросить к изображениям по умолчанию?')) return;
+    
+    cubeImages = [
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773192062133_4.jpg"
+    ];
+    
+    renderCubeImages();
+    renderCubePreview();
+    showNotification('🔄 Сброшено к фото по умолчанию', 'info');
+};
+
+// ========== НАСТРОЙКИ КАРУСЕЛИ ==========
+
+let carouselImages = [];
+
+/**
+ * Загружает настройки карусели из Firestore
+ */
+async function loadCarouselSettings() {
+    try {
+        const settingsDoc = await getDoc(doc(db, 'settings', 'carousel'));
+        if (settingsDoc.exists()) {
+            carouselImages = settingsDoc.data().images || [];
+            console.log('✅ Загружено изображений для карусели:', carouselImages.length);
+        } else {
+            // Изображения по умолчанию
+            carouselImages = [
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg",
+                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773192062133_4.jpg"
+            ];
+        }
+        
+        renderCarouselImages();
+        renderCarouselPreview();
+        
+    } catch (error) {
+        console.error('❌ Ошибка загрузки настроек карусели:', error);
+    }
+}
+
+/**
+ * Отображает список изображений карусели
+ */
+function renderCarouselImages() {
+    const list = document.getElementById('carouselImagesList');
+    if (!list) return;
+    
+    if (carouselImages.length === 0) {
+        list.innerHTML = '<div class="text-muted">Нет изображений. Добавьте ссылки на фото.</div>';
+        return;
+    }
+    
+    list.innerHTML = carouselImages.map((url, index) => `
+        <div class="image-item">
+            <img src="${url}" alt="Carousel ${index + 1}" onerror="this.src='https://via.placeholder.com/60?text=Error'">
+            <input type="text" value="${url}" placeholder="https://..." onchange="updateCarouselImage(${index}, this.value)">
+            <div class="image-actions">
+                <button class="btn-icon" onclick="moveCarouselImage(${index}, 'up')" ${index === 0 ? 'disabled' : ''}>↑</button>
+                <button class="btn-icon" onclick="moveCarouselImage(${index}, 'down')" ${index === carouselImages.length - 1 ? 'disabled' : ''}>↓</button>
+                <button class="btn-icon delete" onclick="removeCarouselImage(${index})">🗑️</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Отображает превью изображений карусели
+ */
+function renderCarouselPreview() {
+    const preview = document.getElementById('carouselPreview');
+    if (!preview) return;
+    
+    if (carouselImages.length === 0) {
+        preview.innerHTML = '<div class="text-muted">Нет изображений для предпросмотра</div>';
+        return;
+    }
+    
+    preview.innerHTML = carouselImages.slice(0, 6).map(url => `
+        <div class="preview-item">
+            <img src="${url}" alt="Preview" onerror="this.src='https://via.placeholder.com/100?text=Error'">
+        </div>
+    `).join('');
+}
+
+/**
+ * Добавляет новое изображение в карусель
+ */
+window.addCarouselImage = function() {
+    const input = document.getElementById('newCarouselImage');
+    const url = input.value.trim();
+    
+    if (!url) {
+        showNotification('Введите ссылку на изображение', 'warning');
+        return;
+    }
+    
+    carouselImages.push(url);
+    input.value = '';
+    
+    renderCarouselImages();
+    renderCarouselPreview();
+    showNotification('Изображение добавлено в карусель', 'success');
+};
+
+/**
+ * Обновляет URL изображения карусели
+ */
+window.updateCarouselImage = function(index, newUrl) {
+    if (!newUrl.trim()) {
+        showNotification('URL не может быть пустым', 'warning');
+        return;
+    }
+    
+    carouselImages[index] = newUrl.trim();
+    renderCarouselImages();
+    renderCarouselPreview();
+    showNotification('Изображение обновлено', 'success');
+};
+
+/**
+ * Удаляет изображение из карусели
+ */
+window.removeCarouselImage = function(index) {
+    if (!confirm('Удалить это изображение?')) return;
+    
+    carouselImages.splice(index, 1);
+    renderCarouselImages();
+    renderCarouselPreview();
+    showNotification('Изображение удалено', 'success');
+};
+
+/**
+ * Перемещает изображение карусели
+ */
+window.moveCarouselImage = function(index, direction) {
+    if (direction === 'up' && index > 0) {
+        [carouselImages[index - 1], carouselImages[index]] = [carouselImages[index], carouselImages[index - 1]];
+    } else if (direction === 'down' && index < carouselImages.length - 1) {
+        [carouselImages[index], carouselImages[index + 1]] = [carouselImages[index + 1], carouselImages[index]];
+    } else {
+        return;
+    }
+    
+    renderCarouselImages();
+    renderCarouselPreview();
+    showNotification('Порядок изменён', 'success');
+};
+
+/**
+ * Сохраняет настройки карусели
+ */
+window.saveCarouselSettings = async function() {
+    if (carouselImages.length === 0) {
+        showNotification('Добавьте хотя бы одно изображение', 'warning');
+        return;
+    }
+    
+    try {
+        await setDoc(doc(db, 'settings', 'carousel'), {
+            images: carouselImages,
+            updatedAt: new Date().toISOString(),
+            updatedBy: currentAdmin?.uid
+        });
+        
+        showNotification('✅ Настройки карусели сохранены', 'success');
+        
+    } catch (error) {
+        console.error('Ошибка сохранения карусели:', error);
+        showNotification('❌ Ошибка: ' + error.message, 'error');
+    }
+};
+
+/**
+ * Сбрасывает карусель к фото по умолчанию
+ */
+window.resetCarouselToDefault = function() {
+    if (!confirm('Сбросить к изображениям по умолчанию?')) return;
+    
+    carouselImages = [
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
+        "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg"
+    ];
+    
+    renderCarouselImages();
+    renderCarouselPreview();
+    showNotification('🔄 Сброшено к фото по умолчанию', 'info');
+};
+
+// Добавьте вызов загрузки в onAuthStateChanged для страницы настроек
+// Найдите в функции onAuthStateChanged блок:
+// } else if (path.includes('settings.html')) {
+//     await loadSettings();
+// }
+
+// И добавьте после loadSettings():
+// await loadCubeSettings();
+// await loadCarouselSettings();
+
 // Инициализация обработчиков после загрузки DOM
 document.addEventListener('DOMContentLoaded', function() {
     // Инициализируем фильтры логов, если мы на странице логов
