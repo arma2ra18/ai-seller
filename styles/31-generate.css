@@ -300,3 +300,114 @@
         height: 200px;
     }
 }
+
+/* ===== СТИЛИ ДЛЯ КАТЕГОРИЙ ===== */
+
+/* Контейнер для селекта */
+.category-select-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+/* Сам селект */
+.category-select {
+    width: 100%;
+    padding: 16px 20px;
+    background: rgba(20, 20, 30, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 60px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    line-height: 1.5;
+}
+
+/* Стили для опций */
+.category-select option {
+    background: #1a1a25;
+    color: white;
+    padding: 15px;
+    font-size: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Стили для групп опций */
+.category-select optgroup {
+    background: #0f0f15;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    padding: 10px 0;
+}
+
+/* Hover эффект */
+.category-select:hover {
+    border-color: rgba(0, 113, 227, 0.5);
+    background: rgba(30, 30, 40, 0.9);
+    transform: translateY(-2px);
+}
+
+/* Фокус */
+.category-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.2), 0 8px 25px rgba(0, 113, 227, 0.3);
+    background: rgba(25, 25, 35, 0.95);
+}
+
+/* Стрелка для селекта */
+.category-select-wrapper::after {
+    content: "▼";
+    font-size: 14px;
+    color: var(--accent);
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    transition: transform 0.3s ease;
+    opacity: 0.8;
+}
+
+/* Анимация стрелки при наведении */
+.category-select-wrapper:hover::after {
+    transform: translateY(-50%) rotate(180deg);
+    color: white;
+}
+
+/* Метка для категории */
+.category-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+}
+
+.category-label i {
+    color: var(--accent);
+    font-style: normal;
+    font-size: 18px;
+}
+
+/* Адаптив для мобильных */
+@media (max-width: 768px) {
+    .category-select {
+        padding: 14px 18px;
+        font-size: 15px;
+    }
+    
+    .category-select-wrapper::after {
+        right: 15px;
+    }
+}
