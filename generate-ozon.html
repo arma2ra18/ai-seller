@@ -20,8 +20,8 @@
     <style>
         .platform-badge {
             display: inline-block;
-            background: rgba(114, 46, 209, 0.15);
-            border: 1px solid rgba(114, 46, 209, 0.3);
+            background: rgba(0, 159, 227, 0.15);
+            border: 1px solid rgba(0, 159, 227, 0.3);
             color: #009fe3;
             padding: 4px 12px;
             border-radius: 40px;
@@ -31,8 +31,8 @@
         }
         
         .instruction-card {
-            background: linear-gradient(135deg, rgba(114,46,209,0.1), rgba(0,113,227,0.1));
-            border: 1px solid rgba(114,46,209,0.2);
+            background: linear-gradient(135deg, rgba(0,159,227,0.1), rgba(0,113,227,0.1));
+            border: 1px solid rgba(0,159,227,0.2);
             border-radius: 24px;
             padding: 25px;
             margin-bottom: 30px;
@@ -85,7 +85,7 @@
         .instruction-item:hover {
             transform: translateY(-3px);
             border-color: #009fe3;
-            background: rgba(114,46,209,0.05);
+            background: rgba(0,159,227,0.05);
         }
         
         .instruction-item-header {
@@ -122,7 +122,7 @@
         }
         
         .instruction-highlight {
-            background: rgba(114,46,209,0.1);
+            background: rgba(0,159,227,0.1);
             border-left: 4px solid #009fe3;
             padding: 15px 20px;
             border-radius: 16px;
@@ -182,10 +182,10 @@
                     <li class="menu-item" data-section="balance">
                         <a href="/balance.html">💰 Баланс</a>
                     </li>
-                    <li class="menu-item active" data-section="generate-wb">
-                        <a href="/generate-wb.html">🟣 Ozon</a>
+                    <li class="menu-item" data-section="generate-wb">
+                        <a href="/generate-wb.html">🟣 Wildberries</a>
                     </li>
-                    <li class="menu-item" data-section="generate-ozon">
+                    <li class="menu-item active" data-section="generate-ozon">
                         <a href="/generate-ozon.html">🔵 Ozon</a>
                     </li>
                     <li class="menu-item" data-section="description">
@@ -219,7 +219,7 @@
         <main class="main-content">
             <div class="welcome-block">
                 <h1 class="gradient-text">✨ Генерация для Ozon 
-                    <span class="platform-badge">WB</span>
+                    <span class="platform-badge">OZON</span>
                 </h1>
                 <p>Создавайте продающие карточки специально для Ozon</p>
             </div>
@@ -281,7 +281,7 @@
                             <span class="instruction-step">3</span>
                             <h4>Качественное фото</h4>
                         </div>
-                        <p>Загрузите чёткое фото товара на нейтральном фоне. Для Ozon важен чистый фон.</p>
+                        <p>Загрузите чёткое фото товара. Для Ozon важна детализация и чёткость изображения.</p>
                     </div>
                     
                     <div class="instruction-item">
@@ -294,7 +294,7 @@
                 </div>
                 
                 <div class="instruction-highlight">
-                    <p>🔍 <strong>Для Ozon важно:</strong> Запрещены слова "хит", "лидер продаж", "номер 1". Карточка должна быть информативной, без лишних призывов. ИИ автоматически соблюдает все правила.</p>
+                    <p>🔍 <strong>Для Ozon важно:</strong> Описания должны быть подробными, с техническими характеристиками. ИИ автоматически подбирает SEO-оптимизированный текст.</p>
                 </div>
             </div>
 
@@ -310,7 +310,7 @@
                         <label>
                             Название товара <span style="color: #009fe3;">*</span>
                         </label>
-                        <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4 Pro" autocomplete="off">
+                        <input type="text" id="ozonProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4 Pro" autocomplete="off">
                         <small style="color: var(--text-muted); display: block; margin-top: 5px;">Чем точнее название, тем реалистичнее карточка</small>
                     </div>
 
@@ -318,11 +318,11 @@
                     <div class="form-row">
                         <div class="form-group half">
                             <label>Бренд</label>
-                            <input type="text" id="wbBrand" placeholder="Xiaomi, Samsung и т.д." autocomplete="off">
+                            <input type="text" id="ozonBrand" placeholder="Xiaomi, Samsung и т.д." autocomplete="off">
                         </div>
                         <div class="form-group half">
                             <label>Цена (₽)</label>
-                            <input type="number" id="wbPrice" placeholder="1990" min="0" step="1" value="1990">
+                            <input type="number" id="ozonPrice" placeholder="1990" min="0" step="1" value="1990">
                         </div>
                     </div>
 
@@ -330,7 +330,7 @@
                     <div class="form-group">
                         <label>Категория</label>
                         <div class="category-select-wrapper">
-                            <select id="wbCategory" class="category-select">
+                            <select id="ozonCategory" class="category-select">
                                 <option value="electronics">📱 Электроника</option>
                                 <option value="clothing">👕 Одежда</option>
                                 <option value="home">🏠 Товары для дома</option>
@@ -346,7 +346,7 @@
                     <!-- Особенности -->
                     <div class="form-group">
                         <label>Ключевые особенности</label>
-                        <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 30 часов работы" autocomplete="off">
+                        <input type="text" id="ozonFeatures" placeholder="шумоподавление, влагозащита, 30 часов работы" autocomplete="off">
                         <small style="color: var(--text-muted); display: block; margin-top: 5px;">Через запятую, например: шумоподавление, влагозащита, 30ч</small>
                     </div>
 
@@ -354,17 +354,17 @@
                     <div class="form-group">
                         <label>Фото товара <span style="color: #009fe3;">*</span></label>
                         <div class="file-upload-wrapper">
-                            <button type="button" class="file-upload-button" onclick="document.getElementById('wbPhotos').click()">
+                            <button type="button" class="file-upload-button" onclick="document.getElementById('ozonPhotos').click()">
                                 Выбрать файлы
                             </button>
-                            <input type="file" id="wbPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('wbPhotos', 'wbFileInfo')">
-                            <span class="file-upload-info" id="wbFileInfo">Файлы не выбраны</span>
+                            <input type="file" id="ozonPhotos" accept="image/*" multiple class="file-input-hidden" onchange="updateFileInfo('ozonPhotos', 'ozonFileInfo')">
+                            <span class="file-upload-info" id="ozonFileInfo">Файлы не выбраны</span>
                         </div>
                         <small style="color: var(--text-muted); display: block; margin-top: 5px;">Поддерживаются JPG, PNG. До 3 файлов, до 5 МБ каждый.</small>
                     </div>
 
                     <!-- Кнопка генерации -->
-                    <button class="btn-generate" id="generateWBBtn" onclick="generateWBCard()">
+                    <button class="btn-generate" id="generateOzonBtn" onclick="generateOzonCard()">
                         <span class="btn-icon">✨</span>
                         Создать для Ozon (100 ₽)
                     </button>
