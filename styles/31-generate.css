@@ -173,7 +173,6 @@
 }
 
 
-
 /* ===== СТИЛИ ДЛЯ КАТЕГОРИЙ ===== */
 
 /* Контейнер для селекта */
@@ -282,5 +281,125 @@
     
     .category-select-wrapper::after {
         right: 15px;
+    }
+}
+
+/* ПРИНУДИТЕЛЬНЫЕ СТИЛИ ДЛЯ ФОРМЫ */
+.generation-form {
+    max-width: 700px !important;
+    width: 100% !important;
+}
+
+.generation-form .form-group {
+    margin-bottom: 25px !important;
+    width: 100% !important;
+}
+
+.generation-form label {
+    display: block !important;
+    margin-bottom: 8px !important;
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+    font-size: 15px !important;
+}
+
+.generation-form input,
+.generation-form select,
+.generation-form textarea {
+    width: 100% !important;
+    padding: 16px 20px !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 12px !important;
+    color: white !important;
+    font-size: 16px !important;
+    transition: all 0.3s ease !important;
+    box-sizing: border-box !important;
+}
+
+.generation-form input:focus,
+.generation-form select:focus,
+.generation-form textarea:focus {
+    border-color: var(--accent) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.2) !important;
+}
+
+.form-row {
+    display: flex !important;
+    gap: 20px !important;
+    margin-bottom: 0 !important;
+}
+
+.form-row .half {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+/* Стили для загрузки файлов */
+.file-upload-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+    flex-wrap: wrap !important;
+}
+
+.file-upload-button {
+    min-width: 160px !important;
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-secondary) !important;
+}
+
+.file-upload-button:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: var(--accent) !important;
+}
+
+.file-input-hidden {
+    display: none !important;
+}
+
+.file-upload-info {
+    color: var(--text-secondary) !important;
+    font-size: 14px !important;
+    font-style: italic !important;
+}
+
+/* Кнопка генерации */
+#generateWBBtn {
+    width: 100% !important;
+    padding: 18px !important;
+    font-size: 18px !important;
+    margin-top: 20px !important;
+    background: var(--accent-gradient) !important;
+    border: none !important;
+    color: white !important;
+    border-radius: 40px !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+#generateWBBtn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(0, 113, 227, 0.4) !important;
+}
+
+/* Адаптив */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column !important;
+        gap: 15px !important;
+    }
+    
+    .file-upload-wrapper {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+    
+    .file-upload-button {
+        width: 100% !important;
     }
 }
