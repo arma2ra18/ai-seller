@@ -586,15 +586,16 @@ function displayCardResults(result, attempt, platform) {
     }
 
     if (result.images && result.images.length) {
-        result.images.forEach(url => {
-            const existingImages = Array.from(gallery.children).map(img => img.src);
-            if (!existingImages.includes(url)) {
-                const img = document.createElement('img');
-                img.src = url;
-                img.alt = `Фото товара для ${platform === 'wb' ? 'Wildberries' : 'Ozon'}`;
-                img.onclick = () => window.openLightbox(url);
-                gallery.appendChild(img);
-            }
+        // Очищаем галерею перед добавлением новых фото
+        // Это решит проблему с дублированием
+        gallery.innerHTML = '';
+        
+        result.images.forEach((url, index) => {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = `Фото ${index + 1} для ${platform === 'wb' ? 'Wildberries' : 'Ozon'}`;
+            img.onclick = () => window.openLightbox(url);
+            gallery.appendChild(img);
         });
     }
 
