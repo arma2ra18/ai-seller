@@ -330,10 +330,6 @@ async function generateCard(platform) {
     const btnId = platform === 'wb' ? 'generateWBBtn' : 'generateOzonBtn';
 
     const fileInput = document.getElementById(inputId);
-    if (!fileInput) {
-        showNotification('Ошибка: элемент загрузки не найден.', 'error');
-        return;
-    }
     
     const productName = document.getElementById(nameId)?.value.trim();
     const brand = document.getElementById(brandId)?.value.trim();
@@ -341,27 +337,24 @@ async function generateCard(platform) {
     const price = document.getElementById(priceId)?.value.trim() || '1990';
     const featuresInput = document.getElementById(featuresId)?.value;
     const features = featuresInput ? featuresInput.split(',').map(f => f.trim()).filter(Boolean) : [];
-    const files = fileInput.files;
     
+    // Проверяем только название товара
     if (!productName) {
         showNotification('Введите название товара', 'error');
         return;
     }
-    if (files.length === 0) {
-        showNotification('Выберите хотя бы одно фото', 'error');
-        return;
-    }
 
-    if (featuresInput && featuresInput.includes('@')) {
-        document.getElementById(featuresId).value = '';
-        showNotification('Пожалуйста, введите характеристики товара, а не email', 'warning');
-        return;
-    }
-
+    // Проверяем баланс
     const currentBalance = userData.balance || 0;
     if (currentBalance < 100) {
         showNotification('Недостаточно средств. Требуется 100 ₽', 'error');
         return;
+    }
+
+    // Фото теперь НЕ обязательно! Если нет фото - будет генерация с нуля
+    let files = [];
+    if (fileInput) {
+        files = fileInput.files || [];
     }
 
     resetGenerationSession(platform);
