@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>Генерация фото — Prodiger</title>
+    <title>Генерация фото для Ozon — Prodiger</title>
     <link rel="stylesheet" href="styles/main.css">
     
     <!-- PWA Meta Tags -->
@@ -18,10 +18,21 @@
     <script src="//code.jivo.ru/widget/dxg5looTDX" async></script>
     
     <style>
-        /* Дополнительные стили для страницы */
+        .platform-badge {
+            display: inline-block;
+            background: rgba(114, 46, 209, 0.15);
+            border: 1px solid rgba(114, 46, 209, 0.3);
+            color: #009fe3;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
         .instruction-card {
-            background: linear-gradient(135deg, rgba(0,113,227,0.1), rgba(155,94,240,0.1));
-            border: 1px solid rgba(0,113,227,0.2);
+            background: linear-gradient(135deg, rgba(114,46,209,0.1), rgba(0,113,227,0.1));
+            border: 1px solid rgba(114,46,209,0.2);
             border-radius: 24px;
             padding: 25px;
             margin-bottom: 30px;
@@ -41,10 +52,14 @@
             margin: 0;
         }
         
+        .instruction-title h3 span {
+            color: #009fe3;
+        }
+        
         .instruction-icon {
             width: 40px;
             height: 40px;
-            background: var(--accent-gradient);
+            background: linear-gradient(135deg, #009fe3, #0071e3);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -69,8 +84,8 @@
         
         .instruction-item:hover {
             transform: translateY(-3px);
-            border-color: var(--accent);
-            background: rgba(0,113,227,0.05);
+            border-color: #009fe3;
+            background: rgba(114,46,209,0.05);
         }
         
         .instruction-item-header {
@@ -83,7 +98,7 @@
         .instruction-step {
             width: 28px;
             height: 28px;
-            background: var(--accent);
+            background: #009fe3;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -107,8 +122,8 @@
         }
         
         .instruction-highlight {
-            background: rgba(0,113,227,0.1);
-            border-left: 4px solid var(--accent);
+            background: rgba(114,46,209,0.1);
+            border-left: 4px solid #009fe3;
             padding: 15px 20px;
             border-radius: 16px;
             margin-top: 20px;
@@ -121,30 +136,7 @@
         }
         
         .instruction-highlight strong {
-            color: var(--accent);
-        }
-        
-        .pricing-badge {
-            display: inline-block;
-            background: rgba(245, 176, 65, 0.15);
-            border: 1px solid rgba(245, 176, 65, 0.3);
-            color: #f5b041;
-            padding: 4px 12px;
-            border-radius: 40px;
-            font-size: 13px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .feature-tag {
-            display: inline-block;
-            background: rgba(48, 209, 88, 0.1);
-            border: 1px solid rgba(48, 209, 88, 0.2);
-            color: var(--success);
-            padding: 2px 10px;
-            border-radius: 40px;
-            font-size: 12px;
-            margin-left: 8px;
+            color: #009fe3;
         }
         
         @media (max-width: 768px) {
@@ -190,8 +182,11 @@
                     <li class="menu-item" data-section="balance">
                         <a href="/balance.html">💰 Баланс</a>
                     </li>
-                    <li class="menu-item active" data-section="generate">
-                        <a href="/generate.html">✨ Генерация фото</a>
+                    <li class="menu-item active" data-section="generate-wb">
+                        <a href="/generate-wb.html">🟣 Ozon</a>
+                    </li>
+                    <li class="menu-item" data-section="generate-ozon">
+                        <a href="/generate-ozon.html">🔵 Ozon</a>
                     </li>
                     <li class="menu-item" data-section="description">
                         <a href="/description.html">📝 Описание товара</a>
@@ -223,8 +218,10 @@
         <!-- Основной контент -->
         <main class="main-content">
             <div class="welcome-block">
-                <h1 class="gradient-text">✨ Создание фото</h1>
-                <p>Превратите обычное фото в продающую карточку за 30 секунд</p>
+                <h1 class="gradient-text">✨ Генерация для Ozon 
+                    <span class="platform-badge">WB</span>
+                </h1>
+                <p>Создавайте продающие карточки специально для Ozon</p>
             </div>
 
             <!-- Карточки с ценами -->
@@ -233,7 +230,7 @@
                     <div class="stat-icon" style="font-size: 32px;">💰</div>
                     <div class="stat-info">
                         <span class="stat-label">Первая генерация</span>
-                        <span class="stat-value" style="color: var(--accent);">100 ₽</span>
+                        <span class="stat-value" style="color: #009fe3;">100 ₽</span>
                         <small style="color: var(--text-muted);">1 фото</small>
                     </div>
                 </div>
@@ -259,7 +256,7 @@
             <div class="instruction-card">
                 <div class="instruction-title">
                     <div class="instruction-icon">🎯</div>
-                    <h3>Как получить идеальную карточку</h3>
+                    <h3>Как получить идеальную карточку для <span>Ozon</span></h3>
                 </div>
                 
                 <div class="instruction-grid">
@@ -268,7 +265,7 @@
                             <span class="instruction-step">1</span>
                             <h4>Точное название</h4>
                         </div>
-                        <p>Введите полное название товара с брендом и моделью. Например: <strong>"Наушники Xiaomi Redmi Buds 4 Pro"</strong>, а не просто "наушники".</p>
+                        <p>Введите полное название товара с брендом и моделью. Например: <strong>"Наушники Xiaomi Redmi Buds 4 Pro"</strong></p>
                     </div>
                     
                     <div class="instruction-item">
@@ -284,7 +281,7 @@
                             <span class="instruction-step">3</span>
                             <h4>Качественное фото</h4>
                         </div>
-                        <p>Загрузите чёткое фото товара на нейтральном фоне. Можно несколько, но для генерации используется первое.</p>
+                        <p>Загрузите чёткое фото товара на нейтральном фоне. Для Ozon важен чистый фон.</p>
                     </div>
                     
                     <div class="instruction-item">
@@ -297,25 +294,24 @@
                 </div>
                 
                 <div class="instruction-highlight">
-                    <p>🔍 <strong>Важно:</strong> ИИ ищет информацию в интернете по точному названию товара. Если написать просто "телефон", он не сможет найти реальные характеристики. Указывайте бренд и модель полностью — это гарантирует достоверность данных на карточке.</p>
+                    <p>🔍 <strong>Для Ozon важно:</strong> Запрещены слова "хит", "лидер продаж", "номер 1". Карточка должна быть информативной, без лишних призывов. ИИ автоматически соблюдает все правила.</p>
                 </div>
             </div>
 
             <!-- Форма генерации -->
             <div class="content-area glass">
                 <h2 style="margin-bottom: 25px; display: flex; align-items: center; gap: 10px;">
-                    <span>📋</span> Данные товара
+                    <span>📋</span> Данные товара для Ozon
                 </h2>
                 
                 <div class="generation-form">
                     <!-- Название товара -->
                     <div class="form-group">
                         <label>
-                            Название товара <span style="color: var(--accent);">*</span>
-                            <span class="feature-tag">обязательно</span>
+                            Название товара <span style="color: #009fe3;">*</span>
                         </label>
                         <input type="text" id="wbProductName" placeholder="Например: Наушники Xiaomi Redmi Buds 4 Pro" autocomplete="off">
-                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">Чем точнее, тем реалистичнее карточка</small>
+                        <small style="color: var(--text-muted); display: block; margin-top: 5px;">Чем точнее название, тем реалистичнее карточка</small>
                     </div>
 
                     <!-- Ряд с брендом и ценой -->
@@ -349,14 +345,14 @@
 
                     <!-- Особенности -->
                     <div class="form-group">
-                        <label>Ключевые особенности <span class="pricing-badge">+15% к CTR</span></label>
+                        <label>Ключевые особенности</label>
                         <input type="text" id="wbFeatures" placeholder="шумоподавление, влагозащита, 30 часов работы" autocomplete="off">
                         <small style="color: var(--text-muted); display: block; margin-top: 5px;">Через запятую, например: шумоподавление, влагозащита, 30ч</small>
                     </div>
 
                     <!-- Загрузка фото -->
                     <div class="form-group">
-                        <label>Фото товара <span style="color: var(--accent);">*</span></label>
+                        <label>Фото товара <span style="color: #009fe3;">*</span></label>
                         <div class="file-upload-wrapper">
                             <button type="button" class="file-upload-button" onclick="document.getElementById('wbPhotos').click()">
                                 Выбрать файлы
@@ -370,19 +366,17 @@
                     <!-- Кнопка генерации -->
                     <button class="btn-generate" id="generateWBBtn" onclick="generateWBCard()">
                         <span class="btn-icon">✨</span>
-                        Создать первое фото (100 ₽)
+                        Создать для Ozon (100 ₽)
                     </button>
                 </div>
             </div>
 
             <!-- Результаты генерации -->
             <div id="cardResults" class="results-section glass" style="display: none;">
-                <h2>Результаты</h2>
+                <h2>Результаты генерации</h2>
                 <div class="result-block">
                     <div class="image-gallery" id="resultImages"></div>
                 </div>
-                
-                <!-- Блок повторной генерации будет добавлен сюда скриптом -->
             </div>
             
             <!-- Подсказка внизу -->
@@ -427,7 +421,7 @@
     <!-- Модальное окно загрузки (генерация) -->
     <div id="generationModal" class="modal">
         <div class="modal-content glass loading-content">
-            <h2 class="gradient-text">✨ Генерация ✨</h2>
+            <h2 class="gradient-text">✨ Генерация для Ozon ✨</h2>
             <div class="loading-animation">
                 <div class="spinner"></div>
                 <div class="progress-bar">
@@ -448,12 +442,12 @@
 
     <script type="module" src="js/dashboard.js"></script>
     <script>
-        // Функции для навигации
         function navigateTo(section) {
             const paths = {
                 'news': '/news.html',
                 'balance': '/balance.html',
-                'generate': '/generate.html',
+                'generate-wb': '/generate-wb.html',
+                'generate-ozon': '/generate-ozon.html',
                 'description': '/description.html',
                 'description-history': '/description-history.html',
                 'history': '/history.html',
@@ -468,7 +462,6 @@
             window.location.href = '/login.html';
         };
 
-        // Функции для модального окна пополнения
         window.showPaymentModal = function() {
             document.getElementById('paymentModal').classList.add('show');
         };
@@ -493,7 +486,6 @@
             closeModal();
         };
 
-        // Функции для генерации
         window.updateFileInfo = function(inputId, infoId) {
             const input = document.getElementById(inputId);
             const info = document.getElementById(infoId);
@@ -510,10 +502,8 @@
             document.body.style.overflow = '';
         };
 
-        // Загрузка данных пользователя (временная, реальная будет из dashboard.js)
         async function loadUserData() {
             try {
-                // Реальная загрузка будет из dashboard.js
                 document.getElementById('sidebarBalance').textContent = '1250';
                 document.getElementById('userEmail').textContent = 'user@example.com';
             } catch (error) {
