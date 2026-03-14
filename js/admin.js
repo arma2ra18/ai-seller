@@ -1721,12 +1721,7 @@ async function loadCubeSettings() {
         } else {
             // Изображения по умолчанию (можно взять из ваших существующих)
             cubeImages = [
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773156099302_1.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773151756196_0.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145797533_1.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773145575547_1.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773144880048_1.jpg",
-                "https://storage.googleapis.com/ai-seller-prod-4c0c9.firebasestorage.app/generated/card_1773192062133_4.jpg"
+             
             ];
         }
         
