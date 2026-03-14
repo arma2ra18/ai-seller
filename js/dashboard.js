@@ -351,10 +351,13 @@ async function generateCard(platform) {
         return;
     }
 
-    // Фото теперь НЕ обязательно! Если нет фото - будет генерация с нуля
+    // Фото не обязательно! Просто передаем что есть (или пустой массив)
     let files = [];
-    if (fileInput) {
-        files = fileInput.files || [];
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+        files = fileInput.files;
+        console.log(`📸 Загружено ${files.length} фото`);
+    } else {
+        console.log('📝 Фото не загружено, будет генерация по описанию');
     }
 
     resetGenerationSession(platform);
