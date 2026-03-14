@@ -14,7 +14,6 @@ import {
     reauthenticateWithCredential,
     EmailAuthProvider
 } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
-import { TEMPLATES, applyTemplateToResults } from './templates.js';
 
 let currentUser = null;
 let userData = null;
@@ -41,9 +40,6 @@ let currentGenerationSession = {
     imageIds: []               // Массив ID изображений в Storage
 };
 
-// Активный шаблон
-let activeTemplate = null;
-
 // Для страницы истории (все сессии)
 let allSessions = [];
 let currentHistoryPage = 1;
@@ -57,7 +53,6 @@ onAuthStateChanged(auth, async (user) => {
     }
     currentUser = user;
     await loadUserData();
-    loadActiveTemplate();
     
     // Получаем текущий путь страницы
     const path = window.location.pathname;
@@ -76,26 +71,6 @@ onAuthStateChanged(auth, async (user) => {
         console.log('Страница новостей, историю не загружаем');
     }
 });
-
-// Загрузка активного шаблона
-function loadActiveTemplate() {
-    try {
-        const saved = localStorage.getItem('activeTemplate');
-        const savedForUser = localStorage.getItem(`template_${currentUser?.uid}`);
-        
-        if (saved) {
-            activeTemplate = JSON.parse(saved);
-        } else if (savedForUser) {
-            activeTemplate = JSON.parse(savedForUser);
-        } else {
-            activeTemplate = TEMPLATES.premium;
-        }
-        
-        console.log('🎨 Активный шаблон загружен:', activeTemplate.name);
-    } catch (error) {
-        console.error('Ошибка загрузки шаблона:', error);
-    }
-}
 
 // Загрузка данных пользователя из Firestore
 async function loadUserData() {
@@ -440,12 +415,6 @@ async function performGeneration(files, attempt) {
         if (currentGenerationSession.originalImageId) {
             formData.append('originalImageId', currentGenerationSession.originalImageId);
         }
-        
-        // Добавляем шаблон, если он есть
-        if (activeTemplate) {
-            formData.append('template', JSON.stringify(activeTemplate));
-            console.log('🎨 Отправляем шаблон:', activeTemplate.name);
-        }
 
         const response = await fetch('/api/generate-card', {
             method: 'POST',
@@ -596,13 +565,6 @@ function displayCardResults(result, attempt) {
                 gallery.appendChild(img);
             }
         });
-        
-        // Применяем шаблон к результатам
-        if (activeTemplate) {
-            setTimeout(() => {
-                applyTemplateToResults(activeTemplate);
-            }, 100);
-        }
     }
 
     const descList = document.getElementById('resultDescriptions');
@@ -965,13 +927,6 @@ window.viewHistorySession = async function(sessionId) {
                 img.onclick = () => window.openLightbox(url);
                 gallery.appendChild(img);
             });
-            
-            // Применяем шаблон
-            if (activeTemplate) {
-                setTimeout(() => {
-                    applyTemplateToResults(activeTemplate);
-                }, 100);
-            }
             
             updateRegenerationUI();
             
