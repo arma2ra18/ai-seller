@@ -1458,95 +1458,151 @@ async function loadPayments() {
  */
 async function loadSettings() {
     try {
-        const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
-        if (settingsDoc.exists()) {
-            const settings = settingsDoc.data();
-            document.getElementById('siteName').value = settings.siteName || 'Prodiger';
-            document.getElementById('welcomeBonus').value = settings.welcomeBonus || 500;
-            document.getElementById('genPrice').value = settings.genPrice || 100;
-            document.getElementById('maxLoginAttempts').value = settings.maxLoginAttempts || 5;
-        } else {
-            // Если документа нет, используем значения по умолчанию
-            document.getElementById('siteName').value = 'Prodiger';
-            document.getElementById('welcomeBonus').value = '500';
-            document.getElementById('genPrice').value = '100';
-            document.getElementById('maxLoginAttempts').value = '5';
+        console.log('📥 Загрузка настроек сайта...');
+        
+        // Значения по умолчанию
+        const defaultSettings = {
+            siteName: 'Prodiger',
+            welcomeBonus: 500,
+            genPrice: 100,
+            maxLoginAttempts: 5,
+            telegramBotToken: '',
+            telegramChatId: '',
+            emailNotifications: true,
+            maintenanceMode: false,
+            minPaymentAmount: 100,
+            bonusPercent1000: 10,
+            bonusPercent10000: 20
+        };
+        
+        // Пробуем загрузить из Firestore
+        let settings = { ...defaultSettings };
+        
+        try {
+            const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+            if (settingsDoc.exists()) {
+                settings = { ...defaultSettings, ...settingsDoc.data() };
+                console.log('✅ Настройки загружены из Firestore');
+            } else {
+                console.log('⚠️ Документ settings/general не найден, используем значения по умолчанию');
+            }
+        } catch (e) {
+            console.warn('⚠️ Ошибка загрузки из Firestore:', e.message);
+        }
+
+        // ===== ОСНОВНЫЕ НАСТРОЙКИ =====
+        const siteNameEl = document.getElementById('siteName');
+        if (siteNameEl) siteNameEl.value = settings.siteName;
+        
+        const welcomeBonusEl = document.getElementById('welcomeBonus');
+        if (welcomeBonusEl) welcomeBonusEl.value = settings.welcomeBonus;
+        
+        const genPriceEl = document.getElementById('genPrice');
+        if (genPriceEl) {
+            genPriceEl.value = settings.genPrice;
+            genPriceEl.readOnly = true; // Фиксированная цена
+            genPriceEl.disabled = true; // Дополнительная защита
         }
         
-        document.getElementById('apiStatus').innerHTML = '<span class="badge badge-success">Работает</span>';
+        const maxLoginAttemptsEl = document.getElementById('maxLoginAttempts');
+        if (maxLoginAttemptsEl) maxLoginAttemptsEl.value = settings.maxLoginAttempts;
         
-        const deployDate = new Date().toLocaleString('ru-RU');
-        document.getElementById('lastDeploy').innerHTML = deployDate;
+        // ===== НАСТРОЙКИ ТЕЛЕГРАМ =====
+        const telegramBotTokenEl = document.getElementById('telegramBotToken');
+        if (telegramBotTokenEl) telegramBotTokenEl.value = settings.telegramBotToken || '';
+        
+        const telegramChatIdEl = document.getElementById('telegramChatId');
+        if (telegramChatIdEl) telegramChatIdEl.value = settings.telegramChatId || '';
+        
+        // ===== УВЕДОМЛЕНИЯ =====
+        const emailNotificationsEl = document.getElementById('emailNotifications');
+        if (emailNotificationsEl) emailNotificationsEl.checked = settings.emailNotifications;
+        
+        // ===== ТЕХНИЧЕСКИЕ НАСТРОЙКИ =====
+        const maintenanceModeEl = document.getElementById('maintenanceMode');
+        if (maintenanceModeEl) maintenanceModeEl.checked = settings.maintenanceMode;
+        
+        const minPaymentAmountEl = document.getElementById('minPaymentAmount');
+        if (minPaymentAmountEl) minPaymentAmountEl.value = settings.minPaymentAmount;
+        
+        // ===== БОНУСЫ =====
+        const bonusPercent1000El = document.getElementById('bonusPercent1000');
+        if (bonusPercent1000El) bonusPercent1000El.value = settings.bonusPercent1000;
+        
+        const bonusPercent10000El = document.getElementById('bonusPercent10000');
+        if (bonusPercent10000El) bonusPercent10000El.value = settings.bonusPercent10000;
+        
+        // ===== СТАТУСЫ И ИНФОРМАЦИЯ =====
+        const apiStatusEl = document.getElementById('apiStatus');
+        if (apiStatusEl) {
+            // Проверяем статус API Gemini
+            const apiKey = import.meta.env?.VITE_GOOGLE_API_KEY || process.env.GOOGLE_API_KEY;
+            const status = apiKey ? 'Работает' : 'Не настроен';
+            const statusClass = apiKey ? 'badge-success' : 'badge-warning';
+            apiStatusEl.innerHTML = `<span class="badge ${statusClass}">${status}</span>`;
+        }
+        
+        const lastDeployEl = document.getElementById('lastDeploy');
+        if (lastDeployEl) {
+            // Можно загружать из Firestore или использовать текущую дату
+            const deployDate = settings.lastDeploy 
+                ? new Date(settings.lastDeploy).toLocaleString('ru-RU')
+                : new Date().toLocaleString('ru-RU');
+            lastDeployEl.innerHTML = deployDate;
+        }
+        
+        const firebaseProjectEl = document.getElementById('firebaseProject');
+        if (firebaseProjectEl) {
+            firebaseProjectEl.innerHTML = db.app.options.projectId || 'Не указан';
+        }
+        
+        console.log('✅ Все настройки успешно загружены и применены');
         
     } catch (error) {
-        console.error('Ошибка загрузки настроек:', error);
-        // Используем значения по умолчанию при ошибке
-        document.getElementById('siteName').value = 'Prodiger';
-        document.getElementById('welcomeBonus').value = '500';
-        document.getElementById('genPrice').value = '100';
-        document.getElementById('maxLoginAttempts').value = '5';
-        document.getElementById('apiStatus').innerHTML = '<span class="badge badge-warning">Проверка...</span>';
+        console.error('❌ Критическая ошибка загрузки настроек:', error);
+        
+        // Показываем уведомление об ошибке
+        showNotification('Ошибка загрузки настроек: ' + error.message, 'error');
+        
+        // Пытаемся установить хотя бы базовые значения, чтобы страница не была пустой
+        setDefaultSettings();
     }
 }
 
 /**
- * Сохраняет настройки сайта
+ * Устанавливает значения по умолчанию при ошибке загрузки
  */
-window.saveSettings = async function() {
-    const siteName = document.getElementById('siteName').value;
-    const bonus = parseInt(document.getElementById('welcomeBonus').value);
-    const maxAttempts = parseInt(document.getElementById('maxLoginAttempts').value);
+function setDefaultSettings() {
+    console.log('🔄 Устанавливаем значения по умолчанию');
     
-    if (isNaN(bonus) || isNaN(maxAttempts)) {
-        showNotification('Проверьте введённые данные', 'error');
-        return;
+    const defaults = {
+        siteName: 'Prodiger',
+        welcomeBonus: 500,
+        genPrice: 100,
+        maxLoginAttempts: 5
+    };
+    
+    const siteNameEl = document.getElementById('siteName');
+    if (siteNameEl) siteNameEl.value = defaults.siteName;
+    
+    const welcomeBonusEl = document.getElementById('welcomeBonus');
+    if (welcomeBonusEl) welcomeBonusEl.value = defaults.welcomeBonus;
+    
+    const genPriceEl = document.getElementById('genPrice');
+    if (genPriceEl) {
+        genPriceEl.value = defaults.genPrice;
+        genPriceEl.readOnly = true;
     }
     
-    try {
-        await setDoc(doc(db, 'settings', 'general'), {
-            siteName: siteName,
-            welcomeBonus: bonus,
-            genPrice: 100, // фиксированная цена
-            maxLoginAttempts: maxAttempts,
-            updatedAt: new Date().toISOString(),
-            updatedBy: currentAdmin?.uid
-        }, { merge: true });
-        
-        // Пытаемся записать лог
-        try {
-            await addDoc(collection(db, 'adminLogs'), {
-                action: 'update_settings',
-                performedBy: currentAdmin?.uid,
-                changes: { siteName, bonus, maxAttempts },
-                timestamp: new Date().toISOString()
-            });
-        } catch (logError) {
-            console.warn('Не удалось записать лог:', logError);
-        }
-        
-        showNotification('Настройки сохранены', 'success');
-        
-    } catch (error) {
-        console.error('Ошибка сохранения настроек:', error);
-        showNotification('Ошибка: ' + error.message, 'error');
-    }
-};
-
-/**
- * Тест API Gemini (заглушка)
- */
-window.testGemini = function() {
-    showNotification('Тест API Gemini: OK (имитация)', 'success');
-};
-
-/**
- * Очищает кэш в localStorage
- */
-window.clearCache = function() {
-    localStorage.clear();
-    sessionStorage.clear();
-    showNotification('Кэш очищен', 'success');
-};
+    const maxLoginAttemptsEl = document.getElementById('maxLoginAttempts');
+    if (maxLoginAttemptsEl) maxLoginAttemptsEl.value = defaults.maxLoginAttempts;
+    
+    const apiStatusEl = document.getElementById('apiStatus');
+    if (apiStatusEl) apiStatusEl.innerHTML = '<span class="badge badge-warning">Неизвестно</span>';
+    
+    const lastDeployEl = document.getElementById('lastDeploy');
+    if (lastDeployEl) lastDeployEl.innerHTML = new Date().toLocaleString('ru-RU');
+}
 
 // ========== МАССОВЫЕ ДЕЙСТВИЯ ==========
 
