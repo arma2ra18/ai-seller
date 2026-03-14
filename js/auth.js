@@ -94,33 +94,17 @@ window.verifyPhoneCode = async function() {
         const userRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userRef);
         
-      // В функции verifyPhoneCode(), после успешной авторизации
-if (!userDoc.exists()) {
-    console.log('Creating new user in Firestore');
-    
-    // Загружаем настройки, чтобы узнать размер бонуса
-    let welcomeBonus = 500; // Значение по умолчанию
-    
-    try {
-        const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
-        if (settingsDoc.exists()) {
-            welcomeBonus = settingsDoc.data().welcomeBonus || 500;
-            console.log('✅ Бонус при регистрации:', welcomeBonus);
-        }
-    } catch (e) {
-        console.warn('Не удалось загрузить настройки, используется 500');
-    }
-    
-    await setDoc(userRef, {
-        phoneNumber: user.phoneNumber,
-        email: user.email || '',
-        displayName: user.displayName || '',
-        plan: 'start',
-        balance: welcomeBonus, // ← ВАЖНО: используем из настроек
-        usedSpent: 0,
-        createdAt: new Date().toISOString()
-    });
-}
+        if (!userDoc.exists()) {
+            console.log('Creating new user in Firestore');
+            await setDoc(userRef, {
+                phoneNumber: user.phoneNumber,
+                email: user.email || '',
+                displayName: user.displayName || '',
+                plan: 'start',
+                balance: 500,
+                usedSpent: 0,
+                createdAt: new Date().toISOString()
+            });
         } else {
             console.log('User already exists in Firestore');
             // Если нужно, можно обновить номер телефона
