@@ -253,7 +253,8 @@ export default async function handler(req, res) {
         const platform = fields.platform?.[0] || 'wb';
         const attempt = parseInt(fields.attempt?.[0]) || 0;
         const originalImageId = fields.originalImageId?.[0] || null;
-        const searchEnabled = fields.searchEnabled?.[0] === 'true';  // true/false из чекбокса
+        // const searchEnabled = fields.searchEnabled?.[0] === 'true';
+const searchEnabled = true; // временно
 
         console.log('📦 Данные:', { 
             productName, 
