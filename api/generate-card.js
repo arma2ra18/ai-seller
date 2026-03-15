@@ -290,27 +290,35 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No reference image available' });
         }
 
-        // ===== ФОРМИРОВАНИЕ ПРОМПТА ИЗ ОТДЕЛЬНЫХ ФАЙЛОВ =====
-        
-        // Базовый стиль
-        let finalPrompt = baseStylePrompt(productName, brand, price, userFeatures);
-        
-        // Правила платформы
-        if (platform === 'wb') {
-            finalPrompt += wbRules;
-            console.log('🎯 Используем промпт для Wildberries');
-        } else {
-            finalPrompt += ozonRules;
-            console.log('🎯 Используем промпт для Ozon');
-        }
-        
-        // Добавляем информацию о генерации без фото
-        if (isGeneratedFromText) {
-            finalPrompt += noPhotoPrompt(productName);
-        }
-        
-        // Добавляем вариацию для повторных генераций
-        finalPrompt += getVariationPrompt(attempt);
+       // ===== ФОРМИРОВАНИЕ ПРОМПТА ИЗ ОТДЕЛЬНЫХ ФАЙЛОВ =====
+
+// Базовый стиль
+let finalPrompt = baseStylePrompt(productName, brand, price, userFeatures);
+
+// Правила платформы
+if (platform === 'wb') {
+    finalPrompt += wbRules;
+    console.log('🎯 Используем промпт для Wildberries');
+} else {
+    finalPrompt += ozonRules;
+    console.log('🎯 Используем промпт для Ozon');
+}
+
+// Добавляем информацию о генерации без фото
+if (isGeneratedFromText) {
+    finalPrompt += noPhotoPrompt(productName);
+}
+
+// Добавляем **вариацию в зависимости от номера попытки**
+// attempt может быть 0,1,2,3,4 (5 попыток всего)
+finalPrompt += getVariationPrompt(attempt, productName);
+
+console.log(`🎨 Попытка ${attempt + 1}/5, используем стиль:`, 
+  attempt === 0 ? 'Классический премиум' :
+  attempt === 1 ? 'Динамичный' :
+  attempt === 2 ? 'Минимализм' :
+  attempt === 3 ? 'Агрессивный маркетинг' :
+  'Креативный');
 
         let imageDataUrl;
         try {
