@@ -2,7 +2,6 @@
 import axios from 'axios';
 
 export default async function handler(req, res) {
-  // Разрешаем CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -30,12 +29,16 @@ export default async function handler(req, res) {
 
     console.log(`📱 Sending code to ${phoneNumber}`);
 
-    // Отправляем запрос в Firebase
+    // Важно: для сервера нужен специальный recaptchaToken
+    // Получить его можно через reCAPTCHA Enterprise API
+    // Для простоты используем тестовый режим
     const response = await axios.post(
       `https://identitytoolkit.googleapis.com/v1/accounts:sendVerificationCode?key=${firebaseApiKey}`,
       {
         phoneNumber: phoneNumber,
-        recaptchaToken: 'NO_RECAPTCHA' // Для серверной отправки
+        // Для сервера нужно получать токен от клиента
+        // Пока используем заглушку
+        recaptchaToken: 'NO_RECAPTCHA'
       }
     );
 
@@ -47,12 +50,11 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('SMS error:', error.response?.data || error.message);
+    console.error('❌ SMS error:', error.response?.data || error.message);
     
-    const errorMessage = error.response?.data?.error?.message || error.message;
-    
+    // Возвращаем понятную ошибку
     res.status(500).json({ 
-      error: errorMessage,
+      error: error.response?.data?.error?.message || error.message,
       details: 'Failed to send verification code'
     });
   }
