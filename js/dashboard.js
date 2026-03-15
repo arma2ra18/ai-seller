@@ -334,21 +334,6 @@ function updateRegenerationUI() {
     }
 }
 
-// Управляем состоянием основной синей кнопки
-const mainBtn = document.getElementById(currentGenerationSession.platform === 'wb' ? 'generateWBBtn' : 'generateOzonBtn');
-if (mainBtn) {
-    if (currentGenerationSession.attemptsMade >= currentGenerationSession.maxAttempts) {
-        // Достигнут лимит — кнопка должна создавать НОВУЮ сессию за 100 ₽
-        mainBtn.innerHTML = `✨ Создать первое фото для ${currentGenerationSession.platform === 'wb' ? 'Wildberries' : 'Ozon'} (100 ₽)`;
-        mainBtn.disabled = false;
-        mainBtn.onclick = currentGenerationSession.platform === 'wb' ? window.generateWBCard : window.generateOzonCard;
-    } else {
-        // Ещё есть попытки — кнопка для повторной генерации за 15 ₽
-        mainBtn.innerHTML = `🔄 Сделать ещё (15 ₽)`;
-        mainBtn.disabled = false;
-        mainBtn.onclick = window.regeneratePhoto;
-    }
-}
 
 // ----- Генерация карточки для Wildberries -----
 window.generateWBCard = async function() {
