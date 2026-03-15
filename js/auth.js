@@ -64,7 +64,7 @@ window.sendPhoneCode = async function(mode) {
 
         // Создаём verifier с правильным контейнером
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            size: 'normal'
+            size: 'invisible'
         });
 
         const appVerifier = window.recaptchaVerifier;
