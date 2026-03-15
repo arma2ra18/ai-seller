@@ -478,8 +478,16 @@ async function performGeneration(files, attempt, platform, btnId) {
         formData.append('brand', currentGenerationSession.brand || '');
         formData.append('category', currentGenerationSession.category || '');
         formData.append('price', currentGenerationSession.price || '1990');
+        
+        // Цвет товара
         const color = document.getElementById('wbColor')?.value || '';
         formData.append('color', color);
+        
+        // 👇 ВАЖНО: Добавляем значение чекбокса поиска
+        const searchEnabled = document.getElementById('wbSearchEnabled')?.checked ? 'true' : 'false';
+        formData.append('searchEnabled', searchEnabled);
+        console.log(`🔍 Поиск в интернете: ${searchEnabled === 'true' ? 'ВКЛ' : 'ВЫКЛ'}`);
+        
         formData.append('features', currentGenerationSession.features.join(','));
         formData.append('platform', platform);
         formData.append('attempt', attempt);
