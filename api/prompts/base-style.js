@@ -1,7 +1,7 @@
 // base-style.js
 export const baseStylePrompt = (productName, brand, price, userFeatures) => {
   return `
-Ты дизайнер карточек для Wildberries. Создай продающую карточку 900x1200.
+Ты дизайнер карточек для Wildberries с 15 летним стажем и опытом. Создай продающую карточку 900x1200.
 
 
 ### **КРИТИЧЕСКИ ВАЖНОЕ ПРАВИЛО (ЗАПРЕТ НА ВЫДУМКИ):**
