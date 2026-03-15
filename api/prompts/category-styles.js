@@ -127,7 +127,7 @@ export const getCategoryPrompt = (category, productName, features, color) => {
 `
   };
 
-  const commonEffects = `
+const commonEffects = `
 ### **ОБЩИЕ ЭФФЕКТЫ ПРЕМИАЛЬНОСТИ (ДЛЯ ВСЕХ КАТЕГОРИЙ):**
 1. **ГИПЕРДЕТАЛИЗАЦИЯ:** товар должен выглядеть так, что его хочется потрогать
 2. **ОБЪЁМ:** используй Rembrandt lighting или мягкий контровой свет
@@ -136,7 +136,7 @@ export const getCategoryPrompt = (category, productName, features, color) => {
 
 ### **ВАЖНО:**
 Сохрани 100% внешнего вида товара. Не меняй форму, пропорции, цвет. Только улучшай подачу — фон, свет, текстуру.
-
+`;
 
   // Выбираем стиль для категории или используем дефолтный
   const selectedStyle = categoryStyles[category] || categoryStyles['home'];
