@@ -48,9 +48,8 @@ const ai = new GoogleGenAI({ apiKey: apiKey || '' });
 /**
  * Генерация изображения через Gemini с референсом
  */
-async function generateGeminiImage(prompt, referenceImage, attempt) {
+async function generateGeminiImage(prompt, referenceImage, searchEnabled) {
     try {
-        const enableSearch = (attempt === 0);
         const base64Image = referenceImage.toString('base64');
         const contents = [
             {
@@ -69,12 +68,12 @@ async function generateGeminiImage(prompt, referenceImage, attempt) {
                 responseModalities: ['Image'],
                 aspectRatio: '3:4',
                 googleSearch: {
-                    enable: enableSearch
+                    enable: searchEnabled
                 }
             }
         });
 
-        console.log(`🔍 Поиск в интернете: ${enableSearch ? 'ВКЛЮЧЕН' : 'ОТКЛЮЧЕН'} (попытка ${attempt + 1})`);
+        console.log(`🔍 Поиск в интернете: ${searchEnabled ? 'ВКЛ' : 'ВЫКЛ'}`);
 
         if (!response.candidates || !response.candidates[0]) {
             throw new Error('Нет ответа от Gemini');
@@ -97,10 +96,8 @@ async function generateGeminiImage(prompt, referenceImage, attempt) {
 /**
  * Генерация изображения через Gemini БЕЗ референса (только по тексту)
  */
-async function generateGeminiImageFromText(prompt, attempt) {
+async function generateGeminiImageFromText(prompt, searchEnabled) {
     try {
-        const enableSearch = (attempt === 0);
-        
         const response = await ai.models.generateContent({
             model: 'gemini-3.1-flash-image-preview',
             contents: [prompt],
@@ -108,12 +105,12 @@ async function generateGeminiImageFromText(prompt, attempt) {
                 responseModalities: ['Image'],
                 aspectRatio: '3:4',
                 googleSearch: {
-                    enable: enableSearch
+                    enable: searchEnabled
                 }
             }
         });
 
-        console.log(`🔍 Поиск в интернете: ${enableSearch ? 'ВКЛЮЧЕН' : 'ОТКЛЮЧЕН'} (попытка ${attempt + 1})`);
+        console.log(`🔍 Поиск в интернете: ${searchEnabled ? 'ВКЛ' : 'ВЫКЛ'}`);
 
         if (!response.candidates || !response.candidates[0]) {
             throw new Error('Нет ответа от Gemini');
@@ -256,6 +253,7 @@ export default async function handler(req, res) {
         const platform = fields.platform?.[0] || 'wb';
         const attempt = parseInt(fields.attempt?.[0]) || 0;
         const originalImageId = fields.originalImageId?.[0] || null;
+        const searchEnabled = fields.searchEnabled?.[0] === 'true';  // true/false из чекбокса
 
         console.log('📦 Данные:', { 
             productName, 
@@ -266,7 +264,8 @@ export default async function handler(req, res) {
             userFeatures, 
             platform, 
             attempt, 
-            originalImageId 
+            originalImageId,
+            searchEnabled 
         });
 
         if (!productName) {
@@ -344,10 +343,10 @@ export default async function handler(req, res) {
             
             if (isGeneratedFromText && attempt === 0 && !originalImageId) {
                 // Генерируем с нуля (без референса)
-                imageDataUrl = await generateGeminiImageFromText(finalPrompt, attempt);
+                imageDataUrl = await generateGeminiImageFromText(finalPrompt, searchEnabled);
             } else {
                 // Генерируем с референсом
-                imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer, attempt);
+                imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer, searchEnabled);
             }
             
             console.log('✅ Изображение сгенерировано');
