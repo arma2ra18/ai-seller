@@ -457,6 +457,8 @@ async function performGeneration(files, attempt, platform, btnId) {
         formData.append('brand', currentGenerationSession.brand || '');
         formData.append('category', currentGenerationSession.category || '');
         formData.append('price', currentGenerationSession.price || '1990');
+        const color = document.getElementById('wbColor')?.value || '';
+        formData.append('color', color);
         formData.append('features', currentGenerationSession.features.join(','));
         formData.append('platform', platform);
         formData.append('attempt', attempt);
