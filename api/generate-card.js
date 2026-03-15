@@ -62,7 +62,7 @@ async function generateGeminiImage(prompt, referenceImage) {
         ];
 
         const response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-image-preview1',
+            model: 'gemini-3.1-flash-image-preview',
             contents: contents,
             config: {
                 responseModalities: ['Image'],
