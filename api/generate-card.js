@@ -48,8 +48,9 @@ const ai = new GoogleGenAI({ apiKey: apiKey || '' });
 /**
  * Генерация изображения через Gemini с референсом
  */
-async function generateGeminiImage(prompt, referenceImage) {
+async function generateGeminiImage(prompt, referenceImage, attempt) {
     try {
+        const enableSearch = (attempt === 0);
         const base64Image = referenceImage.toString('base64');
         const contents = [
             {
@@ -68,10 +69,12 @@ async function generateGeminiImage(prompt, referenceImage) {
                 responseModalities: ['Image'],
                 aspectRatio: '3:4',
                 googleSearch: {
-                    enable: true
+                    enable: enableSearch
                 }
             }
         });
+
+        console.log(`🔍 Поиск в интернете: ${enableSearch ? 'ВКЛЮЧЕН' : 'ОТКЛЮЧЕН'} (попытка ${attempt + 1})`);
 
         if (!response.candidates || !response.candidates[0]) {
             throw new Error('Нет ответа от Gemini');
@@ -94,8 +97,10 @@ async function generateGeminiImage(prompt, referenceImage) {
 /**
  * Генерация изображения через Gemini БЕЗ референса (только по тексту)
  */
-async function generateGeminiImageFromText(prompt) {
+async function generateGeminiImageFromText(prompt, attempt) {
     try {
+        const enableSearch = (attempt === 0);
+        
         const response = await ai.models.generateContent({
             model: 'gemini-3.1-flash-image-preview',
             contents: [prompt],
@@ -103,10 +108,12 @@ async function generateGeminiImageFromText(prompt) {
                 responseModalities: ['Image'],
                 aspectRatio: '3:4',
                 googleSearch: {
-                    enable: true
+                    enable: enableSearch
                 }
             }
         });
+
+        console.log(`🔍 Поиск в интернете: ${enableSearch ? 'ВКЛЮЧЕН' : 'ОТКЛЮЧЕН'} (попытка ${attempt + 1})`);
 
         if (!response.candidates || !response.candidates[0]) {
             throw new Error('Нет ответа от Gemini');
@@ -304,30 +311,30 @@ export default async function handler(req, res) {
         }
 
         // ===== ФОРМИРОВАНИЕ ПРОМПТА =====
+        
+        // Берём базовый промпт (со всей типографикой, 3D, эффектами)
+        let finalPrompt = baseStylePrompt(productName, brand, price, userFeatures);
 
-// Берём базовый промпт (со всей типографикой, 3D, эффектами)
-let finalPrompt = baseStylePrompt(productName, brand, price, userFeatures);
+        // Добавляем стиль под категорию
+        const categoryStyle = getCategoryStyle(category);
+        finalPrompt += categoryStyle;
 
-// Добавляем стиль под категорию
-const categoryStyle = getCategoryStyle(category);
-finalPrompt += categoryStyle;
+        // Правила платформы
+        if (platform === 'wb') {
+            finalPrompt += wbRules;
+            console.log('🎯 Используем промпт для Wildberries');
+        } else {
+            finalPrompt += ozonRules;
+            console.log('🎯 Используем промпт для Ozon');
+        }
 
-// Правила платформы
-if (platform === 'wb') {
-    finalPrompt += wbRules;
-    console.log('🎯 Используем промпт для Wildberries');
-} else {
-    finalPrompt += ozonRules;
-    console.log('🎯 Используем промпт для Ozon');
-}
+        // Добавляем информацию о генерации без фото
+        if (isGeneratedFromText) {
+            finalPrompt += noPhotoPrompt(productName);
+        }
 
-// Добавляем информацию о генерации без фото
-if (isGeneratedFromText) {
-    finalPrompt += noPhotoPrompt(productName);
-}
-
-// Добавляем вариацию для повторных генераций
-finalPrompt += getVariationPrompt(attempt, productName);
+        // Добавляем вариацию для повторных генераций
+        finalPrompt += getVariationPrompt(attempt, productName);
 
         console.log(`🎨 Попытка ${attempt + 1}/5`);
 
@@ -337,10 +344,10 @@ finalPrompt += getVariationPrompt(attempt, productName);
             
             if (isGeneratedFromText && attempt === 0 && !originalImageId) {
                 // Генерируем с нуля (без референса)
-                imageDataUrl = await generateGeminiImageFromText(finalPrompt);
+                imageDataUrl = await generateGeminiImageFromText(finalPrompt, attempt);
             } else {
                 // Генерируем с референсом
-                imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer);
+                imageDataUrl = await generateGeminiImage(finalPrompt, referenceBuffer, attempt);
             }
             
             console.log('✅ Изображение сгенерировано');
