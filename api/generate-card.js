@@ -9,7 +9,7 @@ import {
   ozonRules,
   getVariationPrompt,
   noPhotoPrompt,
-  getCategoryPrompt 
+  getCategoryStyle 
 } from './prompts/index.js';
 
 // Инициализация Firebase Admin SDK (только один раз)
@@ -304,31 +304,30 @@ export default async function handler(req, res) {
         }
 
         // ===== ФОРМИРОВАНИЕ ПРОМПТА =====
-        
-        // Используем категорийный промпт
-        let finalPrompt = getCategoryPrompt(
-            category,
-            productName,
-            userFeatures.join(', '),
-            color
-        );
-        
-        // Правила платформы
-        if (platform === 'wb') {
-            finalPrompt += wbRules;
-            console.log('🎯 Используем промпт для Wildberries');
-        } else {
-            finalPrompt += ozonRules;
-            console.log('🎯 Используем промпт для Ozon');
-        }
-        
-        // Добавляем информацию о генерации без фото
-        if (isGeneratedFromText) {
-            finalPrompt += noPhotoPrompt(productName);
-        }
-        
-        // Добавляем вариацию для повторных генераций
-        finalPrompt += getVariationPrompt(attempt, productName);
+
+// Берём базовый промпт (со всей типографикой, 3D, эффектами)
+let finalPrompt = baseStylePrompt(productName, brand, price, userFeatures);
+
+// Добавляем стиль под категорию
+const categoryStyle = getCategoryStyle(category);
+finalPrompt += categoryStyle;
+
+// Правила платформы
+if (platform === 'wb') {
+    finalPrompt += wbRules;
+    console.log('🎯 Используем промпт для Wildberries');
+} else {
+    finalPrompt += ozonRules;
+    console.log('🎯 Используем промпт для Ozon');
+}
+
+// Добавляем информацию о генерации без фото
+if (isGeneratedFromText) {
+    finalPrompt += noPhotoPrompt(productName);
+}
+
+// Добавляем вариацию для повторных генераций
+finalPrompt += getVariationPrompt(attempt, productName);
 
         console.log(`🎨 Попытка ${attempt + 1}/5`);
 
