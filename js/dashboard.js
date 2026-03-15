@@ -295,24 +295,45 @@ function updateRegenerationUI() {
         </div>
     `;
 
+    // Кнопка "Сделать ещё" под галереей
     let regenBtn = document.getElementById('regenerateBtn');
     if (!regenBtn) {
         regenBtn = document.createElement('button');
         regenBtn.id = 'regenerateBtn';
         regenBtn.className = 'btn btn-primary';
         regenBtn.style.marginTop = '15px';
-        regenBtn.onclick = window.regeneratePhoto;
         resultsContainer.appendChild(regenBtn);
     }
 
     if (remaining > 0) {
         regenBtn.style.display = 'inline-block';
         regenBtn.innerHTML = `🔄 Сделать ещё (${nextCost} ₽)`;
+        regenBtn.onclick = window.regeneratePhoto;  // добавил onclick
         regenBtn.disabled = false;
     } else {
         regenBtn.style.display = 'none';
     }
+
+    // Управляем основной синей кнопкой на форме
+    const mainBtn = document.getElementById(currentGenerationSession.platform === 'wb' ? 'generateWBBtn' : 'generateOzonBtn');
+    if (mainBtn) {
+        if (currentGenerationSession.attemptsMade >= currentGenerationSession.maxAttempts) {
+            // Достигнут лимит — кнопка создаёт НОВУЮ сессию за 100 ₽
+            mainBtn.innerHTML = `✨ Создать первое фото для ${platformName} (100 ₽)`;
+            mainBtn.onclick = currentGenerationSession.platform === 'wb' ? window.generateWBCard : window.generateOzonCard;
+        } else if (currentGenerationSession.attemptsMade > 0) {
+            // Есть попытки — кнопка для повторной генерации за 15 ₽
+            mainBtn.innerHTML = `🔄 Сделать ещё (15 ₽)`;
+            mainBtn.onclick = window.regeneratePhoto;
+        } else {
+            // Первая генерация ещё не сделана
+            mainBtn.innerHTML = `✨ Создать первое фото для ${platformName} (100 ₽)`;
+            mainBtn.onclick = currentGenerationSession.platform === 'wb' ? window.generateWBCard : window.generateOzonCard;
+        }
+        mainBtn.disabled = false;
+    }
 }
+
 // Управляем состоянием основной синей кнопки
 const mainBtn = document.getElementById(currentGenerationSession.platform === 'wb' ? 'generateWBBtn' : 'generateOzonBtn');
 if (mainBtn) {
