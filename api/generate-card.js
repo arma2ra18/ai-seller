@@ -8,7 +8,8 @@ import {
   wbRules, 
   ozonRules,
   getVariationPrompt,
-  noPhotoPrompt 
+  noPhotoPrompt,
+  getCategoryPrompt 
 } from './prompts/index.js';
 
 // Инициализация Firebase Admin SDK (только один раз)
@@ -242,12 +243,24 @@ export default async function handler(req, res) {
         const productName = fields.productName?.[0] || '';
         const brand = fields.brand?.[0] || '';
         const price = fields.price?.[0] || '1990';
+        const category = fields.category?.[0] || 'home';
+        const color = fields.color?.[0] || '';
         const userFeatures = (fields.features?.[0] || '').split(',').map(f => f.trim()).filter(Boolean);
         const platform = fields.platform?.[0] || 'wb';
         const attempt = parseInt(fields.attempt?.[0]) || 0;
         const originalImageId = fields.originalImageId?.[0] || null;
 
-        console.log('📦 Данные:', { productName, brand, price, userFeatures, platform, attempt, originalImageId });
+        console.log('📦 Данные:', { 
+            productName, 
+            brand, 
+            price, 
+            category,
+            color,
+            userFeatures, 
+            platform, 
+            attempt, 
+            originalImageId 
+        });
 
         if (!productName) {
             return res.status(400).json({ error: 'Product name is required' });
@@ -290,35 +303,34 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'No reference image available' });
         }
 
-       // ===== ФОРМИРОВАНИЕ ПРОМПТА ИЗ ОТДЕЛЬНЫХ ФАЙЛОВ =====
+        // ===== ФОРМИРОВАНИЕ ПРОМПТА =====
+        
+        // Используем категорийный промпт
+        let finalPrompt = getCategoryPrompt(
+            category,
+            productName,
+            userFeatures.join(', '),
+            color
+        );
+        
+        // Правила платформы
+        if (platform === 'wb') {
+            finalPrompt += wbRules;
+            console.log('🎯 Используем промпт для Wildberries');
+        } else {
+            finalPrompt += ozonRules;
+            console.log('🎯 Используем промпт для Ozon');
+        }
+        
+        // Добавляем информацию о генерации без фото
+        if (isGeneratedFromText) {
+            finalPrompt += noPhotoPrompt(productName);
+        }
+        
+        // Добавляем вариацию для повторных генераций
+        finalPrompt += getVariationPrompt(attempt, productName);
 
-// Базовый стиль
-let finalPrompt = baseStylePrompt(productName, brand, price, userFeatures);
-
-// Правила платформы
-if (platform === 'wb') {
-    finalPrompt += wbRules;
-    console.log('🎯 Используем промпт для Wildberries');
-} else {
-    finalPrompt += ozonRules;
-    console.log('🎯 Используем промпт для Ozon');
-}
-
-// Добавляем информацию о генерации без фото
-if (isGeneratedFromText) {
-    finalPrompt += noPhotoPrompt(productName);
-}
-
-// Добавляем **вариацию в зависимости от номера попытки**
-// attempt может быть 0,1,2,3,4 (5 попыток всего)
-finalPrompt += getVariationPrompt(attempt, productName);
-
-console.log(`🎨 Попытка ${attempt + 1}/5, используем стиль:`, 
-  attempt === 0 ? 'Классический премиум' :
-  attempt === 1 ? 'Динамичный' :
-  attempt === 2 ? 'Минимализм' :
-  attempt === 3 ? 'Агрессивный маркетинг' :
-  'Креативный');
+        console.log(`🎨 Попытка ${attempt + 1}/5`);
 
         let imageDataUrl;
         try {
@@ -345,7 +357,6 @@ console.log(`🎨 Попытка ${attempt + 1}/5, используем стил
         const publicUrl = await uploadToStorage(processed.buffer, fileName, processed.mimeType);
 
         // ВАЖНО: Для первой генерации (attempt === 0) всегда сохраняем оригинал
-        // Это нужно для повторных генераций, даже если фото не было загружено
         if (attempt === 0 && !originalImageId) {
             try {
                 const originalFileName = `original_${Date.now()}.jpg`;
@@ -356,7 +367,8 @@ console.log(`🎨 Попытка ${attempt + 1}/5, используем стил
                         contentType: 'image/jpeg',
                         metadata: {
                             productName: productName,
-                            platform: platform
+                            platform: platform,
+                            category: category
                         }
                     },
                     public: false
@@ -366,7 +378,6 @@ console.log(`🎨 Попытка ${attempt + 1}/5, используем стил
                 console.log('💾 Сохранен originalImageId для повторных генераций:', savedOriginalId);
             } catch (err) {
                 console.error('❌ Ошибка сохранения оригинала:', err);
-                // Продолжаем, даже если не удалось сохранить оригинал
             }
         }
 
@@ -382,11 +393,10 @@ console.log(`🎨 Попытка ${attempt + 1}/5, используем стил
 
         console.log('✅ Успешно сгенерировано изображение 900x1200');
         
-        // Возвращаем результат с originalImageId
         res.status(200).json({ 
             images: [publicUrl], 
             descriptions: [],
-            originalImageId: savedOriginalId, // Всегда передаем, если сохранили
+            originalImageId: savedOriginalId,
             attempt: attempt,
             dimensions: '900x1200',
             size: processed.size,
